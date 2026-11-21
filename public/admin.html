@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Panel</title>
+<style>
+  :root { --tinta: #161616; --suave: #5b5a57; --borde: #dedcd6; --fondo: #f4f3ef; --azul: #2a78d6; --rojo: #c4372b; --verde: #19804a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: var(--tinta); font-size: 15px; }
+  button, input, select, textarea { font: inherit; }
+  input, select, textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--borde); border-radius: 9px; background: #fff; }
+  input[type=checkbox] { width: auto; }
+  input[type=color] { padding: 2px; height: 40px; }
+  textarea { min-height: 70px; resize: vertical; }
+  button { border: 0; border-radius: 9px; padding: 9px 14px; background: var(--tinta); color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  button.sec { background: #fff; color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); }
+  button.peligro { background: #fff; color: var(--rojo); box-shadow: inset 0 0 0 1px #efc7c3; }
+  button:disabled { opacity: .45; cursor: default; }
+  a { color: var(--azul); }
+  .oculto { display: none !important; }
+  /* login */
+  #login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+  #login form { background: #fff; padding: 28px; border-radius: 18px; width: 100%; max-width: 360px; display: grid; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  #login h1 { margin: 0 0 4px; font-size: 22px; }
+  .error { color: var(--rojo); font-size: 14px; min-height: 1em; }
+  /* app */
+  header { background: #fff; border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 10; }
+  .barra { max-width: 1180px; margin: 0 auto; padding: 10px 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .barra .marca { font-weight: 800; margin-right: 14px; font-size: 17px; }
+  .tab { background: transparent; color: var(--suave); }
+  .tab.activa { background: var(--fondo); color: var(--tinta); }
+  .barra .esp { flex: 1; }
+  main { max-width: 1180px; margin: 0 auto; padding: 20px 18px 60px; }
+  .fila-herr { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 14px; }
+  .fila-herr label { display: grid; gap: 4px; font-size: 13px; color: var(--suave); }
+  .tarjeta { background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--borde); }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eeece7; vertical-align: middle; }
+  th { font-size: 12.5px; color: var(--suave); font-weight: 600; background: #faf9f6; }
+  tr:last-child td { border-bottom: 0; }
+  td input, td select { padding: 6px 8px; }
+  .cod { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; }
+  .chip { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12.5px; font-weight: 600; }
+  .chip.on { background: #e3f3e9; color: var(--verde); }
+  .chip.off { background: #f6e3e1; color: var(--rojo); }
+  .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+  .acciones button, .acciones a { padding: 6px 10px; font-size: 13.5px; }
+  .btnlink { display: inline-block; border-radius: 9px; background: #fff; color: var(--tinta); box-shadow: inset 0 0 0 1px var(--borde); font-weight: 600; text-decoration: none; }
+  .estado-guardado { font-size: 12px; color: var(--verde); }
+  .tabla-scroll { overflow-x: auto; }
+  dialog { border: 0; border-radius: 18px; padding: 0; width: min(760px, 96vw); max-height: 92vh; }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog form { padding: 22px; display: grid; gap: 16px; }
+  dialog h2 { margin: 0; font-size: 20px; }
+  fieldset { border: 1px solid var(--borde); border-radius: 12px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+  legend { font-weight: 700; padding: 0 6px; }
+  fieldset label { display: grid; gap: 4px; font-size: 13px; color: var(--suave); }
+  fieldset .ancho { grid-column: 1 / -1; }
+  .ayuda { font-size: 12px; color: #8a8985; }
+  .pie-dialog { display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--tinta); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 100; display: none; }
+  @media (max-width: 640px) { fieldset { grid-template-columns: 1fr; } }
+</style>
+<script src="/api/config"></script>
+<script src="/assets/qrcode.js"></script>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="login" class="oculto">
+  <form id="form-login">
+    <h1>Panel <span class="nom-marca">Nef</span></h1>
+    <input type="email" id="l-email" placeholder="Correo" autocomplete="username" required>
+    <input type="password" id="l-clave" placeholder="Contraseña" autocomplete="current-password" required>
+    <button type="submit">Entrar</button>
+    <div class="error" id="l-error"></div>
+  </form>
+</section>
+
+<!-- ============ APP ============ -->
+<section id="app" class="oculto">
+  <header><div class="barra">
+    <span class="marca nom-marca">Nef</span>
+    <button class="tab activa" data-tab="negocios">Negocios</button>
+    <button class="tab" data-tab="tags">Tags</button>
+    <button class="tab" data-tab="stats">Estadísticas</button>
+    <span class="esp"></span>
+    <button class="sec" id="salir">Salir</button>
+  </div></header>
+
+  <main>
+    <!-- NEGOCIOS -->
+    <div id="tab-negocios">
+      <div class="fila-herr"><button id="nuevo-negocio">+ Nuevo negocio</button></div>
+      <div class="tabla-scroll"><table>
+        <thead><tr><th>Negocio</th><th>Dirección</th><th>Tags</th><th>Plan</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="lista-negocios"></tbody>
+      </table></div>
+    </div>
+
+    <!-- TAGS -->
+    <div id="tab-tags" class="oculto">
+      <div class="tarjeta">
+        <b>Crear tags nuevos</b>
+        <div class="fila-herr" style="margin:10px 0 0">
+          <label>Cantidad<input type="number" id="c-cant" value="5" min="1" max="200" style="width:90px"></label>
+          <label>Para el negocio<select id="c-negocio"></select></label>
+          <label>Nombre base<input id="c-base" value="Mesa" style="width:150px"></label>
+          <button id="crear-tags">Crear</button>
+        </div>
+        <p class="ayuda" style="margin:10px 0 0">Tip: crea tags "Sin asignar", grábalos todos de una vez y luego los asignas al negocio que los compre.</p>
+      </div>
+      <div class="fila-herr">
+        <label>Mostrar<select id="f-negocio"></select></label>
+        <span style="flex:1"></span>
+        <label>Asignar seleccionados a<select id="b-negocio"></select></label>
+        <button class="sec" id="b-asignar">Asignar</button>
+        <button class="sec" id="b-copiar">Copiar links NFC</button>
+        <button id="b-imprimir">Imprimir QR</button>
+      </div>
+      <div class="tabla-scroll"><table>
+        <thead><tr>
+          <th><input type="checkbox" id="sel-todos" aria-label="Seleccionar todos"></th>
+          <th>Código</th><th>Nombre</th><th>Negocio</th><th>Al tocar abre…</th><th>URL (si es personalizada)</th><th>Activo</th><th></th>
+        </tr></thead>
+        <tbody id="lista-tags"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div id="tab-stats" class="oculto">
+      <div class="fila-herr">
+        <label>Negocio<select id="s-negocio"></select></label>
+        <label>Periodo<select id="s-dias"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></label>
+        <button class="sec" id="s-compartir">Copiar link para el cliente</button>
+      </div>
+      <div id="s-contenido"></div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ FORMULARIO NEGOCIO ============ -->
+<dialog id="dlg-negocio">
+  <form id="form-negocio" method="dialog">
+    <h2 id="n-titulo">Nuevo negocio</h2>
+    <fieldset>
+      <legend>Lo que ven los clientes</legend>
+      <label>Nombre *<input name="nombre" required></label>
+      <label>Dirección web *<input name="slug" required pattern="[a-z0-9\-]{2,60}"><span class="ayuda" id="n-slug-ayuda"></span></label>
+      <label class="ancho">Descripción corta<input name="descripcion" placeholder="Café de especialidad · Chapinero"></label>
+      <label>Logo (link a la imagen)<input name="logo_url" type="url" placeholder="https://…"></label>
+      <label>Color de la marca<input name="color" type="color" value="#1f1f1f"></label>
+      <label class="ancho">Link del menú<input name="menu_url" type="url" placeholder="https://… (PDF en Drive, página, carta digital)"></label>
+      <label class="ancho">Link para dejar reseña en Google<input name="resena_url" type="url" placeholder="https://g.page/r/…/review">
+        <span class="ayuda">Perfil de Empresa de Google → "Pedir reseñas" → copiar el link.</span></label>
+      <label>WhatsApp<input name="whatsapp" placeholder="3001234567"></label>
+      <label>Instagram<input name="instagram" placeholder="@micafe"></label>
+      <label>Nombre del WiFi<input name="wifi_nombre"></label>
+      <label>Contraseña del WiFi<input name="wifi_clave"></label>
+      <label class="ancho">Otros botones (uno por línea: Título | link)
+        <textarea name="links" placeholder="Pide a domicilio | https://…&#10;Reserva una mesa | https://…"></textarea></label>
+    </fieldset>
+    <fieldset>
+      <legend>Privado (solo tú lo ves)</legend>
+      <label>Plan<select name="plan"><option value="basico">Básico</option><option value="pro">Pro</option><option value="cortesia">Cortesía / prueba</option></select></label>
+      <label style="align-content:end"><span><input type="checkbox" name="activo" checked> Activo (si lo apagas, sus tags dejan de funcionar)</span></label>
+      <label>Contacto<input name="contacto_nombre"></label>
+      <label>Teléfono del contacto<input name="contacto_telefono"></label>
+      <label class="ancho">Notas<textarea name="notas" placeholder="Pagó 50% anticipo, cobra el 5 de cada mes…"></textarea></label>
+    </fieldset>
+    <div class="error" id="n-error"></div>
+    <div class="pie-dialog">
+      <button type="button" class="peligro" id="n-eliminar">Eliminar</button>
+      <span style="display:flex;gap:10px"><button type="button" class="sec" id="n-cancelar">Cancelar</button><button type="submit" id="n-guardar">Guardar</button></span>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { renderStats } from '/assets/stats.js';
+
+const cfg = window.TOQUE;
+const sb = createClient(cfg.url, cfg.anon);
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const ORIGEN = location.origin;
+const linkNFC = (c) => `${ORIGEN}/t/${c}`;
+const linkQR = (c) => `${ORIGEN}/t/${c}?q`;
+const DESTINOS = { hub: 'Página del negocio', menu: 'Menú directo', resena: 'Reseña Google directo', whatsapp: 'WhatsApp directo', instagram: 'Instagram directo', wifi: 'Página → WiFi', url: 'URL personalizada' };
+
+document.querySelectorAll('.nom-marca').forEach((e) => (e.textContent = cfg.marca));
+document.title = `Panel · ${cfg.marca}`;
+
+let negocios = [];
+let tags = [];
+let editando = null;
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toast.h);
+  toast.h = setTimeout(() => (t.style.display = 'none'), 2600);
+}
+async function copiar(txt, msg = 'Copiado') {
+  try { await navigator.clipboard.writeText(txt); toast(msg); } catch { prompt('Copia esto:', txt); }
+}
+const slugify = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+const nombreNegocio = (id) => negocios.find((n) => n.id === id)?.nombre || '— Sin asignar —';
+
+// ---------------- Sesión ----------------
+async function iniciar() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('#login').classList.remove('oculto'); $('#app').classList.add('oculto'); return; }
+  const { data: esAdmin } = await sb.rpc('es_admin');
+  if (!esAdmin) {
+    $('#login').classList.remove('oculto');
+    $('#l-error').textContent = 'Entraste, pero este usuario no es administrador. Revisa el paso 3 de la guía.';
+    await sb.auth.signOut();
+    return;
+  }
+  $('#login').classList.add('oculto');
+  $('#app').classList.remove('oculto');
+  await recargar();
+}
+
+$('#form-login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#l-error').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-clave').value });
+  if (error) { $('#l-error').textContent = 'Correo o contraseña incorrectos.'; return; }
+  iniciar();
+});
+$('#salir').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+// ---------------- Pestañas ----------------
+document.querySelectorAll('.tab').forEach((b) =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('activa', x === b));
+    ['negocios', 'tags', 'stats'].forEach((t) => $(`#tab-${t}`).classList.toggle('oculto', t !== b.dataset.tab));
+    if (b.dataset.tab === 'stats') cargarStats();
+  })
+);
+
+// ---------------- Datos ----------------
+async function recargar() {
+  const [n, t] = await Promise.all([
+    sb.from('negocios').select('*').order('nombre'),
+    sb.from('tags').select('*').order('creado', { ascending: false }).order('nombre'),
+  ]);
+  if (n.error || t.error) { toast('Error cargando datos: ' + (n.error || t.error).message); return; }
+  negocios = n.data;
+  tags = t.data;
+  pintarNegocios();
+  llenarSelects();
+  pintarTags();
+}
+
+function opcionesNegocio({ todos = false, sinAsignar = true } = {}) {
+  let h = '';
+  if (todos) h += '<option value="*">Todos</option>';
+  if (sinAsignar) h += '<option value="">— Sin asignar —</option>';
+  return h + negocios.map((n) => `<option value="${n.id}">${esc(n.nombre)}</option>`).join('');
+}
+function llenarSelects() {
+  const keep = (sel, html) => { const v = sel.value; sel.innerHTML = html; if ([...sel.options].some((o) => o.value === v)) sel.value = v; };
+  keep($('#c-negocio'), opcionesNegocio());
+  keep($('#f-negocio'), opcionesNegocio({ todos: true }));
+  keep($('#b-negocio'), opcionesNegocio());
+  keep($('#s-negocio'), opcionesNegocio({ sinAsignar: false }));
+}
+
+// ---------------- Negocios ----------------
+function pintarNegocios() {
+  const tb = $('#lista-negocios');
+  if (!negocios.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:24px;color:#5b5a57">Aún no tienes negocios. Crea el primero (puede ser Mamut Herd).</td></tr>'; return; }
+  tb.innerHTML = negocios.map((n) => {
+    const nt = tags.filter((t) => t.negocio_id === n.id).length;
+    return `<tr>
+      <td><b>${esc(n.nombre)}</b>${n.contacto_nombre ? `<br><span class="ayuda">${esc(n.contacto_nombre)} ${esc(n.contacto_telefono || '')}</span>` : ''}</td>
+      <td class="cod">/n/${esc(n.slug)}</td>
+      <td>${nt}</td>
+      <td>${esc(n.plan)}</td>
+      <td><span class="chip ${n.activo ? 'on' : 'off'}">${n.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td><div class="acciones">
+        <button class="sec" data-editar="${n.id}">Editar</button>
+        <a class="btnlink" href="/n/${encodeURIComponent(n.slug)}" target="_blank" rel="noopener">Ver página</a>
+        <button class="sec" data-stats="${n.id}">Link estadísticas</button>
+      </div></td></tr>`;
+  }).join('');
+  tb.querySelectorAll('[data-editar]').forEach((b) => b.addEventListener('click', () => abrirNegocio(negocios.find((n) => n.id === b.dataset.editar))));
+  tb.querySelectorAll('[data-stats]').forEach((b) => b.addEventListener('click', () => {
+    const n = negocios.find((x) => x.id === b.dataset.stats);
+    copiar(`${ORIGEN}/stats?k=${n.token_stats}`, 'Link de estadísticas copiado — envíaselo al cliente');
+  }));
+}
+
+const fN = $('#form-negocio');
+let slugTocado = false;
+function abrirNegocio(n = null) {
+  editando = n;
+  fN.reset();
+  $('#n-error').textContent = '';
+  $('#n-titulo').textContent = n ? `Editar · ${n.nombre}` : 'Nuevo negocio';
+  $('#n-eliminar').classList.toggle('oculto', !n);
+  slugTocado = !!n;
+  if (n) {
+    for (const el of fN.elements) {
+      if (!el.name) continue;
+      if (el.name === 'links') el.value = (n.links || []).map((l) => `${l.titulo} | ${l.url}`).join('\n');
+      else if (el.type === 'checkbox') el.checked = !!n[el.name];
+      else el.value = n[el.name] ?? '';
+    }
+  }
+  actualizarAyudaSlug();
+  $('#dlg-negocio').showModal();
+}
+function actualizarAyudaSlug() { $('#n-slug-ayuda').textContent = `${ORIGEN}/n/${fN.slug.value || '…'}`; }
+fN.nombre.addEventListener('input', () => { if (!slugTocado) fN.slug.value = slugify(fN.nombre.value); actualizarAyudaSlug(); });
+fN.slug.addEventListener('input', () => { slugTocado = true; fN.slug.value = fN.slug.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); actualizarAyudaSlug(); });
+$('#nuevo-negocio').addEventListener('click', () => abrirNegocio());
+$('#n-cancelar').addEventListener('click', () => $('#dlg-negocio').close());
+
+fN.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const v = (k) => fN[k].value.trim() || null;
+  const links = (fN.links.value || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const i = l.lastIndexOf('|');
+    return i < 0 ? null : { titulo: l.slice(0, i).trim(), url: l.slice(i + 1).trim() };
+  });
+  if (links.some((l) => !l || !l.titulo || !/^https?:\/\//i.test(l.url))) {
+    $('#n-error').textContent = 'Revisa "Otros botones": cada línea debe ser  Título | https://…';
+    return;
+  }
+  const datos = {
+    nombre: v('nombre'), slug: v('slug'), descripcion: v('descripcion'), logo_url: v('logo_url'), color: fN.color.value,
+    menu_url: v('menu_url'), resena_url: v('resena_url'), whatsapp: v('whatsapp'), instagram: v('instagram'),
+    wifi_nombre: v('wifi_nombre'), wifi_clave: v('wifi_clave'), links,
+    plan: fN.plan.value, activo: fN.activo.checked, contacto_nombre: v('contacto_nombre'), contacto_telefono: v('contacto_telefono'), notas: v('notas'),
+  };
+  const q = editando ? sb.from('negocios').update(datos).eq('id', editando.id) : sb.from('negocios').insert(datos);
+  const { error } = await q;
+  if (error) {
+    $('#n-error').textContent = error.code === '23505' ? 'Esa dirección web ya la usa otro negocio. Cambia la "Dirección web".' : 'No se pudo guardar: ' + error.message;
+    return;
+  }
+  $('#dlg-negocio').close();
+  toast('Negocio guardado');
+  recargar();
+});
+
+$('#n-eliminar').addEventListener('click', async () => {
+  if (!editando || !confirm(`¿Eliminar "${editando.nombre}" y todas sus estadísticas? Sus tags quedan sin asignar.`)) return;
+  const { error } = await sb.from('negocios').delete().eq('id', editando.id);
+  if (error) { $('#n-error').textContent = error.message; return; }
+  $('#dlg-negocio').close();
+  toast('Negocio eliminado');
+  recargar();
+});
+
+// ---------------- Tags ----------------
+function tagsFiltrados() {
+  const f = $('#f-negocio').value;
+  return f === '*' ? tags : tags.filter((t) => (t.negocio_id || '') === f);
+}
+function pintarTags() {
+  const lista = tagsFiltrados();
+  const tb = $('#lista-tags');
+  $('#sel-todos').checked = false;
+  if (!lista.length) { tb.innerHTML = '<tr><td colspan="8" style="padding:24px;color:#5b5a57">No hay tags aquí. Créalos arriba.</td></tr>'; return; }
+  const optsDest = (sel) => Object.entries(DESTINOS).map(([k, l]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${l}</option>`).join('');
+  tb.innerHTML = lista.map((t) => `<tr data-id="${t.id}">
+      <td><input type="checkbox" class="sel"></td>
+      <td class="cod">${esc(t.codigo)}</td>
+      <td><input data-campo="nombre" value="${esc(t.nombre || '')}" style="min-width:120px"></td>
+      <td><select data-campo="negocio_id" style="min-width:150px">${opcionesNegocio()}</select></td>
+      <td><select data-campo="destino" style="min-width:185px">${optsDest(t.destino)}</select></td>
+      <td><input data-campo="url_personalizada" type="url" value="${esc(t.url_personalizada || '')}" placeholder="https://…" ${t.destino === 'url' ? '' : 'disabled'} style="min-width:160px"></td>
+      <td><input type="checkbox" data-campo="activo" ${t.activo ? 'checked' : ''}></td>
+      <td><div class="acciones"><button class="sec" data-copiar="${esc(t.codigo)}" title="Copiar el link para grabar en el chip">Link NFC</button><span class="estado-guardado"></span></div></td>
+    </tr>`).join('');
+  tb.querySelectorAll('tr[data-id]').forEach((tr) => {
+    const t = tags.find((x) => x.id === tr.dataset.id);
+    tr.querySelector('[data-campo="negocio_id"]').value = t.negocio_id || '';
+    tr.querySelectorAll('[data-campo]').forEach((el) => el.addEventListener('change', () => guardarTag(tr, el)));
+  });
+  tb.querySelectorAll('[data-copiar]').forEach((b) => b.addEventListener('click', () => copiar(linkNFC(b.dataset.copiar), 'Link NFC copiado — pégalo en NFC Tools')));
+}
+
+async function guardarTag(tr, el) {
+  const id = tr.dataset.id;
+  const campo = el.dataset.campo;
+  let valor = el.type === 'checkbox' ? el.checked : el.value.trim() || null;
+  if (campo === 'destino') tr.querySelector('[data-campo="url_personalizada"]').disabled = valor !== 'url';
+  const { error } = await sb.from('tags').update({ [campo]: valor }).eq('id', id);
+  const ok = tr.querySelector('.estado-guardado');
+  if (error) { ok.style.color = 'var(--rojo)'; ok.textContent = 'Error'; toast(error.message); return; }
+  Object.assign(tags.find((x) => x.id === id), { [campo]: valor });
+  ok.style.color = ''; ok.textContent = '✓ guardado';
+  setTimeout(() => (ok.textContent = ''), 1800);
+  if (campo === 'negocio_id') pintarNegocios();
+}
+
+$('#f-negocio').addEventListener('change', pintarTags);
+$('#sel-todos').addEventListener('change', (e) => document.querySelectorAll('#lista-tags .sel').forEach((c) => (c.checked = e.target.checked)));
+const seleccionados = () => [...document.querySelectorAll('#lista-tags .sel:checked')].map((c) => tags.find((t) => t.id === c.closest('tr').dataset.id));
+
+$('#crear-tags').addEventListener('click', async () => {
+  const cant = Math.max(1, Math.min(200, parseInt($('#c-cant').value, 10) || 1));
+  const negocio_id = $('#c-negocio').value || null;
+  const base = $('#c-base').value.trim();
+  const existentes = tags.filter((t) => (t.negocio_id || null) === negocio_id && base && (t.nombre || '').startsWith(base + ' ')).length;
+  const filas = Array.from({ length: cant }, (_, i) => ({ negocio_id, nombre: base ? `${base} ${existentes + i + 1}` : null }));
+  $('#crear-tags').disabled = true;
+  const { error } = await sb.from('tags').insert(filas);
+  $('#crear-tags').disabled = false;
+  if (error) { toast('No se pudieron crear: ' + error.message); return; }
+  toast(`${cant} tag${cant > 1 ? 's' : ''} creado${cant > 1 ? 's' : ''}`);
+  $('#f-negocio').value = negocio_id || '';
+  recargar();
+});
+
+$('#b-asignar').addEventListener('click', async () => {
+  const sel = seleccionados();
+  if (!sel.length) return toast('Selecciona tags primero');
+  const negocio_id = $('#b-negocio').value || null;
+  const { error } = await sb.from('tags').update({ negocio_id }).in('id', sel.map((t) => t.id));
+  if (error) return toast(error.message);
+  toast(`${sel.length} tag(s) asignados a ${nombreNegocio(negocio_id)}`);
+  recargar();
+});
+
+$('#b-copiar').addEventListener('click', () => {
+  const sel = seleccionados();
+  if (!sel.length) return toast('Selecciona tags primero');
+  copiar(sel.map((t) => `${t.nombre || t.codigo}\t${linkNFC(t.codigo)}`).join('\n'), `${sel.length} links copiados`);
+});
+
+$('#b-imprimir').addEventListener('click', () => {
+  const sel = seleccionados();
+  if (!sel.length) return toast('Selecciona tags primero');
+  const tarjetas = sel.map((t) => {
+    const qr = qrcode(0, 'M');
+    qr.addData(linkQR(t.codigo));
+    qr.make();
+    const neg = negocios.find((n) => n.id === t.negocio_id);
+    return `<div class="t"><div class="qr">${qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div>
+      <div class="n">${esc(neg ? neg.nombre : '')}</div><div class="s">${esc(t.nombre || '')}</div>
+      <div class="i">📲 Acerca tu celular o escanea</div><div class="c">${esc(t.codigo)}</div></div>`;
+  }).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>QR para imprimir</title><style>
+    @page{margin:10mm} *{box-sizing:border-box} body{margin:0;font-family:system-ui,sans-serif}
+    .g{display:grid;grid-template-columns:repeat(auto-fill,60mm);gap:6mm}
+    .t{width:60mm;border:1px dashed #bbb;border-radius:4mm;padding:5mm;text-align:center;break-inside:avoid}
+    .qr svg{width:40mm;height:40mm} .n{font-weight:700;margin-top:2mm;font-size:12pt} .s{font-size:10pt;color:#444}
+    .i{font-size:9pt;margin-top:1.5mm} .c{font:7pt ui-monospace,monospace;color:#999;margin-top:1mm}
+    .aviso{padding:10px;font-size:13px;background:#fff6d6;margin-bottom:8mm} @media print{.aviso{display:none}}
+    </style></head><body><div class="aviso">Imprime en tamaño real (100%). Las líneas punteadas son guías de corte. Los QR ya llevan la marca para contarse aparte del NFC.</div><div class="g">${tarjetas}</div></body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 400);
+});
+
+// ---------------- Estadísticas ----------------
+async function cargarStats() {
+  const id = $('#s-negocio').value;
+  const cont = $('#s-contenido');
+  if (!id) { cont.innerHTML = '<p style="color:#5b5a57">Primero crea un negocio.</p>'; return; }
+  cont.innerHTML = '<p style="color:#5b5a57">Cargando…</p>';
+  const { data, error } = await sb.rpc('stats_admin', { p_negocio: id, p_dias: +$('#s-dias').value });
+  if (error) { cont.innerHTML = `<p class="error">${esc(error.message)}</p>`; return; }
+  renderStats(cont, data);
+}
+$('#s-negocio').addEventListener('change', cargarStats);
+$('#s-dias').addEventListener('change', cargarStats);
+$('#s-compartir').addEventListener('click', () => {
+  const n = negocios.find((x) => x.id === $('#s-negocio').value);
+  if (n) copiar(`${ORIGEN}/stats?k=${n.token_stats}`, 'Link de estadísticas copiado — envíaselo al cliente');
+});
+
+iniciar();
+</script>
+</body>
+</html>

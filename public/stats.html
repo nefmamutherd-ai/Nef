@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Estadísticas</title>
+<style>
+  body { margin: 0; background: #f4f3ef; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #0b0b0b; }
+  header { padding: 22px 18px 6px; max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; }
+  h1 { margin: 0; font-size: 24px; }
+  header p { margin: 4px 0 0; color: #52514e; font-size: 14px; }
+  select { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid #d6d5d0; background: #fff; }
+  main { max-width: 860px; margin: 0 auto; padding: 12px 18px 40px; }
+  .msg { padding: 40px 0; text-align: center; color: #52514e; }
+</style>
+<script src="/api/config"></script>
+</head>
+<body>
+<header>
+  <div><h1 id="titulo">Estadísticas</h1><p>Cómo usan tus clientes tu portal · <span id="marca">Nef</span></p></div>
+  <label>Periodo
+    <select id="dias"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select>
+  </label>
+</header>
+<main id="contenido"><div class="msg">Cargando…</div></main>
+<script type="module">
+  import { renderStats } from '/assets/stats.js';
+  const cfg = window.TOQUE;
+  document.getElementById('marca').textContent = cfg.marca;
+  const token = new URLSearchParams(location.search).get('k') || '';
+  const cont = document.getElementById('contenido');
+
+  async function cargar() {
+    const dias = +document.getElementById('dias').value;
+    const r = await fetch(`${cfg.url}/rest/v1/rpc/stats_token`, {
+      method: 'POST',
+      headers: { apikey: cfg.anon, Authorization: `Bearer ${cfg.anon}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: token, p_dias: dias }),
+    });
+    const data = r.ok ? await r.json() : null;
+    if (!data) { cont.innerHTML = '<div class="msg">Este link de estadísticas no es válido.</div>'; return; }
+    document.getElementById('titulo').textContent = data.negocio;
+    document.title = `Estadísticas · ${data.negocio}`;
+    renderStats(cont, data.stats);
+  }
+  document.getElementById('dias').addEventListener('change', cargar);
+  cargar().catch(() => (cont.innerHTML = '<div class="msg">No pudimos cargar las estadísticas. Intenta de nuevo.</div>'));
+</script>
+</body>
+</html>

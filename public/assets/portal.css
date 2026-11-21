@@ -1,0 +1,146 @@
+/* =====================================================================
+   NEF · componentes de los PORTALES de los negocios (cliente final y caja)
+   Requiere /assets/tokens.css antes. Solo usa variables de tokens.css, así
+   funciona igual en los tres temas (data-tema="calido" | "energia" | "limpio").
+   Catálogo visual: docs/diseno/componentes.html · Reglas: docs/UI.md
+   Prefijo de clases: pt-  (no inventes clases nuevas si una de estas sirve)
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 var(--t-16)/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+.pt [hidden] { display: none !important; }
+.pt-pagina { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding: var(--e-24) var(--e-24) 96px; position: relative; }
+.pt-icono { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.pt-titulo { font-family: var(--serif); font-weight: var(--peso-titulo, 500); letter-spacing: -.01em; }
+.pt-oculto-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pt a { color: inherit; }
+.pt :focus-visible { outline: 3px solid var(--marca); outline-offset: 2px; }
+
+/* ── Cabeza del portal: logo, nombre, ubicación ───────────────────── */
+.pt-cabeza { text-align: center; padding-top: var(--e-8); margin-bottom: var(--e-32); }
+.pt-logo { width: 84px; height: 84px; border-radius: 50%; margin: 0 auto; background: var(--marca); color: var(--sobre-marca); display: grid; place-items: center; overflow: hidden; font: var(--peso-titulo, 500) 34px var(--serif); }
+.pt-logo img { width: 100%; height: 100%; object-fit: cover; }
+.pt-cabeza h1 { font: var(--peso-titulo, 500) var(--t-28)/1.15 var(--serif); margin: var(--e-16) 0 var(--e-4); }
+.pt-cabeza p { margin: 0; color: var(--tinta-2); font-size: 15px; }
+
+/* ── Botones grandes del portal (máximo 3; el primero es .principal) ── */
+.pt-botones { display: grid; gap: 14px; }
+.pt-boton { display: flex; align-items: center; gap: var(--e-16); width: 100%; min-height: 76px; padding: 0 var(--e-20); border-radius: 20px; background: var(--tarjeta); border: 1.5px solid var(--linea); color: var(--tinta); font: 600 19px/1.2 var(--sans); text-align: left; text-decoration: none; cursor: pointer; transition: transform var(--dur-1) var(--ease); }
+.pt-boton:active { transform: scale(.98); }
+.pt-boton span { flex: 1; }
+.pt-boton small { font-size: 15px; font-weight: 600; color: var(--oro); font-variant-numeric: tabular-nums; }
+.pt-boton .pt-flecha { color: var(--tinta-3); }
+.pt-boton.principal { background: var(--marca); border-color: var(--marca); color: var(--sobre-marca); }
+.pt-boton.principal .pt-flecha { color: currentColor; opacity: .7; }
+
+/* Enlaces de texto secundarios (WiFi, WhatsApp, Instagram…) */
+.pt-enlaces { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 22px; margin-top: var(--e-32); font-size: 15px; color: var(--tinta-2); }
+.pt-enlaces a, .pt-enlaces button { color: inherit; background: none; border: 0; padding: 4px 0; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--linea); }
+.pt-firma { position: absolute; left: 0; right: 0; bottom: var(--e-32); text-align: center; font-size: var(--t-12); color: var(--tinta-3); }
+.pt-firma img { height: 14px; width: auto; vertical-align: -2px; opacity: .7; }
+
+/* ── Botón de acción (oscuro, ancho completo) y secundario ─────────── */
+.pt-accion { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 62px; border: 0; border-radius: 18px; background: var(--tinta); color: var(--papel); font: 600 var(--t-18) var(--sans); text-decoration: none; cursor: pointer; transition: transform var(--dur-1) var(--ease); }
+.pt-accion:active { transform: scale(.98); }
+.pt-accion.marca { background: var(--marca); color: var(--sobre-marca); }
+.pt-accion:disabled { opacity: .45; cursor: not-allowed; }
+.pt-link { display: block; margin-top: var(--e-16); text-align: center; font-size: var(--t-16); font-weight: 600; color: var(--tinta-2); background: none; border: 0; width: 100%; cursor: pointer; }
+
+/* ── Carta / catálogo ──────────────────────────────────────────────── */
+.pt-barra { position: sticky; top: 0; z-index: 2; background: var(--papel); display: flex; align-items: center; justify-content: space-between; gap: var(--e-12); padding: var(--e-12) 0; }
+.pt-barra h1 { font: var(--peso-titulo, 500) var(--t-22) var(--serif); margin: 0; }
+.pt-barra .pt-volver { background: none; border: 0; padding: 8px; margin-left: -8px; color: var(--tinta); cursor: pointer; }
+.pt-ayuda { display: inline-flex; align-items: center; gap: 6px; font: 600 var(--t-14) var(--sans); color: var(--marca); background: none; border: 0; cursor: pointer; }
+[data-tema="energia"] .pt-ayuda { color: var(--marca); }
+.pt-pestanas { display: flex; gap: var(--e-8); overflow-x: auto; scrollbar-width: none; padding-bottom: var(--e-12); border-bottom: 1px solid var(--linea); }
+.pt-pestanas::-webkit-scrollbar { display: none; }
+.pt-pestanas button { flex: none; height: 38px; padding: 0 var(--e-16); border-radius: var(--r-pildora); border: 0; background: none; font: 600 15px var(--sans); color: var(--tinta-2); cursor: pointer; }
+.pt-pestanas button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+.pt-categoria { font: var(--peso-titulo, 500) var(--t-22) var(--serif); margin: var(--e-20) 0 var(--e-4); }
+.pt-prod { display: flex; gap: 14px; align-items: center; width: 100%; padding: 14px 0; border: 0; border-bottom: 1px solid var(--linea); background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.pt-prod .pt-tx { flex: 1; min-width: 0; }
+.pt-prod b { display: block; font-size: 17px; font-weight: 600; }
+.pt-prod small { display: block; font-size: var(--t-14); color: var(--tinta-2); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-precio { display: block; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.pt-foto { width: 76px; height: 76px; border-radius: var(--r-medio); flex: none; object-fit: cover; background: var(--papel-hondo); }
+.pt-prod.agotado b, .pt-prod.agotado .pt-precio { color: var(--tinta-3); }
+.pt-prod.agotado .pt-foto { filter: grayscale(1); opacity: .5; }
+.pt-agotado { font-size: 13px; font-weight: 600; color: var(--alerta); }
+
+/* ── Hoja inferior (detalle, Elige por mí, términos) ──────────────── */
+.pt-fondo { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.4); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
+.pt-hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; max-width: 480px; max-height: 92dvh; margin: 0 auto; overflow-y: auto; background: var(--tarjeta); border-radius: var(--r-grande) var(--r-grande) 0 0; box-shadow: var(--sombra-flota); padding: var(--e-12) var(--e-24) calc(var(--e-24) + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform var(--dur-3) var(--ease); }
+.pt-hoja::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--linea); margin: 0 auto var(--e-16); }
+.pt-hoja.abierta { transform: none; }
+.pt-fondo.abierta { opacity: 1; }
+.pt-hoja .pt-foto-grande { width: 100%; aspect-ratio: 1; border-radius: var(--r-medio); object-fit: cover; background: var(--papel-hondo); }
+.pt-hoja h2 { font: var(--peso-titulo, 500) var(--t-28)/1.15 var(--serif); margin: var(--e-16) 0 var(--e-4); }
+
+/* ── Club: saldo en anillo. Poner style="--progreso: 77" (0–100) ───── */
+.pt-club { text-align: center; }
+.pt-club .pt-neg { font-size: 15px; color: var(--tinta-2); }
+.pt-club h1 { font: var(--peso-titulo, 500) var(--t-28) var(--serif); margin: var(--e-4) 0 var(--e-32); }
+.pt-saldo { --progreso: 0; width: 220px; height: 220px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; align-content: center; background: radial-gradient(closest-side, var(--papel) 88%, transparent 89%), conic-gradient(var(--oro) calc(var(--progreso) * 1%), var(--oro-suave) 0); }
+.pt-saldo b { display: block; font-size: 64px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pt-saldo span { font-size: var(--t-16); color: var(--tinta-2); }
+.pt-frase { font-size: 19px; line-height: 1.4; margin: var(--e-24) 0 var(--e-8); }
+.pt-frase b { color: var(--oro-tinta); }
+
+/* Aviso: UNO solo por pantalla. Variantes: (oro, por defecto) .ok .alerta .neutro */
+.pt-aviso { display: inline-block; font-size: var(--t-14); line-height: 1.35; color: var(--oro-tinta); background: var(--oro-suave); padding: 8px 14px; border-radius: var(--r-pildora); margin-bottom: var(--e-32); }
+.pt-aviso.ok { color: var(--ok); background: var(--ok-suave); }
+.pt-aviso.alerta { color: var(--alerta); background: var(--alerta-suave); }
+.pt-aviso.neutro { color: var(--tinta-2); background: var(--papel-hondo); }
+
+/* ── Formularios (registro al club, PIN de caja) ──────────────────── */
+/* Casilla: <label class="pt-casilla"><input type="checkbox"><span>Texto <a>enlace</a></span></label> */
+.pt-form { display: grid; gap: var(--e-16); text-align: left; }
+.pt-campo label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.pt-campo input { width: 100%; height: 56px; padding: 0 var(--e-16); border-radius: var(--r-chico); border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--tinta); font: 400 var(--t-18) var(--sans); }
+.pt-campo input:focus { outline: none; border-color: var(--tinta); }
+.pt-campo .pt-ayuda-campo { font-size: 13px; color: var(--tinta-3); margin-top: 6px; }
+.pt-campo.error input { border-color: var(--alerta); }
+.pt-campo .pt-error { font-size: 13px; font-weight: 600; color: var(--alerta); margin-top: 6px; }
+.pt-casilla { display: flex; gap: var(--e-12); align-items: flex-start; font-size: 15px; line-height: 1.4; color: var(--tinta-2); }
+.pt-casilla input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--tinta); }
+
+/* ── Caja ─────────────────────────────────────────────────────────── */
+.pt-caja-numero { display: flex; align-items: center; gap: var(--e-12); height: 64px; padding: 0 18px; border-radius: 18px; border: 2px solid var(--tinta); background: var(--tarjeta); }
+.pt-caja-numero input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--tinta); font: 600 24px var(--sans); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.pt-o { text-align: center; font-size: var(--t-14); color: var(--tinta-3); margin: 14px 0; }
+.pt-escanear { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 54px; border-radius: var(--r-medio); border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--tinta); font: 600 var(--t-16) var(--sans); cursor: pointer; }
+.pt-cliente { margin-top: 26px; background: var(--tarjeta); border: 1.5px solid var(--linea); border-radius: 22px; padding: 22px; text-align: center; }
+.pt-cliente b { display: block; font-size: var(--t-22); }
+.pt-cliente .pt-mon { font-size: 44px; font-weight: 700; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
+.pt-cliente .pt-mon span { font-size: var(--t-16); font-weight: 500; color: var(--tinta-2); }
+.pt-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: var(--e-16); }
+.pt-sumar, .pt-canjear { height: 64px; border: 0; border-radius: var(--r-medio); font: 700 var(--t-18) var(--sans); cursor: pointer; }
+.pt-sumar { background: var(--ok); color: #fff; }
+.pt-canjear { background: var(--oro-suave); color: var(--oro-tinta); }
+[data-tema="energia"] .pt-sumar { color: #121314; }
+
+/* ── Entrada registrada (gimnasio sin torniquete) ────────────────── */
+.pt-hecho { text-align: center; padding-top: var(--e-32); }
+.pt-check { width: 92px; height: 92px; border-radius: 50%; background: var(--marca); color: var(--sobre-marca); display: grid; place-items: center; margin: 0 auto; }
+.pt-check .pt-icono { width: 46px; height: 46px; stroke-width: 2.6; }
+.pt-hecho h1 { font: 800 30px var(--sans); margin: 22px 0 4px; }
+.pt-hecho .pt-hora { color: var(--tinta-2); font-size: 15px; }
+.pt-racha { margin-top: 34px; background: var(--tarjeta); border: 1.5px solid var(--linea); border-radius: 22px; padding: 22px; text-align: left; }
+.pt-racha b { display: block; font-size: 54px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pt-racha span { color: var(--tinta-2); font-size: 15px; }
+.pt-semanas { display: flex; gap: 6px; margin-top: 18px; }
+.pt-semanas i { flex: 1; height: 10px; border-radius: 5px; background: var(--linea); }
+.pt-semanas i.on { background: var(--marca); }
+
+/* ── Estados: cargando, vacío, error, sin conexión ───────────────── */
+.pt-cargando { border-radius: var(--r-chico); background: linear-gradient(90deg, var(--papel-hondo) 0 40%, var(--linea) 50%, var(--papel-hondo) 60% 100%); background-size: 300% 100%; animation: pt-brillo 1.2s linear infinite; min-height: 20px; }
+@keyframes pt-brillo { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.pt-vacio { text-align: center; padding: var(--e-32) var(--e-16); color: var(--tinta-2); }
+.pt-vacio b { display: block; color: var(--tinta); font-size: var(--t-18); margin-bottom: var(--e-4); }
+.pt-toast { position: fixed; left: 50%; bottom: calc(var(--e-24) + env(safe-area-inset-bottom)); z-index: 20; transform: translate(-50%, 20px); opacity: 0; max-width: calc(100% - 32px); padding: 14px 18px; border-radius: var(--r-medio); background: var(--tinta); color: var(--papel); font: 600 15px/1.35 var(--sans); box-shadow: var(--sombra-flota); transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease); }
+.pt-toast.visible { transform: translate(-50%, 0); opacity: 1; }
+.pt-sin-conexion { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--oro-tinta); background: var(--oro-suave); padding: 8px 12px; border-radius: var(--r-chico); }
+
+/* ── Celebración (solo: ganar monedas, entrada, ruleta) ──────────── */
+@keyframes pt-salto { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.pt-celebra { animation: pt-salto var(--dur-3) var(--ease); }

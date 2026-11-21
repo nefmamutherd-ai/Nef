@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nef · clientes que vuelven</title>
+<style>
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root { --m: #FF6B35; --ms: #FFE3D6; --t: #1D1B18; --p: #F5F1EA; --a: #E8E1D4; --c: #CFE3F0; --g: #6E675E; --tit: "Bricolage", system-ui, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--p); color: var(--t); font: 400 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+.w { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.g { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+h1, h2, h3, .num { font-family: var(--tit); }
+.et { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--g); }
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border-radius: 14px; font-weight: 600; font-size: 16px; text-decoration: none; color: var(--t); }
+.btn.p { background: var(--m); }
+.btn.s { box-shadow: inset 0 0 0 1.5px var(--t); }
+nav { display: flex; align-items: center; justify-content: space-between; height: 88px; }
+nav img { height: 36px; }
+nav .links { display: flex; gap: 32px; font-size: 15px; font-weight: 500; }
+nav .links a { color: var(--t); text-decoration: none; }
+/* portada */
+.hero { padding: 48px 0 128px; align-items: center; }
+.hero .tx { grid-column: 1 / span 7; }
+.hero h1 { font-size: 88px; font-weight: 800; line-height: .95; letter-spacing: -.035em; }
+.hero h1 em { font-style: normal; color: var(--m); }
+.hero p { font-size: 20px; line-height: 1.5; color: #4A443D; max-width: 520px; margin: 28px 0 36px; }
+.hero .acc { display: flex; gap: 12px; }
+.hero .nota { font-size: 14px; color: var(--g); margin-top: 18px; }
+.hero .vis { grid-column: 8 / span 5; position: relative; height: 560px; }
+.hero .foto { position: absolute; inset: 0 -60px 0 0; border-radius: 28px; background: #6B4A33; overflow: hidden; }
+.hero .foto::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(95deg, #7A563C 0 18px, #6E4C34 18px 40px, #7d5a40 40px 70px); opacity: .9; }
+.hero .foto .sticker { position: absolute; left: 70px; bottom: 90px; width: 150px; height: 150px; border-radius: 50%; background: var(--t); display: grid; place-items: center; transform: rotate(-8deg); }
+.hero .foto .sticker img { width: 60px; }
+.hero .foto .cap { position: absolute; left: 24px; bottom: 22px; font-size: 13px; color: rgba(255,255,255,.75); }
+.hero .tel { position: absolute; right: -10px; top: 40px; width: 250px; transform: rotate(4deg); filter: drop-shadow(0 30px 40px rgba(29,27,24,.35)); }
+/* pasos */
+.sec { padding: 0 0 128px; }
+.sec h2 { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -.03em; max-width: 760px; }
+.pasos { margin-top: 56px; }
+.paso { grid-column: span 4; }
+.paso .n { font-family: var(--tit); font-weight: 800; font-size: 64px; color: var(--m); line-height: 1; }
+.paso h3 { font-size: 24px; font-weight: 700; margin: 12px 0 6px; letter-spacing: -.01em; }
+.paso p { color: #4A443D; max-width: 320px; }
+.paso .cap { margin-top: 24px; height: 280px; border-radius: 20px; background: var(--a); overflow: hidden; display: flex; justify-content: center; }
+.paso .cap img { width: 240px; margin-top: 28px; }
+/* nichos */
+.nichos { margin-top: 56px; }
+.nicho { border-radius: 28px; padding: 40px; background: #fff; }
+.nicho.cafe { grid-column: span 7; }
+.nicho.gym { grid-column: span 5; background: var(--t); color: var(--p); }
+.nicho h3 { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1.08; margin: 10px 0 18px; }
+.nicho ul { list-style: none; display: grid; gap: 12px; }
+.nicho li { display: flex; gap: 12px; }
+.nicho li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--m); margin-top: 9px; }
+.nicho .frase { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--a); font-family: var(--tit); font-size: 24px; font-weight: 700; }
+.nicho.gym .frase { border-color: #3a3631; }
+.nicho.gym .et { color: #A39B90; }
+.nicho .fila { display: flex; gap: 28px; align-items: flex-start; }
+.nicho .fila img { width: 190px; flex: none; margin-top: 8px; }
+/* panel */
+.panel { margin-top: 56px; align-items: center; }
+.panel .tx { grid-column: span 5; }
+.panel .tx p { color: #4A443D; margin-top: 16px; max-width: 420px; font-size: 20px; line-height: 1.5; }
+.panel .ui { grid-column: 7 / span 6; background: #fff; border-radius: 28px; padding: 28px; }
+.ui .bar { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--a); font-size: 14px; font-weight: 600; }
+.ui .bar img { height: 24px; margin-right: auto; }
+.ui .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+.ui .kpi { background: var(--p); border-radius: 16px; padding: 16px; }
+.ui .kpi small { display: block; font-size: 13px; color: var(--g); }
+.ui .kpi .num { font-size: 44px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+.ui .kpi.r { background: var(--ms); }
+.ui .lista div { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--a); font-size: 15px; }
+.ui .lista span:last-child { color: var(--g); }
+/* estudio */
+.estudio { background: var(--t); color: var(--p); border-radius: 28px; padding: 72px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+.estudio h2 { grid-column: span 6; font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -.03em; color: var(--p); }
+.estudio h2 em { font-style: normal; color: var(--m); }
+.estudio .tx { grid-column: 8 / span 5; font-size: 18px; color: #D8D0C3; }
+.estudio .tx p + p { margin-top: 14px; }
+.estudio .tx b { color: var(--p); }
+/* cierre */
+.cierre { text-align: center; padding: 128px 0 96px; }
+.cierre h2 { font-size: 56px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.cierre .btn { margin-top: 32px; }
+footer { border-top: 1px solid var(--a); padding: 28px 0 48px; display: flex; justify-content: space-between; font-size: 14px; color: var(--g); }
+</style>
+</head>
+<body>
+<div class="w">
+  <nav><img src="logo-nef.svg" alt="nef"><div class="links"><a href="#">Cómo funciona</a><a href="#">Cafés</a><a href="#">Gimnasios</a><a href="#">Precios</a></div><a class="btn s" href="#" style="height:44px">Escríbenos</a></nav>
+
+  <section class="g hero">
+    <div class="tx">
+      <h1>Clientes que <em>vuelven</em>.</h1>
+      <p>Un punto en la mesa o en la máquina. Tu cliente acerca el celular, ve tu carta, junta monedas y te deja la reseña. Tú sabes quién dejó de venir.</p>
+      <div class="acc"><a class="btn p" href="#">Quiero Nef en mi negocio</a><a class="btn s" href="#">Tócalo tú</a></div>
+      <div class="nota">Sin apps. Funciona con NFC y con QR.</div>
+    </div>
+    <div class="vis"><div class="foto"><div class="sticker"><img src="simbolo-nef.svg" alt=""></div><span class="cap">Foto real del sticker en una mesa (pendiente)</span></div>
+      <img class="tel" src="img/portal-cafe.png" alt="Portal de un café"></div>
+  </section>
+
+  <section class="sec">
+    <div class="et">Cómo funciona</div>
+    <h2 style="margin-top:12px">Tres pasos. Ninguno es descargar una app.</h2>
+    <div class="g pasos">
+      <div class="paso"><div class="n">1</div><h3>Acerca el celular</h3><p>Al punto de la mesa, la recepción o la máquina. Si no tiene NFC, escanea el QR.</p><div class="cap"><img src="img/portal-cafe.png" alt=""></div></div>
+      <div class="paso"><div class="n">2</div><h3>Ve tu portal</h3><p>Tu carta, tus clases, sus monedas. Tres botones grandes, nada que buscar.</p><div class="cap"><img src="img/carta.png" alt=""></div></div>
+      <div class="paso"><div class="n">3</div><h3>Vuelve</h3><p>Cada visita suma. Y si deja de venir, te avisamos para que le escribas.</p><div class="cap"><img src="img/monedas.png" alt=""></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="et">Para quién</div>
+    <h2 style="margin-top:12px">Hecho para el café de la esquina y para el gimnasio de tres pisos.</h2>
+    <div class="g nichos">
+      <div class="nicho cafe"><div class="et">Cafés y restaurantes</div><h3>La reseña llega justo después del postre.</h3>
+        <div class="fila"><ul><li>Carta siempre al día: marcas "agotado" desde el celular.</li><li>Club de monedas que el cajero suma en 3 segundos.</li><li>El botón de reseña aparece cuando el cliente está contento.</li></ul></div>
+        <div class="frase">"Este mes volvieron 184 clientes."</div></div>
+      <div class="nicho gym"><div class="et">Gimnasios</div><h3>Sabe quién se va antes de que cancele.</h3>
+        <ul><li>Usamos las entradas de tu torniquete. No instalas nada nuevo en la puerta.</li><li>Cada máquina con su video de cómo usarla.</li></ul>
+        <div class="frase">"Estos 12 socios llevan 10 días sin venir."</div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="g panel">
+      <div class="tx"><div class="et">Lo que ves tú</div><h2 style="margin-top:12px;font-size:56px">Tres números y una lista.</h2><p>Quién volvió, quién está en riesgo y cuántas reseñas pediste. Todos los lunes, sin abrir un Excel.</p></div>
+      <div class="ui"><div class="bar"><img src="logo-nef.svg" alt=""><span>Café Luna</span><span style="color:var(--g)">Noviembre</span></div>
+        <div class="kpis"><div class="kpi"><small>Volvieron</small><div class="num">184</div></div><div class="kpi r"><small>En riesgo</small><div class="num">12</div></div><div class="kpi"><small>Reseñas pedidas</small><div class="num">63</div></div></div>
+        <div class="lista"><div><span>Laura M.</span><span>23 días sin venir</span></div><div><span>Andrés P.</span><span>21 días sin venir</span></div><div><span>Camila R.</span><span>21 días sin venir</span></div></div></div>
+    </div>
+  </section>
+
+  <section class="estudio">
+    <h2>No te entregamos datos. Te entregamos <em>decisiones</em>.</h2>
+    <div class="tx"><p>Cada trimestre, un estudio estadístico de tus clientes: quién tiene más probabilidad de irse, si la promoción de los martes sí funcionó, a qué hora necesitas más personal.</p><p><b>Lo hace Jacobo López, matemático</b>, y te lo explica en 15 minutos, sin tecnicismos.</p></div>
+  </section>
+
+  <section class="cierre"><h2>¿Lo probamos en tu negocio?</h2><a class="btn p" href="#">Escríbenos por WhatsApp</a></section>
+  <footer><span>nef · un producto de Mamut Herd</span><span>Bogotá, Colombia</span></footer>
+</div>
+</body>
+</html>

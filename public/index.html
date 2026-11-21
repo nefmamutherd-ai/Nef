@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nef · clientes que vuelven</title>
+<meta name="description" content="Un punto NFC y QR en la mesa, la recepción o la máquina. Tu cliente ve tu carta, junta monedas y te deja la reseña. Tú sabes quién dejó de venir. Un producto de Mamut Herd.">
+<meta name="theme-color" content="#F5F1EA">
+<link rel="icon" href="/assets/marca/icono-app-nef.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/marca/icono-app-nef.png">
+<link rel="preload" href="/assets/fuentes/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="/api/config"></script>
+<!--
+  Landing de Nef. Sigue docs/marca/GUIA-WEB.md (8 secciones, en ese orden; no agregar más).
+  Celular primero: los estilos base son para 390 px; @media (min-width: 900px) es escritorio.
+  Para cambiar precios: objeto PRECIOS al final del archivo. Contacto: CONTACTO_WHATSAPP en .dev.vars / Cloudflare.
+-->
+<style>
+@font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+:root {
+  --mandarina: #FF6B35; --mandarina-suave: #FFE3D6; --tinta: #1D1B18; --papel: #F5F1EA;
+  --arena: #E8E1D4; --cielo: #CFE3F0; --gris: #6E675E; --texto-2: #4A443D; --blanco: #FFFFFF;
+  --titulos: "Bricolage", system-ui, sans-serif;
+  --texto: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --lado: 20px; --entre-secciones: 72px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--papel); color: var(--tinta); font: 400 16px/1.55 var(--texto); -webkit-font-smoothing: antialiased; }
+img { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+a { color: inherit; }
+.w { max-width: 1200px; margin: 0 auto; padding: 0 var(--lado); }
+h1, h2, h3, .num { font-family: var(--titulos); }
+.et { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); }
+.t1 { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -.03em; margin-top: 12px; max-width: 760px; }
+.lead { font-size: 18px; line-height: 1.5; color: var(--texto-2); max-width: 560px; }
+.sec { padding-bottom: var(--entre-secciones); scroll-margin-top: 24px; }
+
+/* Botones: 52 px, radio 14, mandarina con texto tinta */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 14px; font: 600 16px/1 var(--texto); text-decoration: none; color: var(--tinta); border: 0; cursor: pointer; transition: transform .15s ease, background-color .15s ease; }
+.btn:active { transform: scale(.98); }
+.btn.p { background: var(--mandarina); }
+.btn.p:hover { background: #F25E28; }
+.btn.s { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tinta); }
+.btn.s:hover { background: var(--arena); }
+.btn:focus-visible, summary:focus-visible, nav a:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+
+/* Barra superior */
+nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+nav .logo img { height: 30px; width: auto; }
+nav .links { display: none; }
+nav .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
+
+/* 1. Portada */
+.hero { padding: 24px 0 var(--entre-secciones); display: grid; gap: 40px; }
+.hero h1 { font-size: 48px; font-weight: 800; line-height: .95; letter-spacing: -.035em; }
+.hero h1 em { font-style: normal; color: var(--mandarina); }
+.hero .lead { margin: 20px 0 28px; }
+.hero .acc { display: grid; gap: 12px; }
+.hero .nota { font-size: 14px; color: var(--gris); margin-top: 16px; }
+.hero .vis { position: relative; height: 440px; border-radius: 28px; background: var(--arena); overflow: hidden; }
+.hero .tel { position: absolute; right: 8%; top: 32px; width: 210px; border-radius: 30px; border: 7px solid var(--tinta); background: var(--tinta); transform: rotate(4deg); box-shadow: 0 30px 40px -20px rgba(29,27,24,.45); }
+.hero .tel img { border-radius: 23px; width: 100%; height: auto; }
+.hero .punto { position: absolute; left: 8%; bottom: 36px; width: 128px; height: 128px; border-radius: 50%; background: var(--tinta); display: grid; place-items: center; transform: rotate(-8deg); }
+.hero .punto img { width: 56px; height: 56px; animation: late 1.2s ease .4s 1 both; }
+@keyframes late { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 70% { transform: scale(.98); } 100% { transform: scale(1); } }
+
+/* 2. Cómo funciona */
+.pasos { display: grid; gap: 40px; margin-top: 40px; }
+.paso .n { font-family: var(--titulos); font-weight: 800; font-size: 56px; color: var(--mandarina); line-height: 1; font-variant-numeric: tabular-nums; }
+.paso h3 { font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; margin: 10px 0 6px; }
+.paso p { color: var(--texto-2); max-width: 340px; }
+.paso .cap { margin-top: 20px; height: 260px; border-radius: 20px; background: var(--arena); overflow: hidden; display: flex; justify-content: center; }
+.paso .cap img { width: 220px; height: auto; margin-top: 24px; border-radius: 16px 16px 0 0; }
+
+/* 3. Para cafés / gimnasios (7/5) */
+.nichos { display: grid; gap: 16px; margin-top: 40px; }
+.nicho { border-radius: 28px; padding: 24px; background: var(--blanco); }
+.nicho.gym { background: var(--tinta); color: var(--papel); }
+.nicho.gym .et { color: #A39B90; }
+.nicho h3 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.08; margin: 10px 0 18px; }
+.nicho ul { list-style: none; display: grid; gap: 12px; }
+.nicho li { display: flex; gap: 12px; }
+.nicho li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--mandarina); margin-top: 8px; }
+.nicho .frase { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--arena); font-family: var(--titulos); font-size: 20px; font-weight: 700; line-height: 1.2; }
+.nicho.gym .frase { border-color: #3A3631; }
+.nicho .frase small { display: block; font: 400 13px/1.4 var(--texto); color: var(--gris); margin-top: 6px; }
+.nicho.gym .frase small { color: #A39B90; }
+
+/* 4. Lo que ve el dueño */
+.panel { display: grid; gap: 32px; }
+.ui { background: var(--blanco); border-radius: 28px; padding: 20px; }
+.ui .bar { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--arena); font-size: 14px; font-weight: 600; }
+.ui .bar img { height: 22px; width: auto; margin-right: auto; }
+.ui .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+.ui .kpi { background: var(--papel); border-radius: 16px; padding: 12px; }
+.ui .kpi small { display: block; font-size: 12px; color: var(--gris); line-height: 1.3; }
+.ui .kpi .num { font-size: 32px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.ui .kpi.r { background: var(--mandarina-suave); }
+.ui .lista div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--arena); font-size: 15px; }
+.ui .lista span:last-child { color: var(--gris); }
+.ui .pie { font-size: 13px; color: var(--gris); margin-top: 8px; }
+
+/* 5. El estudio (bloque tinta) */
+.estudio { background: var(--tinta); color: var(--papel); border-radius: 28px; padding: 32px 24px; display: grid; gap: 24px; }
+.estudio h2 { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.estudio h2 em { font-style: normal; color: var(--mandarina); }
+.estudio .tx { font-size: 17px; color: #D8D0C3; }
+.estudio .tx p + p { margin-top: 14px; }
+.estudio .tx b { color: var(--papel); font-weight: 600; }
+
+/* 6. Precios */
+.precios { margin-top: 40px; background: var(--blanco); border-radius: 28px; padding: 8px 24px; }
+.precio { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 20px 0; border-top: 1px solid var(--arena); }
+.precio:first-child { border-top: 0; }
+.precio h3 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.precio p { grid-column: 1 / -1; color: var(--texto-2); font-size: 15px; max-width: 560px; }
+.precio .valor { font-family: var(--titulos); font-weight: 700; font-size: 20px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.precio .valor small { font: 400 13px var(--texto); color: var(--gris); }
+.precio .opc { font: 600 12px/1 var(--texto); letter-spacing: .06em; text-transform: uppercase; color: var(--gris); margin-left: 8px; }
+.precios-nota { margin-top: 16px; font-size: 14px; color: var(--gris); }
+
+/* 7. Preguntas (acordeón) */
+.faq { margin-top: 32px; max-width: 760px; }
+.faq details { border-top: 1px solid var(--arena); }
+.faq details:last-child { border-bottom: 1px solid var(--arena); }
+.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; font-family: var(--titulos); font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ""; flex: none; width: 14px; height: 14px; border-right: 1.75px solid var(--tinta); border-bottom: 1.75px solid var(--tinta); transform: rotate(45deg) translate(-3px, -3px); transition: transform .2s ease; }
+.faq details[open] summary::after { transform: rotate(-135deg) translate(-3px, -3px); }
+.faq details p { padding: 0 0 20px; color: var(--texto-2); max-width: 620px; }
+
+/* 8. Cierre */
+.cierre { text-align: center; padding: var(--entre-secciones) 0; }
+.cierre h2 { font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.cierre .btn { margin-top: 28px; width: 100%; max-width: 360px; }
+footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 14px; color: var(--gris); }
+
+@media (min-width: 900px) {
+  :root { --lado: 24px; --entre-secciones: 128px; }
+  body { font-size: 17px; }
+  .et { font-size: 13px; }
+  .t1, .cierre h2 { font-size: 56px; }
+  .lead { font-size: 20px; }
+  nav { height: 88px; }
+  nav .logo img { height: 36px; }
+  nav .links { display: flex; gap: 32px; font-size: 15px; font-weight: 500; }
+  nav .links a { text-decoration: none; }
+  nav .links a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .hero { grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: center; padding-top: 48px; }
+  .hero .tx { grid-column: 1 / span 7; }
+  .hero h1 { font-size: 88px; }
+  .hero .lead { margin: 28px 0 36px; }
+  .hero .acc { display: flex; }
+  .hero .vis { grid-column: 8 / span 5; height: 560px; margin-right: -60px; }
+  .hero .tel { width: 250px; top: 48px; right: 56px; }
+  .hero .punto { width: 150px; height: 150px; left: 40px; bottom: 64px; }
+  .hero .punto img { width: 60px; height: 60px; }
+  .pasos { grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px; }
+  .paso .n { font-size: 64px; }
+  .paso h3 { font-size: 24px; margin-top: 12px; }
+  .paso .cap { height: 280px; }
+  .paso .cap img { width: 240px; margin-top: 28px; }
+  .nichos { grid-template-columns: 7fr 5fr; gap: 24px; margin-top: 56px; }
+  .nicho { padding: 40px; }
+  .nicho h3 { font-size: 40px; }
+  .nicho .frase { font-size: 24px; margin-top: 28px; }
+  .panel { grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: center; }
+  .panel .tx { grid-column: span 5; }
+  .panel .tx .lead { margin-top: 16px; }
+  .ui { grid-column: 7 / span 6; padding: 28px; }
+  .ui .kpis { gap: 12px; margin: 20px 0; }
+  .ui .kpi { padding: 16px; }
+  .ui .kpi small { font-size: 13px; }
+  .ui .kpi .num { font-size: 44px; }
+  .estudio { grid-template-columns: repeat(12, 1fr); padding: 72px; }
+  .estudio h2 { grid-column: span 6; font-size: 56px; }
+  .estudio .tx { grid-column: 8 / span 5; font-size: 18px; }
+  .precios { margin-top: 56px; padding: 8px 40px; }
+  .precio { grid-template-columns: 1fr 1.4fr auto; align-items: baseline; padding: 24px 0; }
+  .precio p { grid-column: auto; }
+  .faq { margin-top: 48px; }
+  .faq summary { font-size: 24px; }
+  .cierre .btn { width: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="w">
+  <nav aria-label="Principal">
+    <a class="logo" href="/" aria-label="Nef, inicio"><img src="/assets/marca/logo-nef.svg" alt="nef" width="96" height="36"></a>
+    <div class="links"><a href="#como-funciona">Cómo funciona</a><a href="#cafes">Cafés</a><a href="#gimnasios">Gimnasios</a><a href="#precios">Precios</a></div>
+    <a class="btn s js-wa" href="#cierre">Escríbenos</a>
+  </nav>
+
+  <!-- 1. Portada -->
+  <header class="hero">
+    <div class="tx">
+      <h1>Clientes que <em>vuelven</em>.</h1>
+      <p class="lead">Un punto en la mesa, la recepción o la máquina. Tu cliente acerca el celular, ve tu carta, junta monedas y te deja la reseña. Tú sabes quién dejó de venir.</p>
+      <div class="acc">
+        <a class="btn p js-wa" href="#cierre">Quiero Nef en mi negocio</a>
+        <a class="btn s" id="demo" href="/n/demo-cafe">Tócalo tú</a>
+      </div>
+      <p class="nota">Sin apps. Funciona con NFC y con QR.</p>
+    </div>
+    <!-- TODO(Jacobo): reemplazar por la foto real del sticker en una mesa (WebP, 1200×1400). Mientras tanto: la captura del portal. -->
+    <div class="vis" aria-hidden="true">
+      <div class="tel"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"></div>
+      <div class="punto"><img src="/assets/marca/simbolo-nef.svg" alt="" width="60" height="60"></div>
+    </div>
+  </header>
+
+  <!-- 2. Cómo funciona -->
+  <section class="sec" id="como-funciona">
+    <div class="et">Cómo funciona</div>
+    <h2 class="t1">Tres pasos. Ninguno es descargar una app.</h2>
+    <div class="pasos">
+      <div class="paso"><div class="n">1</div><h3>Acerca el celular</h3><p>Al punto de la mesa, la recepción o la máquina. Si no tiene NFC, escanea el QR que está al lado.</p>
+        <div class="cap"><img src="/assets/img/portal-cafe.webp" alt="Portal de un café: tres botones grandes" width="416" height="870" loading="lazy"></div></div>
+      <div class="paso"><div class="n">2</div><h3>Ve tu portal</h3><p>Tu carta, tus clases, sus monedas. Tres botones grandes y nada que buscar.</p>
+        <div class="cap"><img src="/assets/img/carta.webp" alt="Carta de un café con precios y fotos" width="416" height="870" loading="lazy"></div></div>
+      <div class="paso"><div class="n">3</div><h3>Vuelve</h3><p>Cada visita suma monedas. Y si deja de venir, te avisamos para que le escribas.</p>
+        <div class="cap"><img src="/assets/img/monedas.webp" alt="Tarjeta de monedas del cliente" width="416" height="870" loading="lazy"></div></div>
+    </div>
+  </section>
+
+  <!-- 3. Para cafés / Para gimnasios -->
+  <section class="sec" id="cafes">
+    <div class="et">Para quién</div>
+    <h2 class="t1">Para el café de la esquina y para el gimnasio de tres pisos.</h2>
+    <div class="nichos">
+      <article class="nicho cafe">
+        <div class="et">Cafés y restaurantes</div>
+        <h3>La reseña llega justo después del postre.</h3>
+        <ul>
+          <li>Tu carta siempre al día: marcas "agotado" desde el celular y todas las mesas cambian.</li>
+          <li>Club de monedas que el cajero suma en tres segundos, con el número del cliente.</li>
+          <li>El botón de reseña de Google aparece cuando el cliente está contento. Nunca a cambio de un premio.</li>
+          <li>WiFi, Instagram y WhatsApp en un toque: nadie vuelve a dictar la clave.</li>
+        </ul>
+        <div class="frase">"Este mes volvieron 184 clientes."<small>Así te lo dice el panel (ejemplo).</small></div>
+      </article>
+      <article class="nicho gym" id="gimnasios">
+        <div class="et">Gimnasios</div>
+        <h3>Sabe quién se va antes de que cancele.</h3>
+        <ul>
+          <li>Usamos las entradas de tu torniquete o huellero. No instalas nada nuevo en la puerta.</li>
+          <li>Cada máquina con su punto: el socio ve el video de cómo usarla.</li>
+          <li>Las clases del día en el portal, siempre actualizadas.</li>
+        </ul>
+        <div class="frase">"Estos 12 socios llevan 10 días sin venir."<small>Así te lo dice el panel (ejemplo).</small></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 4. Lo que ve el dueño -->
+  <section class="sec">
+    <div class="panel">
+      <div class="tx">
+        <div class="et">Lo que ves tú</div>
+        <h2 class="t1">Tres números y una lista.</h2>
+        <p class="lead">Quién volvió, quién está en riesgo y cuántas reseñas pediste. Todos los lunes, sin abrir un Excel.</p>
+      </div>
+      <figure class="ui">
+        <div class="bar"><img src="/assets/marca/logo-nef.svg" alt="" width="60" height="22"><span>Café Luna</span><span style="color:var(--gris)">Noviembre</span></div>
+        <div class="kpis">
+          <div class="kpi"><small>Volvieron</small><div class="num">184</div></div>
+          <div class="kpi r"><small>En riesgo</small><div class="num">12</div></div>
+          <div class="kpi"><small>Reseñas pedidas</small><div class="num">63</div></div>
+        </div>
+        <div class="lista">
+          <div><span>Laura M.</span><span>23 días sin venir</span></div>
+          <div><span>Andrés P.</span><span>21 días sin venir</span></div>
+          <div><span>Camila R.</span><span>21 días sin venir</span></div>
+        </div>
+        <figcaption class="pie">Panel de ejemplo con datos ficticios.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 5. El estudio -->
+  <section class="sec">
+    <div class="estudio">
+      <h2>No te entregamos datos. Te entregamos <em>decisiones</em>.</h2>
+      <div class="tx">
+        <p>Cada trimestre, un estudio estadístico de tus clientes: quién tiene más probabilidad de irse, si la promoción de los martes sí funcionó y a qué hora necesitas más personal.</p>
+        <p><b>Lo hace Jacobo López, matemático</b>, y te lo explica en 15 minutos, sin tecnicismos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Precios -->
+  <section class="sec" id="precios">
+    <div class="et">Precios</div>
+    <h2 class="t1">Pagas lo que usas.</h2>
+    <div class="precios" id="lista-precios"><!-- se llena desde PRECIOS (abajo) --></div>
+    <p class="precios-nota">Sin permanencia. Las piezas NFC y QR se cobran una sola vez.</p>
+  </section>
+
+  <!-- 7. Preguntas -->
+  <section class="sec" id="preguntas">
+    <div class="et">Preguntas</div>
+    <h2 class="t1">Lo que nos preguntan siempre.</h2>
+    <div class="faq">
+      <details><summary>¿Mis clientes tienen que descargar una app?</summary>
+        <p>No. Acercan el celular al punto y se abre una página. Nada que instalar, nada que registrar para ver la carta.</p></details>
+      <details><summary>¿Y si su celular no tiene NFC?</summary>
+        <p>Cada punto tiene un código QR al lado. Lo escanean con la cámara y llegan a la misma página.</p></details>
+      <details><summary>¿Y si se cae el internet del local?</summary>
+        <p>El cliente usa los datos de su celular. La caja guarda las monedas que sumes y las envía sola cuando vuelve la conexión, sin repetirlas.</p></details>
+      <details><summary>¿Qué pasa con los datos de mis clientes?</summary>
+        <p>Son tuyos. Cada cliente autoriza el uso de sus datos al unirse al club, como pide la Ley 1581, y nosotros no los vendemos ni los compartimos.</p></details>
+      <details><summary>¿Puedo verlo funcionando antes de decidir?</summary>
+        <p>Sí. Escríbenos y te lo mostramos en una mesa o una máquina de tu propio negocio.</p></details>
+    </div>
+  </section>
+
+  <!-- 8. Cierre -->
+  <section class="cierre" id="cierre">
+    <h2>¿Lo probamos en tu negocio?</h2>
+    <a class="btn p js-wa" id="cta" href="#cierre">Escríbenos por WhatsApp</a>
+  </section>
+  <footer><span>nef · un producto de Mamut Herd</span><span>Bogotá, Colombia</span></footer>
+</div>
+
+<script>
+  // ── Precios: edita aquí. valor: número en pesos o null ("Te lo cotizamos"). ──
+  var PRECIOS = [
+    { nombre: 'Base', texto: 'Puntos NFC y QR, portal de tu negocio, botón de reseñas y estadísticas.', valor: null, periodo: 'al mes' },
+    { nombre: 'Catálogo', texto: 'Carta o clases y máquinas con video, siempre al día. "Elige por mí".', valor: null, periodo: 'al mes', opcional: true },
+    { nombre: 'Club', texto: 'Monedas que suma tu cajero, premios y aviso de clientes en riesgo.', valor: null, periodo: 'al mes', opcional: true },
+    { nombre: 'Estudio', texto: 'Informe estadístico trimestral explicado en persona.', valor: null, periodo: 'por trimestre', opcional: true }
+  ];
+  var pesos = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  var cont = document.getElementById('lista-precios');
+  PRECIOS.forEach(function (p) {
+    var fila = document.createElement('div'); fila.className = 'precio';
+    var h = document.createElement('h3'); h.textContent = p.nombre;
+    if (p.opcional) { var o = document.createElement('span'); o.className = 'opc'; o.textContent = 'Opcional'; h.appendChild(o); }
+    var t = document.createElement('p'); t.textContent = p.texto;
+    var v = document.createElement('div'); v.className = 'valor';
+    if (typeof p.valor === 'number') { v.textContent = pesos.format(p.valor) + ' '; var s = document.createElement('small'); s.textContent = p.periodo; v.appendChild(s); }
+    else v.textContent = 'Te lo cotizamos';
+    fila.append(h, t, v); cont.appendChild(fila);
+  });
+
+  // ── WhatsApp de ventas (CONTACTO_WHATSAPP) ──
+  var c = window.TOQUE || {};
+  var d = String(c.contacto || '').replace(/\D/g, '');
+  if (d.length === 10 && d[0] === '3') d = '57' + d;
+  if (d) {
+    var url = 'https://wa.me/' + d + '?text=' + encodeURIComponent('Hola, quiero información de Nef para mi negocio');
+    document.querySelectorAll('.js-wa').forEach(function (a) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; });
+  }
+
+  // ── "Tócalo tú": solo se muestra si el negocio de demostración existe (Fase 7). ──
+  var demo = document.getElementById('demo');
+  fetch(demo.getAttribute('href'), { redirect: 'manual' })
+    .then(function (r) { if (r.status !== 200) demo.hidden = true; })
+    .catch(function () { demo.hidden = true; });
+</script>
+</body>
+</html>

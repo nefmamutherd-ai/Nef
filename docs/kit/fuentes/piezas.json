@@ -1,0 +1,22 @@
+{
+ "sticker-mesa-cafe": {
+  "w": 70,
+  "h": 70
+ },
+ "sticker-maquina-gym": {
+  "w": 70,
+  "h": 70
+ },
+ "placa-caja-cafe": {
+  "w": 105,
+  "h": 148
+ },
+ "qr-gigante-entrada-gym": {
+  "w": 600,
+  "h": 900
+ },
+ "tarjeta-mamut-herd": {
+  "w": 85,
+  "h": 55
+ }
+}

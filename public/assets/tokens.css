@@ -1,0 +1,94 @@
+/* =====================================================================
+   SOBREMESA · tokens de diseño
+   Copiar a public/assets/tokens.css y usar SOLO estas variables.
+   --marca la define cada negocio (color de su marca); todo lo demás es fijo.
+   ===================================================================== */
+:root {
+  /* Superficies (papel cálido, nunca blanco puro de fondo) */
+  --papel: #F5F1EA;          /* fondo de página */
+  --papel-hondo: #ECE6DB;    /* fondo de bloques secundarios, pistas de barras */
+  --tarjeta: #FFFFFF;        /* tarjetas y hojas */
+  --linea: #E4DCCF;          /* bordes y divisores (1px) */
+
+  /* Tinta */
+  --tinta: #1F1B17;          /* texto principal, botón oscuro */
+  --tinta-2: #5C554D;        /* texto secundario */
+  --tinta-3: #8F877C;        /* ayudas, metadatos */
+
+  /* Marca del negocio (se sobreescribe por negocio desde el servidor) */
+  --marca: #B4532A;
+  --sobre-marca: #FFFFFF;    /* texto sobre --marca: el servidor elige blanco o tinta según contraste */
+  --marca-suave: color-mix(in srgb, var(--marca) 12%, white);
+
+  /* Monedas y estados */
+  --oro: #B7841A;            /* monedas, niveles */
+  --oro-suave: #F6EBD2;
+  --oro-tinta: #6B4A08;      /* texto sobre --oro-suave */
+  --ok: #2E7A4E;  --ok-suave: #E1F0E6;
+  --alerta: #B3261E; --alerta-suave: #F8E3E0;
+
+  /* Tipografía: sin fuentes externas. Serif del sistema para la voz del restaurante. */
+  --serif: ui-serif, "New York", "Iowan Old Style", Georgia, "Noto Serif", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Escala tipográfica (px) */
+  --t-12: 12px; --t-14: 14px; --t-16: 16px; --t-18: 18px; --t-22: 22px; --t-28: 28px; --t-40: 40px;
+
+  /* Espacios */
+  --e-4: 4px; --e-8: 8px; --e-12: 12px; --e-16: 16px; --e-20: 20px; --e-24: 24px; --e-32: 32px;
+
+  /* Radios */
+  --r-chico: 10px;   /* chips cuadrados, inputs */
+  --r-medio: 16px;   /* tarjetas, botones grandes */
+  --r-grande: 24px;  /* hojas inferiores, tarjeta del club */
+  --r-pildora: 999px;
+
+  /* Sombra: solo para cosas que flotan (hojas, botón flotante) */
+  --sombra-flota: 0 10px 30px rgba(31, 27, 23, .14), 0 2px 6px rgba(31, 27, 23, .06);
+
+  /* Movimiento */
+  --dur-1: 150ms; --dur-2: 220ms; --dur-3: 300ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 1ms; --dur-2: 1ms; --dur-3: 1ms; }
+}
+
+/* =====================================================================
+   TEMAS POR SECTOR — se activan con data-tema en <html>.
+   Misma estructura y componentes; cambia la "ropa". --marca la pone cada negocio.
+   ===================================================================== */
+[data-tema="calido"] { }  /* por defecto: cafés, panaderías, restaurantes (valores de arriba) */
+
+[data-tema="energia"] {   /* gimnasios, deportes, academias */
+  --papel: #121314; --papel-hondo: #1E2022; --tarjeta: #1A1C1E; --linea: #2C2F32;
+  --tinta: #F4F4F2; --tinta-2: #B9BBB5; --tinta-3: #7D807A;
+  --marca: #C8F03C; --sobre-marca: #121314;
+  --oro: #F2C14E; --oro-suave: #2E2817; --oro-tinta: #F2C14E;
+  --ok: #4ADE80; --ok-suave: #17301F; --alerta: #FF6B5E; --alerta-suave: #3A1C19;
+  --serif: var(--sans);               /* en gimnasios no hay serif: todo sans, títulos en 800 */
+  --peso-titulo: 800;
+}
+
+[data-tema="limpio"] {    /* barberías, salones, spa, tiendas */
+  --papel: #FFFFFF; --papel-hondo: #F3F3F1; --tarjeta: #FFFFFF; --linea: #E8E8E4;
+  --tinta: #141414; --tinta-2: #5F5F5A; --tinta-3: #9A9A94;
+  --marca: #2F4A3A;
+  --serif: ui-serif, "New York", Georgia, serif;
+  --peso-titulo: 500;
+}
+
+/* =====================================================================
+   MARCA NEF — solo para superficies de Nef: landing, panel, informes.
+   Los portales de los negocios usan los temas de arriba, no esto.
+   ===================================================================== */
+@font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+.nef {
+  --nef-mandarina: #FF6B35; --nef-mandarina-suave: #FFE3D6;
+  --nef-tinta: #1D1B18; --nef-papel: #F5F1EA; --nef-arena: #E8E1D4; --nef-cielo: #CFE3F0; --nef-gris: #6E675E;
+  --nef-titulos: "Bricolage", system-ui, sans-serif;
+  background: var(--nef-papel); color: var(--nef-tinta);
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nef · identidad</title>
+<style>
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Bricolage"; src: url("fuentes/bricolage-grotesque-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+:root { --tinta: #1D1B18; --papel: #F5F1EA; --mandarina: #FF6B35; --mandarina-suave: #FFE3D6; --arena: #E8E1D4; --gris: #6E675E; --cielo: #CFE3F0; }
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--papel); color: var(--tinta); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.t { font-family: "Bricolage", system-ui, sans-serif; }
+.wrap { width: 1600px; margin: 0 auto; padding: 64px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+.c { background: #fff; border-radius: 28px; padding: 36px; position: relative; overflow: hidden; }
+.lbl { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gris); font-weight: 600; margin-bottom: 18px; }
+.hero { grid-column: span 8; min-height: 420px; display: flex; flex-direction: column; justify-content: space-between; }
+.hero img { width: 520px; }
+.hero h1 { font-size: 64px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.hero h1 span { color: var(--mandarina); }
+.hero p { font-size: 20px; color: var(--gris); margin-top: 14px; max-width: 640px; line-height: 1.45; }
+.icono { grid-column: span 4; background: var(--tinta); color: var(--papel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+.icono img { width: 200px; border-radius: 44px; }
+.icono .lbl { color: #A39B90; position: absolute; top: 36px; left: 36px; }
+.icono .logo-osc { width: 260px; }
+.paleta { grid-column: span 7; }
+.sw { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr; gap: 12px; }
+.sw div { height: 190px; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; font-size: 14px; }
+.sw b { font-size: 17px; display: block; }
+.tipo { grid-column: span 5; }
+.tipo .big { font-size: 92px; font-weight: 800; letter-spacing: -.04em; line-height: .95; }
+.tipo .mid { font-size: 30px; font-weight: 700; margin-top: 18px; letter-spacing: -.01em; }
+.tipo .small { font-size: 16px; color: var(--gris); margin-top: 14px; line-height: 1.5; }
+.voz { grid-column: span 6; }
+.voz table { width: 100%; border-collapse: collapse; font-size: 17px; }
+.voz td { padding: 12px 0; border-top: 1px solid var(--arena); vertical-align: top; }
+.voz td:first-child { width: 50%; padding-right: 18px; }
+.voz .si { color: #1F7A4A; font-weight: 600; } .voz .no { color: #A33A2B; text-decoration: line-through; text-decoration-color: rgba(163,58,43,.5); }
+.pers { grid-column: span 6; }
+.pers ul { list-style: none; padding: 0; display: grid; gap: 14px; font-size: 18px; line-height: 1.4; }
+.pers li b { display: block; font-family: "Bricolage"; font-size: 22px; font-weight: 700; }
+.pers .eje { display: flex; justify-content: space-between; font-size: 14px; color: var(--gris); margin-top: 22px; }
+.pers .barra { height: 10px; border-radius: 5px; background: var(--arena); position: relative; margin-top: 8px; }
+.pers .barra i { position: absolute; left: 45%; top: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--mandarina); }
+.apps { grid-column: span 12; display: grid; grid-template-columns: 1fr 1.2fr 1.4fr; gap: 24px; background: var(--arena); }
+.apps > div { background: #fff; border-radius: 20px; padding: 26px; }
+.sticker { width: 220px; height: 220px; border-radius: 50%; background: var(--tinta); margin: 6px auto 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--papel); text-align: center; gap: 10px; }
+.sticker img { width: 70px; }
+.sticker b { font-family: "Bricolage"; font-size: 22px; }
+.sticker small { font-size: 13px; color: #CFC6B8; }
+.firma { background: var(--papel); border-radius: 16px; padding: 22px; font-size: 15px; color: var(--gris); text-align: center; margin-top: 8px; }
+.firma img { height: 22px; vertical-align: middle; margin-left: 6px; }
+.panel { border: 1px solid var(--arena); border-radius: 16px; overflow: hidden; margin-top: 8px; }
+.panel .bar { display: flex; align-items: center; gap: 18px; padding: 14px 18px; border-bottom: 1px solid var(--arena); font-weight: 600; font-size: 15px; }
+.panel .bar img { height: 26px; margin-right: 10px; }
+.panel .bar span.on { background: var(--tinta); color: #fff; padding: 6px 12px; border-radius: 99px; }
+.panel .body { padding: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kpi { background: var(--papel); border-radius: 14px; padding: 14px; }
+.kpi small { display: block; color: var(--gris); font-size: 13px; }
+.kpi b { font-family: "Bricolage"; font-size: 34px; font-weight: 800; }
+.kpi.acc { background: var(--mandarina-suave); }
+.apps h4 { font-size: 15px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="c hero">
+    <div><div class="lbl">Marca · nombre provisional</div><img src="logo-nef.svg" alt="Nef"></div>
+    <div><h1 class="t">Clientes que <span>vuelven</span>.</h1>
+    <p>Nef pone un punto en la mesa, la entrada o la máquina. El cliente acerca el celular y el negocio lo conoce, lo premia y lo recupera.</p></div>
+  </div>
+  <div class="c icono"><div class="lbl">Ícono y versión oscura</div><img src="icono-app-nef.svg" alt=""><img class="logo-osc" src="logo-nef-sobre-oscuro.svg" alt=""></div>
+
+  <div class="c paleta"><div class="lbl">Color</div>
+    <div class="sw">
+      <div style="background:var(--mandarina);color:var(--tinta)"><b>Mandarina</b>#FF6B35 · el punto y los acentos</div>
+      <div style="background:var(--tinta);color:var(--papel)"><b>Tinta</b>#1D1B18</div>
+      <div style="background:var(--papel);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--arena)"><b>Papel</b>#F5F1EA</div>
+      <div style="background:var(--arena);color:var(--tinta)"><b>Arena</b>#E8E1D4</div>
+      <div style="background:var(--cielo);color:var(--tinta)"><b>Cielo</b>#CFE3F0 · datos</div>
+    </div></div>
+  <div class="c tipo"><div class="lbl">Tipografía</div>
+    <div class="big t">Aa Ññ</div>
+    <div class="mid t">Bricolage Grotesque · títulos</div>
+    <div class="small">Sans del sistema para textos e interfaz. En los portales de los negocios manda su propio tema; Nef solo firma abajo.</div></div>
+
+  <div class="c pers"><div class="lbl">Personalidad</div>
+    <ul>
+      <li><b>El aliado del negocio de barrio</b>Sabe de tecnología, pero habla como el dueño del café.</li>
+      <li><b>Claro antes que impresionante</b>Si hay que explicarlo, está mal hecho.</li>
+      <li><b>Cálido y directo</b>Tutea, va al grano, nunca promete lo que no hace.</li>
+    </ul>
+    <div class="eje"><span>Genérico</span><span>Cercano con criterio</span><span>Premium</span></div>
+    <div class="barra"><i></i></div></div>
+  <div class="c voz"><div class="lbl">Voz</div>
+    <table>
+      <tr><td class="si">"Acerca el celular."</td><td class="no">"Interactúa mediante tecnología NFC."</td></tr>
+      <tr><td class="si">"Estos 12 socios dejaron de venir."</td><td class="no">"Optimiza tu tasa de retención con IA."</td></tr>
+      <tr><td class="si">"Tus clientes vuelven."</td><td class="no">"Revoluciona tu negocio 🚀"</td></tr>
+      <tr><td class="si">"Lo instalo y te enseño en 10 minutos."</td><td class="no">"Solución omnicanal end-to-end."</td></tr>
+    </table></div>
+
+  <div class="c apps"><div><h4>Sticker (marca Nef)</h4><div class="sticker"><img src="simbolo-nef.svg" alt=""><b>Acerca el celular</b><small>o escanea</small></div></div>
+    <div><h4>Firma en el portal de cada negocio</h4><div class="firma">Hecho con<img src="logo-nef-una-tinta.svg" alt="Nef"></div>
+      <p style="font-size:14px;color:var(--gris);margin-top:14px;line-height:1.5">En el portal manda la marca del negocio (tema Cálido, Energía o Limpio). Nef aparece solo aquí, pequeño y en una tinta.</p></div>
+    <div><h4>Panel del dueño</h4><div class="panel"><div class="bar"><img src="logo-nef.svg" alt=""><span class="on">Resumen</span><span>Clientes</span><span>Informes</span></div>
+      <div class="body"><div class="kpi"><small>Volvieron este mes</small><b>184</b></div><div class="kpi acc"><small>En riesgo</small><b>12</b></div><div class="kpi"><small>Reseñas pedidas</small><b>63</b></div></div></div></div>
+  </div>
+</div>
+</body>
+</html>

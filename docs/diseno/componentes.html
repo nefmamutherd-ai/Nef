@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catálogo de componentes · Nef</title>
+<!-- Abre este archivo en el navegador. Es la referencia visual de public/assets/portal.css y nef-ui.css.
+     Cualquier pantalla nueva se arma copiando estos bloques. Si algo no existe aquí, agrégalo primero aquí. -->
+<link rel="stylesheet" href="../../public/assets/tokens.css">
+<link rel="stylesheet" href="../../public/assets/portal.css">
+<link rel="stylesheet" href="../../public/assets/nef-ui.css">
+<style>
+  body { margin: 0; }
+  .cat { display: grid; grid-template-columns: 390px 390px 1fr; gap: 32px; padding: 32px; align-items: start; background: #E7E1D6; min-height: 100vh; font-family: system-ui, sans-serif; }
+  .col { min-width: 0; }
+  .col > h2 { font: 700 14px system-ui; letter-spacing: .06em; text-transform: uppercase; color: #5C554D; margin: 0 0 12px; }
+  .marco { border-radius: 28px; overflow: hidden; margin-bottom: 24px; }
+  .marco .pt-pagina { min-height: 0; padding-bottom: 32px; }
+  .nota { font: 12px/1.4 ui-monospace, monospace; color: #6E675E; margin: 18px 0 6px; }
+  .nef.marco { padding: 24px; }
+</style>
+</head>
+<body>
+<div class="cat">
+
+  <!-- ─────────── Portal · tema cálido (cafés) ─────────── -->
+  <div class="col">
+    <h2>Portal · tema cálido</h2>
+    <div class="marco pt" data-tema="calido" style="background:var(--papel)"><div class="pt-pagina">
+      <p class="nota">.pt-cabeza</p>
+      <header class="pt-cabeza"><div class="pt-logo">CL</div><h1>Café Luna</h1><p>Mesa 4</p></header>
+      <p class="nota">.pt-botones › .pt-boton.principal / .pt-boton (máx. 3)</p>
+      <div class="pt-botones">
+        <a class="pt-boton principal" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg><span>Ver la carta</span><svg class="pt-icono pt-flecha" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></a>
+        <a class="pt-boton" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg><span>Mis monedas</span><small>230</small></a>
+        <a class="pt-boton" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><path d="m12 4 2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 16.2 7 19l1.2-5.6L4 9.6 9.6 9z"/></svg><span>Déjanos tu reseña</span><svg class="pt-icono pt-flecha" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></a>
+      </div>
+      <p class="nota">.pt-enlaces</p>
+      <nav class="pt-enlaces"><a href="#">WiFi</a><a href="#">WhatsApp</a><a href="#">Instagram</a></nav>
+      <p class="nota">.pt-pestanas + .pt-categoria + .pt-prod (.agotado)</p>
+      <div class="pt-pestanas" role="tablist"><button role="tab" aria-selected="true">Desayunos</button><button role="tab">Cafés</button><button role="tab">Postres</button></div>
+      <h2 class="pt-categoria">Desayunos</h2>
+      <button class="pt-prod"><div class="pt-tx"><b>Calentado de la casa</b><small>Fríjol, arroz, huevo y arepa</small><span class="pt-precio">$18.500</span></div><div class="pt-foto"></div></button>
+      <button class="pt-prod agotado"><div class="pt-tx"><b>Croissant de almendras</b><span class="pt-agotado">Agotado hoy</span><span class="pt-precio">$9.500</span></div><div class="pt-foto"></div></button>
+      <p class="nota">.pt-club › .pt-saldo (style="--progreso:77") .pt-frase .pt-aviso .pt-accion</p>
+      <div class="pt-club"><div class="pt-neg">Café Luna</div><h1>Hola, Laura</h1>
+        <div class="pt-saldo" style="--progreso:77"><div><b>230</b><span>monedas</span></div></div>
+        <p class="pt-frase">Te faltan <b>70</b> para un capuchino gratis</p>
+        <span class="pt-aviso">Hoy hasta las 5 p. m. ganas el doble</span>
+        <button class="pt-accion">Mostrar mi código</button><button class="pt-link">Ver todos los premios</button></div>
+      <p class="nota">.pt-form › .pt-campo .pt-casilla</p>
+      <form class="pt-form" onsubmit="return false">
+        <div class="pt-campo"><label for="c1">Tu nombre</label><input id="c1" value="Laura"></div>
+        <div class="pt-campo error"><label for="c2">Tu celular</label><input id="c2" value="300 12"><div class="pt-error">Escribe los 10 números.</div></div>
+        <label class="pt-casilla"><input type="checkbox"><span>Autorizo el uso de mis datos para el club. <a href="#">Cómo se usan</a></span></label>
+        <button class="pt-accion marca">Unirme</button>
+      </form>
+    </div></div>
+  </div>
+
+  <!-- ─────────── Portal · tema energía (gimnasios) + caja ─────────── -->
+  <div class="col">
+    <h2>Portal · tema energía</h2>
+    <div class="marco pt" data-tema="energia" style="background:var(--papel);color:var(--tinta)"><div class="pt-pagina">
+      <header class="pt-cabeza"><div class="pt-logo">FX</div><h1>Forza Gym</h1><p>Máquina 12 · Prensa</p></header>
+      <div class="pt-botones">
+        <a class="pt-boton principal" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg><span>Cómo se usa</span><svg class="pt-icono pt-flecha" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></a>
+        <a class="pt-boton" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/></svg><span>Clases de hoy</span></a>
+        <a class="pt-boton" href="#"><svg class="pt-icono" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg><span>Mis monedas</span><small>120</small></a>
+      </div>
+      <p class="nota">.pt-hecho › .pt-check .pt-racha .pt-semanas</p>
+      <div class="pt-hecho"><div class="pt-check"><svg class="pt-icono" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></div><h1>Entrada registrada</h1><div class="pt-hora">6:42 a. m. · Sede Chapinero</div>
+        <div class="pt-racha"><b>6</b><span>semanas seguidas</span><div class="pt-semanas"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div></div>
+    </div></div>
+
+    <h2>Caja · tema cálido</h2>
+    <div class="marco pt" data-tema="calido" style="background:var(--papel)"><div class="pt-pagina">
+      <p class="nota">.pt-sin-conexion (solo si no hay red)</p>
+      <div class="pt-sin-conexion">Sin conexión · 2 operaciones guardadas</div>
+      <p class="nota">.pt-caja-numero .pt-o .pt-escanear .pt-cliente .pt-dos</p>
+      <div class="pt-caja-numero"><svg class="pt-icono" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg><input value="300 123 4567" aria-label="Número del cliente"></div>
+      <div class="pt-o">o</div>
+      <button class="pt-escanear">Escanear su código</button>
+      <div class="pt-cliente"><b>Laura Martínez</b><div class="pt-mon">230 <span>monedas</span></div><span class="pt-aviso ok" style="margin:6px 0 0">Última visita: hace 3 días</span>
+        <div class="pt-dos"><button class="pt-sumar">Sumar</button><button class="pt-canjear">Canjear</button></div></div>
+      <p class="nota">.pt-vacio · .pt-cargando</p>
+      <div class="pt-vacio"><b>No encontramos ese número</b>Revisa los 10 dígitos o regístralo en el club.</div>
+      <div class="pt-cargando" style="height:56px"></div>
+    </div></div>
+  </div>
+
+  <!-- ─────────── Superficies de Nef (panel, admin) ─────────── -->
+  <div class="col">
+    <h2>Panel / admin · nef-ui.css</h2>
+    <div class="nef marco">
+      <p class="nota">.n-barra</p>
+      <div class="n-barra" style="position:static;border-radius:12px"><img class="n-logo" src="../marca/logo-nef.svg" alt="nef"><span class="n-espacio"></span><span class="n-negocio">Café Luna</span><button class="n-btn fantasma chico">Salir</button></div>
+      <p class="nota">.n-encabezado + .n-pestanas</p>
+      <div class="n-encabezado"><div><div class="n-etiqueta">Noviembre</div><h1>Resumen</h1><p>Actualizado hoy a las 2:00 a. m.</p></div><button class="n-btn principal">Exportar para el estudio</button></div>
+      <nav class="n-pestanas"><a href="#" aria-current="page">Resumen</a><a href="#">Clientes</a><a href="#">Catálogo</a><a href="#">Club</a><a href="#">Informes</a></nav>
+      <p class="nota">.n-kpis › .n-kpi (.destacado) + .n-def[data-def]</p>
+      <div class="n-kpis">
+        <div class="n-kpi"><small>Volvieron <button class="n-def" data-def="Clientes con 2 o más visitas en el mes.">?</button></small><div class="n-num">184</div><div class="n-cambio sube">+12 vs. octubre</div></div>
+        <div class="n-kpi destacado"><small>En riesgo <button class="n-def" data-def="4 o más visitas y 21 días o más sin venir.">?</button></small><div class="n-num">12</div><div class="n-cambio baja">+3 vs. octubre</div></div>
+        <div class="n-kpi"><small>Reseñas pedidas</small><div class="n-num">63</div><div class="n-cambio">igual que octubre</div></div>
+      </div>
+      <div class="n-rejilla dos">
+        <div class="n-tarjeta"><h2>En riesgo</h2><p>Escríbeles hoy. El botón solo aparece en horario permitido.</p>
+          <ul class="n-lista">
+            <li><div class="n-principal"><b>Laura M.</b><span>23 días sin venir · 9 visitas</span></div><a class="n-btn chico secundario" href="#">WhatsApp</a></li>
+            <li><div class="n-principal"><b>Andrés P.</b><span>21 días sin venir · 5 visitas</span></div><a class="n-btn chico secundario" href="#">WhatsApp</a></li>
+          </ul></div>
+        <div class="n-tarjeta"><h2>Visitas por hora</h2><p>Martes a domingo.</p>
+          <div class="n-barras"><div style="--v:.2"><i></i><span>7</span></div><div style="--v:.55"><i></i><span>9</span></div><div class="destacada" style="--v:1"><i></i><span>11</span></div><div style="--v:.7"><i></i><span>13</span></div><div style="--v:.45"><i></i><span>15</span></div><div style="--v:.6"><i></i><span>17</span></div><div style="--v:.3"><i></i><span>19</span></div></div></div>
+      </div>
+      <p class="nota">.n-tabla-caja › .n-tabla + .n-estado (.ok .aviso .alerta)</p>
+      <div class="n-tabla-caja"><table class="n-tabla"><thead><tr><th>Negocio</th><th>Sector</th><th>Mensualidad</th><th class="n-der">Toques del mes</th></tr></thead>
+        <tbody><tr><td>Café Luna</td><td>Café</td><td><span class="n-estado ok">Al día</span></td><td class="n-der">1.284</td></tr>
+        <tr><td>Forza Gym</td><td>Gimnasio</td><td><span class="n-estado aviso">Vence en 3 días</span></td><td class="n-der">3.902</td></tr>
+        <tr><td>Panadería Sol</td><td>Café</td><td><span class="n-estado alerta">Vencido</span></td><td class="n-der">0</td></tr></tbody></table></div>
+      <p class="nota">.n-form › .n-campo .n-fila .n-opciones .n-interruptor .n-subir · .n-aviso · .n-btn</p>
+      <div class="n-rejilla dos">
+        <form class="n-tarjeta n-form" onsubmit="return false">
+          <div class="n-campo"><label for="n1">Nombre del negocio</label><input id="n1" value="Café Luna"></div>
+          <div class="n-campo"><label>Sector</label><div class="n-opciones"><label><input type="radio" name="s" checked><span>Café</span></label><label><input type="radio" name="s"><span>Gimnasio</span></label></div></div>
+          <div><label class="n-interruptor"><div><b>Catálogo</b><span>Carta o clases y máquinas</span></div><input type="checkbox" checked></label>
+            <label class="n-interruptor"><div><b>Club</b><span>Monedas desde la caja</span></div><input type="checkbox"></label></div>
+          <div class="n-campo error"><label for="n2">Devolución</label><select id="n2"><option>5 %</option></select><div class="n-error">Elige 3, 5 u 8 %.</div></div>
+          <div style="display:flex;gap:8px"><button class="n-btn">Guardar</button><button class="n-btn secundario">Cancelar</button></div>
+        </form>
+        <div class="n-rejilla">
+          <label class="n-subir"><input type="file" hidden><b>Sube el CSV de entradas</b><span>Lo exportas desde tu torniquete. Máximo 10 MB.</span></label>
+          <div class="n-aviso ok">Importamos 4.812 entradas de 203 socios. 0 repetidas.</div>
+          <div class="n-aviso aviso">Hay 12 filas sin fecha. Las saltamos.</div>
+          <div class="n-aviso alerta">El archivo no tiene columna de socio. Elige cuál es.</div>
+          <div class="n-tarjeta n-vacio"><b>Aún no hay informes</b>El primero llega al cerrar el trimestre.</div>
+          <div class="n-tarjeta"><div class="n-cargando" style="width:40%"></div><div class="n-cargando" style="margin-top:10px"></div><div class="n-cargando" style="margin-top:10px;width:70%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
