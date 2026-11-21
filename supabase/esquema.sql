@@ -102,44 +102,8 @@ create policy admin_ver  on public.admins   for select to authenticated using (u
 --  puerta pública: no exponen notas, contactos ni datos de otros.
 -- =====================================================================
 
--- Un toque (NFC o QR): registra y devuelve a dónde mandar a la persona
-create or replace function public.resolver_toque(p_codigo text, p_medio text default 'nfc', p_dispositivo text default null)
-returns json language plpgsql security definer set search_path = public as $$
-declare
-  t public.tags;
-  n public.negocios;
-begin
-  select * into t from public.tags where codigo = lower(trim(p_codigo));
-  if not found then
-    return json_build_object('estado', 'no_existe');
-  end if;
-  if not t.activo or t.negocio_id is null then
-    return json_build_object('estado', 'inactivo');
-  end if;
-  select * into n from public.negocios where id = t.negocio_id;
-  if not n.activo then
-    return json_build_object('estado', 'inactivo');
-  end if;
-
-  insert into public.toques (tag_id, negocio_id, medio, dispositivo)
-  values (t.id, n.id, case when p_medio = 'qr' then 'qr' else 'nfc' end, left(p_dispositivo, 20));
-
-  return json_build_object(
-    'estado', 'ok', 'destino', t.destino, 'slug', n.slug, 'url', t.url_personalizada,
-    'menu_url', n.menu_url, 'resena_url', n.resena_url, 'whatsapp', n.whatsapp, 'instagram', n.instagram
-  );
-end $$;
-
--- Datos públicos para la página del negocio
-create or replace function public.negocio_publico(p_slug text)
-returns json language sql stable security definer set search_path = public as $$
-  select json_build_object(
-    'slug', slug, 'nombre', nombre, 'descripcion', descripcion, 'logo_url', logo_url, 'color', color,
-    'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
-    'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links
-  )
-  from public.negocios where slug = lower(trim(p_slug)) and activo;
-$$;
+-- resolver_toque (un toque NFC/QR) y negocio_publico (datos de la página del negocio)
+-- se definen en el bloque "Fase 1" al final: usan columnas que se agregan allá.
 
 -- Clic en un botón de la página del negocio
 create or replace function public.registrar_click(p_slug text, p_boton text, p_codigo text default null)
@@ -236,9 +200,136 @@ do $$ begin
   revoke execute on function public._stats_negocio(uuid, int) from anon, authenticated;
 exception when undefined_object then null; end $$;
 
-grant execute on function public.resolver_toque(text, text, text)  to anon, authenticated;
-grant execute on function public.negocio_publico(text)             to anon, authenticated;
 grant execute on function public.registrar_click(text, text, text) to anon, authenticated;
 grant execute on function public.stats_token(text, int)            to anon, authenticated;
 grant execute on function public.stats_admin(uuid, int)            to authenticated;
 grant execute on function public.es_admin()                        to authenticated;
+
+-- =====================================================================
+-- ===== Fase 1 =====  cuentas (empresas, accesos), sector, servicios,
+-- hora reemplazable en pruebas y antispam de toques.
+-- =====================================================================
+
+-- Hora "de negocio": las pruebas la fijan con  set nef.ahora = '2026-11-22 10:00-05'
+create or replace function public._ahora()
+returns timestamptz language sql stable as $$
+  select coalesce(nullif(current_setting('nef.ahora', true), '')::timestamptz, now())
+$$;
+
+-- ---------- Empresas (quien paga) y accesos de dueños/gerentes -------
+create table if not exists public.empresas (
+  id              uuid primary key default gen_random_uuid(),
+  nombre          text not null,
+  nit             text,
+  plan            text not null default 'base',
+  estado_pago     text not null default 'al_dia' check (estado_pago in ('al_dia', 'por_vencer', 'vencido')),
+  club_compartido boolean not null default false,
+  creado          timestamptz not null default now()
+);
+alter table public.empresas enable row level security;
+drop policy if exists admin_todo on public.empresas;
+create policy admin_todo on public.empresas for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+create table if not exists public.accesos (
+  user_id    uuid not null,
+  empresa_id uuid not null references public.empresas(id) on delete cascade,
+  rol        text not null check (rol in ('dueno', 'gerente')),
+  creado     timestamptz not null default now(),
+  primary key (user_id, empresa_id)
+);
+create index if not exists accesos_empresa_idx on public.accesos(empresa_id);
+alter table public.accesos enable row level security;
+drop policy if exists admin_todo on public.accesos;
+create policy admin_todo on public.accesos for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- ---------- Negocios: empresa, sector, servicios, ubicación -----------
+alter table public.negocios add column if not exists empresa_id uuid references public.empresas(id) on delete set null;
+alter table public.negocios add column if not exists sector text not null default 'cafe'
+  check (sector in ('cafe', 'gimnasio'));
+alter table public.negocios add column if not exists servicios jsonb not null
+  default '{"base":true,"catalogo":false,"club":false,"estudio":false}'::jsonb;
+alter table public.negocios add column if not exists ubicacion_etiqueta text;
+create index if not exists negocios_empresa_idx on public.negocios(empresa_id);
+
+-- Migración: cada negocio sin empresa recibe una empresa con su mismo nombre
+do $$
+declare
+  r record;
+  v_empresa uuid;
+begin
+  for r in select id, nombre from public.negocios where empresa_id is null loop
+    insert into public.empresas (nombre) values (r.nombre) returning id into v_empresa;
+    update public.negocios set empresa_id = v_empresa where id = r.id;
+  end loop;
+end $$;
+
+-- ---------- Antispam: un toque por dispositivo y tag cada 30 min ------
+alter table public.toques add column if not exists dispositivo_id uuid;
+create index if not exists toques_tag_disp_idx on public.toques(tag_id, dispositivo_id, creado);
+
+-- La versión vieja (3 parámetros) se reemplaza por la de 4; se borra para que no haya ambigüedad.
+drop function if exists public.resolver_toque(text, text, text);
+
+-- Un toque (NFC o QR): registra y devuelve a dónde mandar a la persona.
+-- p_dispositivo_id viene de la cookie anónima nef_d (sin datos personales).
+create or replace function public.resolver_toque(
+  p_codigo text, p_medio text default 'nfc', p_dispositivo text default null, p_dispositivo_id uuid default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  t public.tags;
+  n public.negocios;
+begin
+  select * into t from public.tags where codigo = lower(trim(p_codigo));
+  if not found then
+    return json_build_object('estado', 'no_existe');
+  end if;
+  if not t.activo or t.negocio_id is null then
+    return json_build_object('estado', 'inactivo');
+  end if;
+  select * into n from public.negocios where id = t.negocio_id;
+  if not n.activo then
+    return json_build_object('estado', 'inactivo');
+  end if;
+
+  -- Si el mismo dispositivo tocó este tag hace menos de 30 min, no se cuenta otra vez (pero igual entra)
+  if p_dispositivo_id is null or not exists (
+    select 1 from public.toques q
+    where q.tag_id = t.id and q.dispositivo_id = p_dispositivo_id
+      and q.creado > public._ahora() - interval '30 minutes'
+  ) then
+    insert into public.toques (tag_id, negocio_id, medio, dispositivo, dispositivo_id, creado)
+    values (t.id, n.id, case when p_medio = 'qr' then 'qr' else 'nfc' end, left(p_dispositivo, 20),
+            p_dispositivo_id, public._ahora());
+  end if;
+
+  return json_build_object(
+    'estado', 'ok', 'destino', t.destino, 'slug', n.slug, 'url', t.url_personalizada,
+    'menu_url', n.menu_url, 'resena_url', n.resena_url, 'whatsapp', n.whatsapp, 'instagram', n.instagram
+  );
+end $$;
+
+-- Datos públicos para la página del negocio (nada privado: ni notas, ni contacto, ni empresa, ni tokens)
+create or replace function public.negocio_publico(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'slug', slug, 'nombre', nombre, 'descripcion', descripcion, 'logo_url', logo_url, 'color', color,
+    'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
+    'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links,
+    'sector', sector, 'servicios', servicios, 'ubicacion_etiqueta', ubicacion_etiqueta
+  )
+  from public.negocios where slug = lower(trim(p_slug)) and activo;
+$$;
+
+grant execute on function public.resolver_toque(text, text, text, uuid) to anon, authenticated;
+grant execute on function public.negocio_publico(text)                  to anon, authenticated;
+
+-- Nombre del tag ("Mesa 4", "Máquina 12") para la cabeza del portal; solo si el tag es de ese negocio
+create or replace function public.tag_publico(p_slug text, p_codigo text)
+returns text language sql stable security definer set search_path = public as $$
+  select t.nombre
+  from public.tags t join public.negocios n on n.id = t.negocio_id
+  where n.slug = lower(trim(p_slug)) and n.activo and t.activo and t.codigo = lower(trim(p_codigo));
+$$;
+grant execute on function public.tag_publico(text, text) to anon, authenticated;

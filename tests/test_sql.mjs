@@ -89,4 +89,66 @@ await caso('usuario logueado que no es admin no ve nada', async () => {
 
 // ── Agrega aquí las pruebas de cada fase nueva (carta, ruleta, club…) ──
 
+console.log('Fase 1 · cuentas, sector y antispam');
+await caso('un negocio creado antes recibe empresa al correr el esquema', async () => {
+  await db.exec('reset role;');
+  await db.exec(`update negocios set empresa_id = null`);
+  await db.exec(sql);
+  const [n] = await q(`select n.empresa_id, e.nombre from negocios n join empresas e on e.id = n.empresa_id where n.slug = 'cafe-luna'`);
+  assert.ok(n && n.empresa_id); assert.equal(n.nombre, 'Café Luna');
+  await db.exec(sql); // otra vez: no crea empresas repetidas
+  assert.equal((await q(`select count(*)::int n from empresas`))[0].n, 1);
+});
+await caso('negocio_publico trae sector y servicios, no empresa ni notas', async () => {
+  await como('anon');
+  const [{ r }] = await q(`select negocio_publico('cafe-luna') r`);
+  assert.equal(r.sector, 'cafe'); assert.equal(r.servicios.base, true); assert.equal(r.servicios.club, false);
+  assert.ok('ubicacion_etiqueta' in r);
+  for (const k of ['empresa_id', 'notas', 'contacto_telefono', 'token_stats']) assert.ok(!(k in r), 'expone ' + k);
+});
+await caso('anónimo no lee empresas ni accesos', async () => {
+  await como('anon');
+  assert.equal((await q(`select count(*)::int n from empresas`))[0].n, 0);
+  assert.equal((await q(`select count(*)::int n from accesos`))[0].n, 0);
+  await como('authenticated', '22222222-2222-2222-2222-222222222222');
+  assert.equal((await q(`select count(*)::int n from empresas`))[0].n, 0);
+});
+await caso('_ahora() obedece a nef.ahora', async () => {
+  await db.exec(`set nef.ahora = '2026-01-01 00:00-05'`);
+  const [{ r }] = await q(`select _ahora() = '2026-01-01 00:00-05'::timestamptz r`);
+  assert.equal(r, true);
+  await db.exec(`reset nef.ahora`);
+  assert.equal((await q(`select abs(extract(epoch from _ahora() - now())) < 5 r`))[0].r, true);
+});
+await caso('antispam: un toque por dispositivo y tag cada 30 min', async () => {
+  await como('anon');
+  const disp = 'aaaaaaaa-0000-4000-8000-000000000001';
+  const contar = async () => { await db.exec('reset role;'); const n = (await q(`select count(*)::int n from toques where dispositivo_id = $1`, [disp]))[0].n; await como('anon'); return n; };
+  await db.exec(`set nef.ahora = '2026-01-10 10:00-05'`);
+  await q(`select resolver_toque($1,'nfc','ios',$2)`, [tags[2].codigo, disp]);
+  await db.exec(`set nef.ahora = '2026-01-10 10:05-05'`);
+  const [{ r }] = await q(`select resolver_toque($1,'nfc','ios',$2) r`, [tags[2].codigo, disp]);
+  assert.equal(r.estado, 'ok'); // igual entra al portal
+  assert.equal(await contar(), 1);
+  await db.exec(`set nef.ahora = '2026-01-10 10:31-05'`);
+  await q(`select resolver_toque($1,'nfc','ios',$2)`, [tags[2].codigo, disp]);
+  assert.equal(await contar(), 2);
+  await db.exec(`reset nef.ahora`);
+});
+await caso('tag_publico solo da el nombre si el tag es del negocio', async () => {
+  await como('anon');
+  assert.equal((await q(`select tag_publico('cafe-luna', $1) r`, [tags[0].codigo]))[0].r, 'Mesa 1');
+  assert.equal((await q(`select tag_publico('otro-negocio', $1) r`, [tags[0].codigo]))[0].r, null);
+  assert.equal((await q(`select tag_publico('cafe-luna', $1) r`, [libre.codigo]))[0].r, null);
+});
+await caso('antispam: sin dispositivo_id se cuenta siempre', async () => {
+  await db.exec('reset role;');
+  const antes = (await q(`select count(*)::int n from toques where tag_id = $1`, [tags[2].id]))[0].n;
+  await como('anon');
+  await q(`select resolver_toque($1,'qr',null)`, [tags[2].codigo]);
+  await q(`select resolver_toque($1,'qr',null)`, [tags[2].codigo]);
+  await db.exec('reset role;');
+  assert.equal((await q(`select count(*)::int n from toques where tag_id = $1`, [tags[2].id]))[0].n, antes + 2);
+});
+
 console.log(`\n${ok} pruebas OK`);

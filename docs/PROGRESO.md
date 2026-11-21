@@ -31,3 +31,22 @@ Formato: fecha · fase · qué quedó hecho · pruebas · qué sigue · pendient
 - Assets copiados a `public/assets/` (tokens, fuentes, logos, capturas en WebP).
 - Pruebas: test:sql 10 OK · test:e2e 10 OK (nuevo caso de la landing) · verificar OK.
 - Sigue: tarjeta 1.1 de `docs/tareas/fase-1.md`.
+
+## 2026-11-21 · Jornada de Claude Code en local (sin repo remoto ni Cloudflare)
+Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git init` con rama `desarrollo`, mock de Supabase
+(`npm run mock`) + `wrangler pages dev` (`npm run dev`). Cada fase cierra con `npm run verificar -- --e2e` en verde.
+
+### Fase 1 · Cimientos — hecha
+- **BD**: `_ahora()`, tablas `empresas` y `accesos` (RLS + política admin), `negocios.empresa_id/sector/servicios/ubicacion_etiqueta`,
+  migración que crea una empresa por negocio. `negocio_publico` trae sector/servicios/ubicación. RPC nueva `tag_publico`.
+- **Antispam**: cookie anónima `nef_d` en `/t/` (HttpOnly, 1 año); `resolver_toque` ignora el mismo dispositivo+tag por 30 min.
+- **Paquetes de sector**: `lib/sectores/cafe.json`, `gimnasio.json` y `lib/sectores.js` (`paquete`, `botonesPortal`).
+- **Portal** `/n/<slug>` rehecho con `portal.css`: tema por sector, máx. 3 botones según servicios, enlaces de texto,
+  WiFi en hoja inferior, firma "Hecho con nef".
+- **/inactivo** y **/admin** con la marca Nef; el admin elige sector, servicios (Catálogo, Club, Estudio) y ubicación.
+- Pruebas: test:sql **17 OK** (7 nuevas) · test:e2e **15 OK** (5 nuevas) · verificar ✓.
+- Capturas revisadas (390×844 y 1280): `portal-cafe-movil.png`, `portal-gym-movil.png`, `portal-cafe-wifi.png`,
+  `portal-cafe-escritorio.png`, `inactivo-movil.png`, `admin-escritorio.png`, `admin-negocio-form.png`, `admin-movil.png`.
+- Revisión de seguridad: tablas nuevas con RLS y prueba de anon; RPC con `search_path`; nada privado en RPC públicas;
+  todo escapado; la cookie no guarda IP ni datos personales.
+- Pendiente: `git push origin desarrollo` (no existe el remoto). Aviso viejo del verificador en `stats.js` (innerHTML): se rehace en la Fase 4.

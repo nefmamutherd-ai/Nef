@@ -38,9 +38,9 @@
 - ~~Landing `/`~~ **hecha** (20 nov, `public/index.html`, 8 secciones de GUIA-WEB). `/inactivo` con la marca Nef.
 - Panel `/admin` con la marca Nef: elegir sector y servicios por negocio.
 **Listo cuando**
-- [ ] El mismo negocio de prueba cambiado de café a gimnasio cambia botones, textos y tema sin tocar código.
-- [ ] Capturas móvil del portal café y gimnasio comparables con la maqueta.
-- [ ] Pruebas de antes siguen en verde.
+- [x] El mismo negocio de prueba cambiado de café a gimnasio cambia botones, textos y tema sin tocar código.
+- [x] Capturas móvil del portal café y gimnasio comparables con la maqueta.
+- [x] Pruebas de antes siguen en verde.
 
 ## Fase 2 — Club base + caja (sin conexión)
 **Construir** (tablas y reglas en `referencia/plan-v2-detalle.md` §2, con estos cambios):

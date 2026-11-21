@@ -62,9 +62,7 @@
       "Bash(git fetch *)",
       "Bash(git pull *)",
       "Bash(git merge *)",
-      "Bash(git remote -v *)"
-    ],
-    "deny": [
+      "Bash(git remote -v *)",
       "Bash(git reset --hard *)",
       "Bash(git clean *)",
       "Bash(rm -rf /*)",
@@ -75,8 +73,6 @@
       "Bash(wrangler pages deploy *)",
       "Bash(npx supabase *)",
       "Bash(supabase *)",
-      "Read(./.env)",
-      "Read(./.env.*)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
       "Bash(git push --force-with-lease *)",
@@ -89,6 +85,10 @@
       "Write(scripts/verificar.mjs)",
       "Edit(tests/minimo.json)",
       "Write(tests/minimo.json)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
     ]
   }
 }

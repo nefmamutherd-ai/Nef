@@ -4,10 +4,11 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8788';
 const MOCK = process.env.MOCK || 'http://127.0.0.1:54321';
-const DIR = new URL('./capturas/', import.meta.url).pathname;
+const DIR = fileURLToPath(new URL('./capturas/', import.meta.url));
 fs.mkdirSync(DIR, { recursive: true });
 
 let ok = 0;
@@ -127,6 +128,105 @@ await caso('landing: 8 secciones, WhatsApp y sin scroll horizontal', async () =>
 });
 
 // ── Agrega aquí los recorridos de cada fase nueva (carta, ruleta, club, caja…) ──
+
+// Ayudas para leer y cambiar datos directo en el Supabase simulado (como admin)
+const api = async (ruta, method = 'GET', body) => {
+  const r = await fetch(`${MOCK}/rest/v1/${ruta}`, {
+    method, headers: { Authorization: 'Bearer admintoken', 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`${method} ${ruta} → ${r.status} ${t}`);
+  return t ? JSON.parse(t) : null;
+};
+const sinScrollHorizontal = async (p) => assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'hay scroll horizontal');
+
+console.log('Fase 1');
+await caso('antispam: el mismo celular tocando dos veces cuenta un toque', async () => {
+  const [tag] = await api(`tags?codigo=eq.${codigos[0]}`);
+  const contar = async () => (await api(`toques?tag_id=eq.${tag.id}`)).length;
+  const antes = await contar();
+  const p = await ctx.newPage();
+  await p.goto(`${BASE}/t/${codigos[0]}`);
+  await p.goto(`${BASE}/t/${codigos[0]}`);
+  assert.match(p.url(), new RegExp(`/n/${slug}`));
+  assert.equal(await contar(), antes + 1);
+  await p.close();
+});
+await caso('portal café: tema cálido, 1 a 3 botones de 76 px, nombre del tag', async () => {
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { servicios: { base: true, catalogo: true, club: true, estudio: false }, ubicacion_etiqueta: 'Sede Chapinero' });
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('portal café: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}?t=${codigos[0]}`);
+  assert.equal(await p.getAttribute('html', 'data-tema'), 'calido');
+  const n = await p.locator('.pt-boton').count();
+  assert.ok(n >= 1 && n <= 3, 'botones: ' + n);
+  assert.equal(await p.textContent('.pt-boton.principal span'), 'Ver la carta');
+  assert.equal(await p.textContent('.pt-cabeza p'), 'Mesa 1');
+  const alto = await p.$eval('.pt-boton', (b) => b.getBoundingClientRect().height);
+  assert.ok(alto >= 76, 'alto del botón ' + alto);
+  await sinScrollHorizontal(p);
+  await p.screenshot({ path: DIR + 'portal-cafe-movil.png', fullPage: true });
+  await p.goto(`${BASE}/n/${slug}`);
+  assert.equal(await p.textContent('.pt-cabeza p'), 'Sede Chapinero');
+  await p.click('#wifi summary');
+  await p.waitForSelector('.pt-hoja.abierta');
+  await p.waitForTimeout(400); // fin de la animación de la hoja
+  await p.screenshot({ path: DIR + 'portal-cafe-wifi.png' });
+  await p.setViewportSize({ width: 1280, height: 860 });
+  await p.screenshot({ path: DIR + 'portal-cafe-escritorio.png' });
+  await p.close();
+});
+await caso('mismo negocio como gimnasio: tema energía y "Clases de hoy" sin tocar código', async () => {
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { sector: 'gimnasio' });
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('portal gym: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}`);
+  assert.equal(await p.getAttribute('html', 'data-tema'), 'energia');
+  const textos = await p.$$eval('.pt-boton span', (s) => s.map((x) => x.textContent));
+  assert.deepEqual(textos, ['Clases de hoy', 'Mis monedas', 'Déjanos tu reseña']);
+  await sinScrollHorizontal(p);
+  await p.screenshot({ path: DIR + 'portal-gym-movil.png', fullPage: true });
+  await p.close();
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { sector: 'cafe', servicios: { base: true, catalogo: false, club: false, estudio: false } });
+});
+await caso('/inactivo con la marca Nef', async () => {
+  const p = await ctx.newPage();
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/t/zzzzzzz`);
+  assert.match(p.url(), /\/inactivo$/);
+  assert.equal(await p.getAttribute('body', 'class'), 'nef');
+  assert.match(await p.textContent('.n-vacio b'), /Este punto no está activo/);
+  assert.equal(await p.getAttribute('.n-vacio a.n-btn.principal', 'href'), '/');
+  await p.screenshot({ path: DIR + 'inactivo-movil.png', fullPage: true });
+  await p.close();
+});
+await caso('admin: cambiar a Gimnasio + Club → el portal cambia de tema y muestra "Mis monedas"', async () => {
+  await panel.click('.tab[data-tab=negocios]');
+  await panel.click(`#lista-negocios tr:has(td.cod:text-is("/n/${slug}")) [data-editar]`);
+  await panel.click('#f-sector label:has(input[value=gimnasio])');
+  await panel.check('#form-negocio [name=srv_club]');
+  await panel.fill('#form-negocio [name=ubicacion_etiqueta]', 'Sede Chapinero');
+  await panel.screenshot({ path: DIR + 'admin-negocio-form.png' });
+  await panel.click('#n-guardar');
+  await panel.waitForSelector(`#lista-negocios tr:has(td.cod:text-is("/n/${slug}")) td:text-is("Gimnasio")`);
+  await panel.screenshot({ path: DIR + 'admin-escritorio.png', fullPage: true });
+  const p = await ctx.newPage();
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}`);
+  assert.equal(await p.getAttribute('html', 'data-tema'), 'energia');
+  assert.ok((await p.$$eval('.pt-boton span', (s) => s.map((x) => x.textContent))).includes('Mis monedas'));
+  await p.close();
+  const m = await ctx.newPage();
+  await m.setViewportSize({ width: 390, height: 844 });
+  await m.goto(BASE + '/admin');
+  await m.waitForSelector('#app:not([hidden])');
+  await sinScrollHorizontal(m);
+  await m.screenshot({ path: DIR + 'admin-movil.png', fullPage: true });
+  await m.close();
+});
 
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));

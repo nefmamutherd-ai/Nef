@@ -1,0 +1,13 @@
+{
+  "sector": "cafe",
+  "nombre": "Café / restaurante",
+  "tema": "calido",
+  "palabras": { "lugar": "mesa", "catalogo": "carta", "item": "plato", "visita": "visita" },
+  "botones": [
+    { "servicio": "catalogo", "id": "carta", "texto": "Ver la carta", "icono": "lista", "ruta": "/c/{slug}/menu", "requiere": "menu_url" },
+    { "servicio": "club", "id": "monedas", "texto": "Mis monedas", "icono": "monedas", "ruta": "/n/{slug}/club" },
+    { "servicio": "base", "id": "resena", "texto": "Déjanos tu reseña", "icono": "estrella", "ruta": "/c/{slug}/resena", "requiere": "resena_url" }
+  ],
+  "monedas": { "modo": "visita", "plural": "monedas", "singular": "moneda" },
+  "en_riesgo_dias": 21
+}

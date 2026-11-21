@@ -118,6 +118,16 @@
 .n-subir b { font-weight: 600; } .n-subir span { font-size: 13px; color: var(--n-gris); }
 .n-subir.encima { border-color: var(--n-tinta); background: var(--n-arena); }
 
+/* Pantalla de entrada (login): tarjeta angosta centrada */
+.n-entrar { max-width: 400px; margin: 10vh auto 0; }
+.n-entrar .n-logo { display: block; height: 30px; width: auto; margin: 0 auto 24px; }
+.n-entrar h1 { font-size: 26px; font-weight: 800; }
+/* Barra de herramientas sobre una tabla (filtros + acciones), envuelve en celular */
+.n-herramientas { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.n-herramientas .n-campo { min-width: 160px; }
+.n-herramientas .n-espacio { flex: 1; }
+.n-codigo { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; white-space: nowrap; }
+
 /* ── Avisos, vacíos, carga, diálogos ──────────────────────────────── */
 .n-aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--n-arena); font-size: 14px; }
 .n-aviso.ok { background: var(--n-ok-suave); color: var(--n-ok); }
