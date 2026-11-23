@@ -41,6 +41,41 @@ function contar(el, hasta) {
   requestAnimationFrame(paso);
 }
 
+function pintarCamino(t) {
+  const cont = $('t-camino');
+  const premios = [...(t.premios || [])].sort((a, b) => a.costo - b.costo).slice(0, 4);
+  cont.textContent = '';
+  cont.hidden = premios.length < 1;
+  if (!premios.length) return;
+  const max = premios[premios.length - 1].costo;
+  const pista = document.createElement('div');
+  pista.className = 'pt-pista';
+  const lleno = document.createElement('i');
+  pista.append(lleno);
+  cont.append(pista);
+  premios.forEach((p, k) => {
+    const parada = document.createElement('div');
+    parada.className = 'pt-parada' + (t.saldo >= p.costo ? ' lograda' : '') + (k % 2 ? ' abajo' : '');
+    parada.style.setProperty('--v', String(p.costo / max));
+    const punto = document.createElement('span');
+    const txt = document.createElement('small');
+    txt.textContent = `${p.nombre} · ${numero(p.costo)}`;
+    parada.append(punto, txt);
+    cont.append(parada);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => lleno.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / max)))));
+
+  // ¿Alcanzó un premio nuevo desde la última vez? Celebración una sola vez.
+  try {
+    const clave = CLAVE + '_alcanzados';
+    const antes = JSON.parse(localStorage.getItem(clave) || 'null');
+    const ahora = premios.filter((p) => t.saldo >= p.costo).map((p) => p.id);
+    const nuevo = antes && premios.find((p) => ahora.includes(p.id) && !antes.includes(p.id));
+    if (nuevo) { $('t-saldo').classList.add('pt-celebra'); toast(`¡Ya te alcanza para ${nuevo.nombre}!`); }
+    localStorage.setItem(clave, JSON.stringify(ahora));
+  } catch { /* sin almacenamiento */ }
+}
+
 let tokenActual = null;
 const hojaCodigo = hoja($('hoja-codigo'));
 const hojaPremios = hoja($('hoja-premios'));
@@ -70,6 +105,9 @@ function pintarTarjeta(t) {
   if (t.cercano) frase($('t-frase'), ['Te faltan ', { b: numero(t.cercano.faltan) }, ' para un ', { b: t.cercano.nombre }]);
   else if (alcanzables.length) frase($('t-frase'), ['Muéstrale tu código al cajero y ', { b: 'canjea tu premio' }, '.']);
   else frase($('t-frase'), [`Muestra tu código en la caja cada vez que vengas y gana ${plural}.`]);
+
+  // Camino de premios (como Starbucks): cada premio es una parada; la barra se llena hasta el saldo
+  pintarCamino(t);
 
   // Nivel discreto junto al negocio
   if (t.nivel && t.nivel.nombre) $('t-neg').textContent = `${t.negocio} · ${t.nivel.nombre}`;

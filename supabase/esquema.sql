@@ -289,7 +289,7 @@ begin
     return json_build_object('estado', 'inactivo');
   end if;
   select * into n from public.negocios where id = t.negocio_id;
-  if not n.activo then
+  if not n.activo or not public._negocio_habilitado(n.id) then  -- apagado o mensualidad vencida (+ gracia)
     return json_build_object('estado', 'inactivo');
   end if;
 
@@ -1869,3 +1869,117 @@ revoke execute on function public._nivel(uuid, int)                             
 revoke execute on function public._avanzar_racha(int, date, date, date)           from public, anon, authenticated;
 revoke execute on function public._racha_vigente(int, date, date, date)           from public, anon, authenticated;
 revoke execute on function public._aviso_tarjeta(int, json, text, int, json)      from public, anon, authenticated;
+
+-- =====================================================================
+-- ===== Pieles y "Lo más pedido" (2026-11-23) =====
+-- Cada negocio puede elegir el estilo de su portal (null = el de su sector) y la carta muestra arriba lo más pedido.
+-- =====================================================================
+alter table public.negocios add column if not exists tema text check (tema in ('calido', 'limpio', 'noche', 'energia'));
+
+-- negocio_publico + tema (sigue sin nada privado)
+create or replace function public.negocio_publico(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'slug', slug, 'nombre', nombre, 'descripcion', descripcion, 'logo_url', logo_url, 'color', color,
+    'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
+    'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links,
+    'sector', sector, 'servicios', servicios, 'ubicacion_etiqueta', ubicacion_etiqueta,
+    'tiene_carta', public._tiene_carta(id), 'tema', tema
+  )
+  from public.negocios where slug = lower(trim(p_slug)) and activo;
+$$;
+
+-- Lo más pedido: platos disponibles con más "ver producto" + "lo pido" en 30 días; si no hay datos, los destacados
+create or replace function public.carta_populares(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  with n as (select id from public.negocios where slug = lower(trim(p_slug)) and activo),
+  vistas as (
+    select e.producto_id, count(*) * (case when e.tipo = 'ruleta_acepto' then 3 else 1 end) as puntos
+    from public.eventos_carta e, n
+    where e.negocio_id = n.id and e.producto_id is not null and e.tipo in ('ver_producto', 'ruleta_acepto')
+      and e.creado > public._ahora() - interval '30 days'
+    group by e.producto_id, e.tipo
+  ),
+  p as (
+    select pr.id, pr.nombre, pr.precio, pr.foto_url, pr.destacado,
+           coalesce((select sum(v.puntos) from vistas v where v.producto_id = pr.id), 0) as puntos
+    from public.productos pr, n
+    where pr.negocio_id = n.id and pr.activo and not pr.agotado and pr.tipo in ('plato', 'servicio')
+  )
+  select coalesce(json_agg(json_build_object('id', id, 'nombre', nombre, 'precio', precio, 'foto_url', foto_url)
+                  order by puntos desc, destacado desc, nombre), '[]'::json)
+  from (select * from p where puntos > 0 or destacado order by puntos desc, destacado desc, nombre limit 6) x
+$$;
+grant execute on function public.carta_populares(text) to anon, authenticated;
+
+-- =====================================================================
+-- ===== Fase 7 =====  mensualidades: vencimiento + gracia apagan el portal
+-- =====================================================================
+alter table public.empresas add column if not exists vence date;                       -- hasta cuándo está pagado
+alter table public.empresas add column if not exists dias_gracia int not null default 5 check (dias_gracia between 0 and 60);
+
+-- ¿El negocio puede mostrarse? Activo y su empresa al día (o dentro de la gracia). Sin empresa o sin fecha = al día.
+create or replace function public._negocio_habilitado(p_negocio uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select n.activo and (e.id is null or e.vence is null
+           or (public._ahora() at time zone 'America/Bogota')::date <= e.vence + e.dias_gracia)
+    from public.negocios n left join public.empresas e on e.id = n.empresa_id
+    where n.id = p_negocio), false)
+$$;
+revoke execute on function public._negocio_habilitado(uuid) from public, anon, authenticated;
+
+-- Estado de pago para el admin: al_dia | por_vencer (≤ 5 días) | gracia | vencido
+create or replace function public._estado_pago(p_vence date, p_gracia int)
+returns json language sql stable set search_path = public as $$
+  with h as (select (public._ahora() at time zone 'America/Bogota')::date as hoy)
+  select case
+    when p_vence is null then json_build_object('estado', 'al_dia', 'dias', null)
+    when (select hoy from h) <= p_vence - 6 then json_build_object('estado', 'al_dia', 'dias', p_vence - (select hoy from h))
+    when (select hoy from h) <= p_vence then json_build_object('estado', 'por_vencer', 'dias', p_vence - (select hoy from h))
+    when (select hoy from h) <= p_vence + p_gracia then json_build_object('estado', 'gracia', 'dias', p_vence + p_gracia - (select hoy from h))
+    else json_build_object('estado', 'vencido', 'dias', (select hoy from h) - p_vence) end
+$$;
+
+create or replace function public.mensualidades_admin()
+returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  return (
+    select coalesce(json_agg(json_build_object('id', e.id, 'nombre', e.nombre, 'plan', e.plan, 'vence', e.vence, 'dias_gracia', e.dias_gracia,
+      'estado', public._estado_pago(e.vence, e.dias_gracia),
+      'negocios', (select coalesce(json_agg(json_build_object('nombre', n.nombre, 'slug', n.slug) order by n.nombre), '[]'::json)
+                   from public.negocios n where n.empresa_id = e.id)) order by e.vence nulls last, e.nombre), '[]'::json)
+    from public.empresas e);
+end $$;
+
+-- Registrar un pago: corre el vencimiento N meses (desde hoy si ya estaba vencido)
+create or replace function public.registrar_pago(p_empresa uuid, p_meses int default 1)
+returns date language plpgsql security definer set search_path = public as $$
+declare v_hoy date := (public._ahora() at time zone 'America/Bogota')::date; v date;
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if p_meses not between 1 and 24 then raise exception 'meses inválidos'; end if;
+  update public.empresas set vence = (greatest(coalesce(vence, v_hoy), v_hoy) + make_interval(months => p_meses))::date,
+         estado_pago = 'al_dia'
+  where id = p_empresa returning vence into v;
+  return v;
+end $$;
+revoke execute on function public.mensualidades_admin() from public, anon;
+grant execute on function public.mensualidades_admin() to authenticated;
+revoke execute on function public.registrar_pago(uuid, int) from public, anon;
+grant execute on function public.registrar_pago(uuid, int) to authenticated;
+revoke execute on function public._estado_pago(date, int) from public, anon, authenticated;
+
+-- El portal y el toque respetan la mensualidad (vencido + gracia → /inactivo)
+create or replace function public.negocio_publico(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'slug', slug, 'nombre', nombre, 'descripcion', descripcion, 'logo_url', logo_url, 'color', color,
+    'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
+    'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links,
+    'sector', sector, 'servicios', servicios, 'ubicacion_etiqueta', ubicacion_etiqueta,
+    'tiene_carta', public._tiene_carta(id), 'tema', tema
+  )
+  from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
+$$;

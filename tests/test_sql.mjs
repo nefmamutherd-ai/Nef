@@ -720,4 +720,76 @@ await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y d
   assert.equal((await q(`select count(*)::int n from productos where negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and tipo = 'clase'`))[0].n, 4);
 });
 
+console.log('Diseño · pieles y "Lo más pedido"');
+await caso('"Lo más pedido": destacados si no hay datos; luego lo más visto; nunca agotados', async () => {
+  await como('anon');
+  const antes = (await q(`select carta_populares('cafe-luna') r`))[0].r;
+  assert.deepEqual(antes.map((p) => p.nombre), ['Huevos rancheros'], 'sin vistas: solo los destacados');
+  const [{ id: calentado }] = await (async () => { await db.exec('reset role;'); return q(`select id from productos where nombre = 'Calentado' and negocio_id = $1`, [neg.id]); })();
+  const [{ id: croissant }] = await q(`select id from productos where nombre = 'Croissant' and negocio_id = $1`, [neg.id]);
+  await como('anon');
+  for (let i = 0; i < 3; i++) await q(`select registrar_evento_carta('cafe-luna', 'ver_producto', $1, null)`, [calentado]);
+  for (let i = 0; i < 5; i++) await q(`select registrar_evento_carta('cafe-luna', 'ver_producto', $1, null)`, [croissant]);
+  const despues = (await q(`select carta_populares('cafe-luna') r`))[0].r.map((p) => p.nombre);
+  assert.equal(despues[0], 'Calentado', 'lo más visto primero');
+  assert.ok(!despues.includes('Croissant'), 'un agotado nunca sale en "Lo más pedido"');
+});
+await caso('el negocio puede elegir su piel; null = la de su sector', async () => {
+  await como('anon');
+  assert.equal((await q(`select negocio_publico('cafe-luna') r`))[0].r.tema, null);
+  await db.exec('reset role;');
+  await db.exec(`update negocios set tema = 'noche' where slug = 'cafe-luna'`);
+  await assert.rejects(q(`update negocios set tema = 'inventado' where slug = 'cafe-luna'`), /tema_check/);
+  await como('anon');
+  assert.equal((await q(`select negocio_publico('cafe-luna') r`))[0].r.tema, 'noche');
+  await db.exec('reset role;');
+  await db.exec(`update negocios set tema = null where slug = 'cafe-luna'`);
+});
+
+console.log('Fase 7 · mensualidades');
+const empLuna = async () => { await db.exec('reset role;'); return (await q(`select empresa_id id from negocios where slug = 'cafe-luna'`))[0].id; };
+await caso('vencido + gracia apaga el toque y el portal; registrar el pago los prende otra vez', async () => {
+  const emp = await empLuna();
+  await db.exec(`update empresas set vence = '2026-12-10', dias_gracia = 5 where id = '${emp}'`);
+  await como('anon');
+  await db.exec(`set nef.ahora = '2026-12-15 20:00-05'`); // último día de gracia: sigue prendido
+  assert.equal((await q(`select resolver_toque($1,'nfc',null) r`, [tags[0].codigo]))[0].r.estado, 'ok');
+  assert.ok((await q(`select negocio_publico('cafe-luna') r`))[0].r, 'en gracia el portal se ve');
+  await db.exec(`set nef.ahora = '2026-12-16 08:00-05'`); // se acabó la gracia
+  assert.equal((await q(`select resolver_toque($1,'nfc',null) r`, [tags[0].codigo]))[0].r.estado, 'inactivo');
+  assert.equal((await q(`select negocio_publico('cafe-luna') r`))[0].r, null, 'vencido: el portal no se muestra');
+  await como('authenticated', ADMIN);
+  const m = (await q(`select mensualidades_admin() r`))[0].r.find((e) => e.id === emp);
+  assert.deepEqual(m.estado, { estado: 'vencido', dias: 6 });
+  assert.equal((await q(`select registrar_pago($1, 1)::text v`, [emp]))[0].v, '2027-01-16', 'vencido: el mes se cuenta desde hoy');
+  await como('anon');
+  assert.equal((await q(`select resolver_toque($1,'nfc',null) r`, [tags[0].codigo]))[0].r.estado, 'ok');
+  await db.exec('reset role; reset nef.ahora;');
+  await db.exec(`update empresas set vence = null where id = '${emp}'`);
+});
+await caso('estados: al día, por vencer (≤ 5 días), gracia; pagar antes de vencer suma al vencimiento', async () => {
+  const emp = await empLuna();
+  await db.exec(`update empresas set vence = '2026-12-10', dias_gracia = 3 where id = '${emp}'`);
+  await como('authenticated', ADMIN);
+  const estado = async (dia) => { await db.exec(`set nef.ahora = '${dia} 12:00-05'`);
+    return (await q(`select mensualidades_admin() r`))[0].r.find((e) => e.id === emp).estado; };
+  assert.deepEqual(await estado('2026-12-01'), { estado: 'al_dia', dias: 9 });
+  assert.deepEqual(await estado('2026-12-07'), { estado: 'por_vencer', dias: 3 });
+  assert.deepEqual(await estado('2026-12-12'), { estado: 'gracia', dias: 1 });
+  await db.exec(`set nef.ahora = '2026-12-05 12:00-05'`);
+  assert.equal((await q(`select registrar_pago($1, 2)::text v`, [emp]))[0].v, '2027-02-10', 'al día: suma sobre el vencimiento');
+  await db.exec('reset role; reset nef.ahora;');
+  await db.exec(`update empresas set vence = null, dias_gracia = 5 where id = '${emp}'`);
+});
+await caso('solo el admin ve y registra mensualidades', async () => {
+  const emp = await empLuna();
+  await como('anon');
+  await assert.rejects(q(`select registrar_pago($1, 1)`, [emp]), /permission denied/);
+  await assert.rejects(q(`select mensualidades_admin()`), /permission denied/);
+  await como('authenticated', '22222222-2222-2222-2222-222222222222');
+  await assert.rejects(q(`select registrar_pago($1, 1)`, [emp]), /no autorizado/);
+  await assert.rejects(q(`select _negocio_habilitado(gen_random_uuid())`), /permission denied/);
+  await db.exec('reset role;');
+});
+
 console.log(`\n${ok} pruebas OK`);

@@ -70,6 +70,16 @@
   --peso-titulo: 800;
 }
 
+[data-tema="noche"] {     /* bares, cafés de noche, coctelería: oscuro y cálido, serif elegante */
+  --papel: #16120E; --papel-hondo: #221C16; --tarjeta: #1E1913; --linea: #3A2F24;
+  --tinta: #F4EBDD; --tinta-2: #C2B29C; --tinta-3: #8E7F6C;
+  --marca: #D08A4E; --sobre-marca: #16120E;
+  --oro: #E0B45A; --oro-suave: #3A2E18; --oro-tinta: #F0CE84;
+  --ok: #7FC79A; --ok-suave: #1C3324; --alerta: #F08A78; --alerta-suave: #3E1F19;
+  --serif: ui-serif, "New York", "Iowan Old Style", Georgia, serif;
+  --peso-titulo: 500;
+}
+
 [data-tema="limpio"] {    /* barberías, salones, spa, tiendas */
   --papel: #FFFFFF; --papel-hondo: #F3F3F1; --tarjeta: #FFFFFF; --linea: #E8E8E4;
   --tinta: #141414; --tinta-2: #5F5F5A; --tinta-3: #9A9A94;

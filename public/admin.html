@@ -179,6 +179,7 @@
       <label class="n-interruptor"><div><b>Estudio</b><span>Informe estadístico trimestral</span></div><input type="checkbox" name="srv_estudio"></label>
       <label class="n-interruptor"><div><b>Entrada por NFC</b><span>Solo gimnasios SIN torniquete: el socio registra su entrada con el chip</span></div><input type="checkbox" name="srv_entrada_nfc"></label>
     </div>
+    <div class="n-campo"><label for="f-tema">Estilo del portal</label><select id="f-tema" name="tema"><option value="">El de su sector</option><option value="calido">Café · papel y serif</option><option value="limpio">Limpio · blanco y aire</option><option value="noche">Noche · oscuro y cálido</option><option value="energia">Energía · oscuro y vibrante</option></select><div class="n-ayuda">Cambia la ropa del portal, la carta y el club; el color y el logo siguen siendo los del negocio.</div></div>
     <div class="n-campo"><label for="f-ubic">Ubicación</label><input id="f-ubic" name="ubicacion_etiqueta" placeholder="Ej. Sede Chapinero"></div>
     <div class="n-campo"><label for="f-desc">Descripción corta</label><input id="f-desc" name="descripcion" placeholder="Café de especialidad · Chapinero"></div>
     <div class="n-fila">
@@ -595,7 +596,7 @@ fN.addEventListener('submit', async (e) => {
     nombre: v('nombre'), slug: v('slug'), descripcion: v('descripcion'), logo_url: v('logo_url'), color: fN.color.value,
     menu_url: v('menu_url'), resena_url: v('resena_url'), whatsapp: v('whatsapp'), instagram: v('instagram'),
     wifi_nombre: v('wifi_nombre'), wifi_clave: v('wifi_clave'), links,
-    sector: fN.sector.value || 'cafe', servicios, ubicacion_etiqueta: v('ubicacion_etiqueta'),
+    sector: fN.sector.value || 'cafe', servicios, tema: fN.tema.value || null, ubicacion_etiqueta: v('ubicacion_etiqueta'),
     plan: fN.plan.value, activo: fN.activo.checked, contacto_nombre: v('contacto_nombre'), contacto_telefono: v('contacto_telefono'), notas: v('notas'),
     modo_monedas: fN.modo_monedas.value || 'visita', devolucion_pct: +(fN.devolucion_pct.value || 5),
     monedas_por_visita: Math.max(0, parseInt(fN.monedas_por_visita.value, 10) || 0), bienvenida: Math.max(0, parseInt(fN.bienvenida.value, 10) || 0),

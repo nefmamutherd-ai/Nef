@@ -75,7 +75,7 @@ function abrirDetalle(p) {
   conHistoria = true;
   evento('ver_producto', p.id);
 }
-document.querySelectorAll('.pt-prod[data-id]').forEach((b) => b.addEventListener('click', () => {
+document.querySelectorAll('.pt-prod[data-id], .pt-pop[data-id]').forEach((b) => b.addEventListener('click', () => {
   const p = porId.get(b.dataset.id);
   if (p) abrirDetalle(p);
 }));

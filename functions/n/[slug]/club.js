@@ -47,6 +47,7 @@ export async function onRequestGet({ params, request, env }) {
     <div class="pt-filete" aria-hidden="true"><i></i></div>
     <div class="pt-saldo" id="t-saldo"><div><b id="t-numero">0</b><span>${plural}</span></div></div>
     <p class="pt-frase" id="t-frase"></p>
+    <div class="pt-camino" id="t-camino" aria-hidden="true" hidden></div>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>
     <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
     <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>

@@ -29,9 +29,10 @@ export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
   const slug = String(params.slug || '').toLowerCase();
   const t = (url.searchParams.get('t') || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16);
-  let n, c;
+  let n, c, pop;
   try {
-    [n, c] = await Promise.all([rpc(env, 'negocio_publico', { p_slug: slug }), rpc(env, 'carta_publica', { p_slug: slug })]);
+    [n, c, pop] = await Promise.all([rpc(env, 'negocio_publico', { p_slug: slug }), rpc(env, 'carta_publica', { p_slug: slug }),
+      rpc(env, 'carta_populares', { p_slug: slug })]);
   } catch (e) {
     console.error(e);
     return paginaError(env);
@@ -51,6 +52,14 @@ export async function onRequestGet({ params, request, env }) {
     return s.productos.map((p, k) => (k === i ? estrella(p) : plato(p))).join('');
   };
 
+  // "Lo más pedido": carrusel con fotos grandes (solo si hay al menos 2 con foto)
+  const populares = (pop || []).filter((p) => fotoSegura(p.foto_url));
+  const carrusel = populares.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido">
+    <h2 class="pt-versalitas">Lo más pedido</h2>
+    <div class="pt-carrusel">${populares.map((p) => `<button type="button" class="pt-pop" data-id="${esc(p.id)}">
+      <img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b><span class="pt-precio">${pesos(p.precio)}</span></button>`).join('')}</div>
+  </section>` : '';
+
   return html(`${inicioPagina(n, { titulo: `${titulo} · ${n.nombre}`, extraHead: '<script src="/api/config"></script>' })}
 <main class="pt-pagina" id="carta" data-slug="${esc(n.slug)}" data-tag="${esc(t)}">
   <header class="pt-carta-cabeza pt-entra">
@@ -60,6 +69,7 @@ export async function onRequestGet({ params, request, env }) {
     <div class="pt-filete" aria-hidden="true"><i></i></div>
     <button type="button" class="pt-elige" id="elige">${icono('dado')}Elige por mí</button>
   </header>
+  ${carrusel}
   ${secciones.length > 1 ? `<div class="pt-fija"><nav class="pt-pestanas" role="tablist">${secciones.map((s, i) =>
     `<button type="button" role="tab" data-cat="${esc(s.id)}" aria-selected="${i === 0}">${esc(s.nombre)}</button>`).join('')}</nav></div>` : ''}
   ${secciones.map((s, i) => `<section class="pt-seccion" id="cat-${esc(s.id)}" data-cat="${esc(s.id)}">
