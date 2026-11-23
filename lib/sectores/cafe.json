@@ -14,8 +14,12 @@
       "id": "carta",
       "texto": "Ver la carta",
       "icono": "lista",
-      "ruta": "/c/{slug}/menu",
-      "requiere": "menu_url"
+      "ruta": "/n/{slug}/carta",
+      "requiere": "tiene_carta",
+      "alterna": {
+        "ruta": "/c/{slug}/menu",
+        "requiere": "menu_url"
+      }
     },
     {
       "servicio": "club",

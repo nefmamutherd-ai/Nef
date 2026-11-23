@@ -1,37 +1,86 @@
-// Catálogo en el admin: máquinas (video + 3 pasos), clases (horario), platos y servicios.
-// La carta completa del café (categorías, fotos, agotado) llega en la Fase 5.
+// Catálogo en el admin: categorías, platos (foto WebP, etiquetas, destacado, "Agotado hoy" de un toque),
+// máquinas (video + 3 pasos), clases (horario) y servicios.
 const TIPOS = { maquina: 'Máquina', clase: 'Clase', plato: 'Plato', servicio: 'Servicio' };
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const pesos = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n || 0);
+
+// Recorta al centro a cuadrado, redimensiona a 1000×1000 y convierte a WebP (calidad 0,82)
+export async function fotoWebp(file) {
+  const img = await createImageBitmap(file);
+  const lado = Math.min(img.width, img.height);
+  const c = document.createElement('canvas');
+  c.width = 1000; c.height = 1000;
+  c.getContext('2d').drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 1000, 1000);
+  return new Promise((ok, mal) => c.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo convertir la foto'))), 'image/webp', 0.82));
+}
 
 export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
   const $ = (s) => document.querySelector(s);
   const f = $('#form-producto');
   const dlg = $('#dlg-producto');
   let lista = [];
+  let categorias = [];
   let editando = null;
+  let fotoNueva = null; // Blob WebP listo para subir
 
   const detalle = (p) => {
     if (p.tipo === 'maquina') return `${(p.pasos || []).length} pasos${p.video_url ? ' · con video' : ' · sin video'}`;
     if (p.tipo === 'clase') return (p.horario || []).map((h) => `${DIAS[h.dia].slice(0, 3)} ${h.hora}`).join(', ') || 'Sin horario';
-    return pesos(p.precio);
+    const cat = categorias.find((c) => c.id === p.categoria_id);
+    return `${pesos(p.precio)}${cat ? ' · ' + cat.nombre : ''}${p.destacado ? ' · destacado' : ''}`;
   };
+
+  async function cargarCategorias(id) {
+    const { data } = await sb.from('categorias').select('*').eq('negocio_id', id).order('orden').order('nombre');
+    categorias = data || [];
+    const ul = $('#k-cat-lista');
+    ul.textContent = '';
+    for (const c of categorias) {
+      const li = document.createElement('li');
+      const p = document.createElement('div'); p.className = 'n-principal';
+      const b = document.createElement('b'); b.textContent = c.nombre;
+      const s = document.createElement('span'); s.textContent = `${lista.filter((x) => x.categoria_id === c.id).length} productos`;
+      p.append(b, s);
+      const chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.checked = c.activo; chk.setAttribute('aria-label', 'Categoría activa');
+      chk.addEventListener('change', async () => {
+        const { error } = await sb.from('categorias').update({ activo: chk.checked }).eq('id', c.id);
+        toast(error ? 'No se guardó: ' + error.message : 'Categoría guardada');
+      });
+      li.append(p, chk);
+      ul.append(li);
+    }
+    const sel = $('#k-categoria');
+    sel.textContent = '';
+    sel.append(new Option('— Sin categoría —', ''));
+    categorias.forEach((c) => sel.append(new Option(c.nombre, c.id)));
+  }
 
   async function cargar() {
     const id = negocioActual();
     const tb = $('#lista-productos');
-    if (!id) { tb.innerHTML = '<tr><td colspan="5"><div class="n-vacio"><b>Primero crea un negocio</b></div></td></tr>'; return; }
+    if (!id) { tb.innerHTML = '<tr><td colspan="6"><div class="n-vacio"><b>Primero crea un negocio</b></div></td></tr>'; return; }
     const { data, error } = await sb.from('productos').select('*').eq('negocio_id', id).order('tipo').order('orden').order('nombre');
     if (error) { toast('No se cargó el catálogo: ' + error.message); return; }
     lista = data;
-    if (!lista.length) { tb.innerHTML = '<tr><td colspan="5"><div class="n-vacio"><b>Aún no hay nada</b>Agrega una máquina o una clase.</div></td></tr>'; return; }
-    tb.innerHTML = lista.map((p) => `<tr>
+    await cargarCategorias(id);
+    if (!lista.length) { tb.innerHTML = '<tr><td colspan="6"><div class="n-vacio"><b>Aún no hay nada</b>Agrega un plato, una máquina o una clase.</div></td></tr>'; return; }
+    tb.innerHTML = lista.map((p) => `<tr data-id="${esc(p.id)}">
       <td><b>${esc(p.nombre)}</b>${p.descripcion ? `<br>${esc(p.descripcion)}` : ''}</td>
       <td>${esc(TIPOS[p.tipo] || p.tipo)}</td>
       <td>${esc(detalle(p))}</td>
+      <td>${['plato', 'servicio'].includes(p.tipo) ? `<input type="checkbox" class="k-agotado" aria-label="Agotado hoy" ${p.agotado ? 'checked' : ''}>` : ''}</td>
       <td><span class="n-estado ${p.activo ? 'ok' : 'alerta'}">${p.activo ? 'Activo' : 'Apagado'}</span></td>
       <td><button class="n-btn secundario chico" data-editar-producto="${esc(p.id)}">Editar</button></td></tr>`).join('');
     tb.querySelectorAll('[data-editar-producto]').forEach((b) => b.addEventListener('click', () => abrir(lista.find((p) => p.id === b.dataset.editarProducto))));
+    // "Agotado hoy" de un toque: es lo que más se usa en el día a día
+    tb.querySelectorAll('.k-agotado').forEach((chk) => chk.addEventListener('change', async () => {
+      const id = chk.closest('tr').dataset.id;
+      const { error: err } = await sb.from('productos').update({ agotado: chk.checked }).eq('id', id);
+      if (err) { chk.checked = !chk.checked; toast('No se guardó: ' + err.message); return; }
+      lista.find((p) => p.id === id).agotado = chk.checked;
+      toast(chk.checked ? 'Marcado como agotado hoy' : 'Disponible otra vez');
+    }));
   }
 
   function mostrarPorTipo() {
@@ -58,27 +107,55 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
 
   function abrir(p = null) {
     editando = p;
+    fotoNueva = null;
     f.reset();
     $('#k-error').hidden = true;
     $('#k-titulo').textContent = p ? `Editar · ${p.nombre}` : 'Agregar';
     $('#k-eliminar').hidden = !p;
     $('#k-horario').textContent = '';
+    $('#k-foto-txt').textContent = p && p.foto_url ? 'Cambiar foto' : 'Subir foto';
+    f.querySelectorAll('#k-etiquetas input').forEach((c) => (c.checked = false));
     if (p) {
       f.querySelectorAll('input[name=tipo]').forEach((r) => (r.checked = r.value === p.tipo));
       f.nombre.value = p.nombre; f.descripcion.value = p.descripcion || ''; f.precio.value = p.precio || 0;
+      f.categoria_id.value = p.categoria_id || '';
       f.video_url.value = p.video_url || '';
       ['paso1', 'paso2', 'paso3'].forEach((k, i) => (f[k].value = (p.pasos || [])[i] || ''));
       (p.horario || []).forEach(filaHorario);
-      f.activo.checked = p.activo;
+      f.querySelectorAll('#k-etiquetas input').forEach((c) => (c.checked = (p.etiquetas || []).includes(c.value)));
+      f.destacado.checked = p.destacado; f.agotado.checked = p.agotado; f.activo.checked = p.activo;
+    } else {
+      // Por defecto, según el sector del negocio activo en el selector: lo más común primero
+      const tipo = categorias.length ? 'plato' : 'maquina';
+      f.querySelectorAll('input[name=tipo]').forEach((r) => (r.checked = r.value === tipo));
     }
     mostrarPorTipo();
     dlg.showModal();
   }
 
+  $('#k-foto').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      fotoNueva = await fotoWebp(file);
+      $('#k-foto-txt').textContent = `Foto lista (${Math.round(fotoNueva.size / 1024)} KB)`;
+    } catch (err) { toast(err.message); }
+  });
+
   f.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', mostrarPorTipo));
   $('#k-mas-horario').addEventListener('click', () => filaHorario());
   $('#k-nuevo').addEventListener('click', () => { if (negocioActual()) abrir(); else toast('Primero crea un negocio'); });
   $('#k-cancelar').addEventListener('click', () => dlg.close());
+  $('#k-cat-agregar').addEventListener('click', async () => {
+    const nombre = $('#k-cat-nueva').value.trim();
+    if (!nombre || !negocioActual()) return;
+    const { error } = await sb.from('categorias').insert({ negocio_id: negocioActual(), nombre, orden: categorias.length + 1 });
+    if (error) { toast('No se agregó: ' + error.message); return; }
+    $('#k-cat-nueva').value = '';
+    toast('Categoría agregada');
+    cargar();
+  });
 
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -94,20 +171,31 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       duracion: +x.querySelector('[data-h=duracion]').value || null,
       cupo: +x.querySelector('[data-h=cupo]').value || null,
     })).filter((h) => /^\d{2}:\d{2}$/.test(h.hora));
+    const esCarta = ['plato', 'servicio'].includes(tipo);
     const datos = {
       negocio_id: negocioActual(), tipo, nombre,
       descripcion: f.descripcion.value.trim() || null,
-      precio: ['plato', 'servicio'].includes(tipo) ? Math.max(0, parseInt(f.precio.value, 10) || 0) : 0,
+      precio: esCarta ? Math.max(0, parseInt(f.precio.value, 10) || 0) : 0,
+      categoria_id: esCarta ? f.categoria_id.value || null : null,
+      etiquetas: esCarta ? [...f.querySelectorAll('#k-etiquetas input:checked')].map((c) => c.value) : [],
+      destacado: esCarta && f.destacado.checked,
+      agotado: esCarta && f.agotado.checked,
       video_url: tipo === 'maquina' ? video || null : null,
       pasos: tipo === 'maquina' ? ['paso1', 'paso2', 'paso3'].map((k) => f[k].value.trim()).filter(Boolean) : [],
       horario: tipo === 'clase' ? horario : [],
       activo: f.activo.checked,
     };
+    if (fotoNueva && esCarta) {
+      const ruta = `${negocioActual()}/${crypto.randomUUID()}.webp`;
+      const { error: errFoto } = await sb.storage.from('fotos').upload(ruta, fotoNueva, { contentType: 'image/webp' });
+      if (errFoto) return err('No se subió la foto: ' + errFoto.message);
+      datos.foto_url = sb.storage.from('fotos').getPublicUrl(ruta).data.publicUrl;
+    }
     const q = editando ? sb.from('productos').update(datos).eq('id', editando.id) : sb.from('productos').insert(datos);
     const { error } = await q;
     if (error) return err('No se pudo guardar: ' + error.message);
     dlg.close();
-    toast(`${TIPOS[tipo]} guardada`);
+    toast(`${TIPOS[tipo]} guardado`);
     await cargar();
     if (alCambiar) alCambiar();
   });

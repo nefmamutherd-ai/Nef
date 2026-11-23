@@ -7,26 +7,26 @@
 ## Fase 5 — Catálogo del café + "Elige por mí"
 Referencia: `docs/referencia/plan-v2-detalle.md` §2 "Carta", Fases 1 y 2 · Diseño: `docs/UI.md` filas Carta, Detalle, Elige por mí.
 
-### [ ] 5.1 Tablas `categorias`, `eventos_carta`; completar `productos` (si 3.8 ya la creó, solo `add column if not exists`)
-Comprobar: [ ] anon no lee · [ ] verificar ✓.
-### [ ] 5.2 RPC `carta_publica(p_slug)` (una llamada: categorías + productos activos, destacados primero) y `registrar_evento_carta`
-Comprobar: [ ] no devuelve inactivos · [ ] tipo de evento inválido no inserta.
-### [ ] 5.3 Página `/n/<slug>/carta` (SSR) + hoja de detalle
+### [x] 5.1 Tablas `categorias`, `eventos_carta`; completar `productos` (si 3.8 ya la creó, solo `add column if not exists`)
+Comprobar: [x] anon no lee · [x] verificar ✓.
+### [x] 5.2 RPC `carta_publica(p_slug)` (una llamada: categorías + productos activos, destacados primero) y `registrar_evento_carta`
+Comprobar: [x] no devuelve inactivos · [x] tipo de evento inválido no inserta.
+### [x] 5.3 Página `/n/<slug>/carta` (SSR) + hoja de detalle
 `.pt-barra`, `.pt-pestanas` (pestaña activa sigue el scroll con `IntersectionObserver`), `.pt-prod`, `.pt-hoja`.
 Fotos `loading="lazy"` con `width`/`height`. En `cafe.json` el botón "Ver la carta" pasa a `/n/{slug}/carta` **solo si**
 el negocio tiene productos; si no, sigue a `menu_url` (resuélvelo en `botonesPortal`).
-Comprobar: [ ] e2e con 30 productos: captura móvil, agotado en gris, la hoja cierra con Escape · [ ] sin scroll horizontal.
-### [ ] 5.4 Admin de carta: categorías, productos, "agotado hoy" de un toque, foto
+Comprobar: [x] e2e con 30 productos: captura móvil, agotado en gris, la hoja cierra con Escape · [x] sin scroll horizontal.
+### [x] 5.4 Admin de carta: categorías, productos, "agotado hoy" de un toque, foto
 Foto: el navegador la recorta cuadrada y la convierte a WebP 1000×1000 con `<canvas>` (`toBlob('image/webp', .82)`) antes de subir
 a Storage (bucket público `fotos`, en `supabase/storage.sql`). En e2e intercepta `/storage/v1/`.
-Comprobar: [ ] marcar agotado → el portal lo muestra gris al recargar.
-### [ ] 5.5 "Elige por mí"
+Comprobar: [x] marcar agotado → el portal lo muestra gris al recargar.
+### [x] 5.5 "Elige por mí"
 3–4 antojos (dulce, salado, bebida, sorpréndeme) → candidatos sin agotados → **el resultado se elige primero**
 (ponderado: destacado pesa 2) y después se anima la ruleta (≤ 2,5 s, `prefers-reduced-motion` = sin animación) →
 "Lo pido" (evento `ruleta_acepto`) / "Otra vez". **Girar no da monedas ni premios** (regla 2: el azar nunca decide un premio).
 El bono fijo por pedir el plato sugerido solo lo suma la caja (`DECISIONES.md`, 2026-11-17), y es opcional.
-Comprobar: [ ] prueba unitaria de la función de elección con semilla: nunca elige agotados; destacados ≈ el doble en 10.000 tiradas (±5 %).
-### [ ] 5.6 Cierre de la fase 5 — criterios de PLAN.md, PROGRESO.md, push.
+Comprobar: [x] prueba unitaria de la función de elección con semilla: nunca elige agotados; destacados ≈ el doble en 10.000 tiradas (±5 %).
+### [x] 5.6 Cierre de la fase 5 — criterios de PLAN.md, PROGRESO.md, push.
 
 ## Fase 6 — Club que engancha
 Referencia: `plan-v2-detalle.md` Fase 4 y "Reglas del club" (racha, hora dorada, niveles).

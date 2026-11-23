@@ -101,3 +101,13 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Seguridad: anon no lee `metricas_diarias` ni llama recalcular/exportar/métricas (prueba); la exportación no trae nombres ni teléfonos
   (prueba SQL y e2e sobre los archivos descargados); un token de otro negocio no abre el informe (prueba SQL y e2e).
 - Para Jacobo: correr `supabase/cron.sql` y `supabase/storage.sql` en Supabase después de `esquema.sql`.
+
+### Fase 5 · Carta del café + "Elige por mí" — hecha
+- **BD**: `eventos_carta`, etiquetas permitidas en `productos`, `carta_publica` (una llamada, destacados primero, agotados al final),
+  `registrar_evento_carta`, `negocio_publico.tiene_carta`. Bucket público `fotos` en `storage.sql`.
+- **Pantallas**: `/n/<slug>/carta` (SSR: barra con "Elige por mí", pestañas que siguen el scroll, platos con foto, agotado en gris,
+  hoja de detalle), "Elige por mí" (antojos → resultado decidido antes → rollo ≤ 2,2 s → "Lo pido"/"Otra vez").
+  Admin › Catálogo: categorías, plato con foto (WebP 1000×1000 en el navegador), etiquetas, destacado y "Agotado hoy" de un toque.
+- Pruebas: test:sql **58 OK** (4 nuevas, incluida la de 10.000 tiradas con semilla) · test:e2e **32 OK** (3 nuevas) · verificar ✓.
+- Capturas revisadas: `carta-movil.png`, `carta-detalle.png`, `elige-por-mi.png`, `admin-plato.png`, `admin-carta.png`.
+- Seguridad: anon no lee `eventos_carta`; el evento ignora productos de otro negocio; girar no crea movimientos (e2e lo verifica).

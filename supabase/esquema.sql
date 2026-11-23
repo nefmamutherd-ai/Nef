@@ -1621,3 +1621,91 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.informes where ruta = p_ruta)
 $$;
 grant execute on function public.informe_existe(text) to anon, authenticated;
+
+-- =====================================================================
+-- ===== Fase 5 =====  carta del café (catálogo de platos) + "Elige por mí"
+-- categorias y productos se crearon en la Fase 3; aquí: eventos, carta pública y "tiene carta".
+-- =====================================================================
+create table if not exists public.eventos_carta (
+  id          bigint generated always as identity primary key,
+  negocio_id  uuid not null references public.negocios(id) on delete cascade,
+  producto_id uuid references public.productos(id) on delete set null,
+  tipo        text not null check (tipo in ('ver_carta', 'ver_producto', 'girar', 'ruleta_acepto')),
+  tag_codigo  text,
+  creado      timestamptz not null default now()
+);
+create index if not exists eventos_carta_negocio_idx on public.eventos_carta(negocio_id, creado);
+alter table public.eventos_carta enable row level security;
+drop policy if exists admin_todo on public.eventos_carta;
+create policy admin_todo on public.eventos_carta for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- Antojos de "Elige por mí" y filtros de la carta (valores permitidos en productos.etiquetas)
+alter table public.productos drop constraint if exists productos_etiquetas_check;
+alter table public.productos add constraint productos_etiquetas_check
+  check (etiquetas <@ array['vegetariano', 'vegano', 'picante', 'sin_gluten', 'nuevo', 'dulce', 'salado', 'bebida']::text[]);
+
+-- ¿El negocio tiene carta propia? (platos o servicios activos) — decide a dónde va "Ver la carta"
+create or replace function public._tiene_carta(p_negocio uuid)
+returns boolean language sql stable as $$
+  select exists (select 1 from public.productos p where p.negocio_id = p_negocio and p.activo and p.tipo in ('plato', 'servicio'))
+$$;
+revoke execute on function public._tiene_carta(uuid) from public, anon, authenticated;
+
+-- negocio_publico + tiene_carta (sigue sin nada privado)
+create or replace function public.negocio_publico(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'slug', slug, 'nombre', nombre, 'descripcion', descripcion, 'logo_url', logo_url, 'color', color,
+    'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
+    'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links,
+    'sector', sector, 'servicios', servicios, 'ubicacion_etiqueta', ubicacion_etiqueta,
+    'tiene_carta', public._tiene_carta(id)
+  )
+  from public.negocios where slug = lower(trim(p_slug)) and activo;
+$$;
+
+-- La carta en UNA llamada: categorías activas en orden + platos activos (destacados primero, agotados al final)
+create or replace function public.carta_publica(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  with n as (select id from public.negocios where slug = lower(trim(p_slug)) and activo),
+  p as (
+    select pr.* from public.productos pr, n
+    where pr.negocio_id = n.id and pr.activo and pr.tipo in ('plato', 'servicio')
+  ),
+  item as (
+    select p.categoria_id, json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'precio', p.precio,
+      'foto_url', p.foto_url, 'etiquetas', p.etiquetas, 'destacado', p.destacado, 'agotado', p.agotado) as j,
+      p.agotado, p.destacado, p.orden, p.nombre
+    from p
+  )
+  select json_build_object(
+    'categorias', (
+      select coalesce(json_agg(json_build_object('id', c.id, 'nombre', c.nombre,
+        'productos', (select json_agg(i.j order by i.agotado, i.destacado desc, i.orden, i.nombre) from item i where i.categoria_id = c.id))
+        order by c.orden, c.nombre), '[]'::json)
+      from public.categorias c, n
+      where c.negocio_id = n.id and c.activo and exists (select 1 from item i where i.categoria_id = c.id)
+    ),
+    'otros', (select json_agg(i.j order by i.agotado, i.destacado desc, i.orden, i.nombre) from item i
+              where i.categoria_id is null or not exists (select 1 from public.categorias c where c.id = i.categoria_id and c.activo))
+  )
+  where exists (select 1 from n)
+$$;
+
+create or replace function public.registrar_evento_carta(p_slug text, p_tipo text, p_producto uuid default null, p_tag text default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_negocio uuid;
+begin
+  if p_tipo not in ('ver_carta', 'ver_producto', 'girar', 'ruleta_acepto') then return; end if;
+  select id into v_negocio from public.negocios where slug = lower(trim(p_slug)) and activo;
+  if v_negocio is null then return; end if;
+  if p_producto is not null and not exists (select 1 from public.productos where id = p_producto and negocio_id = v_negocio) then
+    p_producto := null;
+  end if;
+  insert into public.eventos_carta (negocio_id, producto_id, tipo, tag_codigo, creado)
+  values (v_negocio, p_producto, p_tipo, left(nullif(regexp_replace(coalesce(p_tag, ''), '[^a-z0-9]', '', 'g'), ''), 16), public._ahora());
+end $$;
+
+grant execute on function public.carta_publica(text)                          to anon, authenticated;
+grant execute on function public.registrar_evento_carta(text, text, uuid, text) to anon, authenticated;

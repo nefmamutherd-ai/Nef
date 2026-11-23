@@ -569,4 +569,62 @@ await caso('informes: el token de otro negocio no obtiene la ruta', async () => 
   assert.equal((await q(`select count(*)::int n from informes`))[0].n, 0);
 });
 
+console.log('Fase 5 · carta y "Elige por mí"');
+await db.exec('reset role;');
+const [catDes] = await q(`insert into categorias (negocio_id, nombre, orden) values ($1, 'Desayunos', 1) returning id`, [neg.id]);
+const [catBeb] = await q(`insert into categorias (negocio_id, nombre, orden) values ($1, 'Bebidas', 2) returning id`, [neg.id]);
+await q(`insert into categorias (negocio_id, nombre, orden, activo) values ($1, 'Oculta', 3, false)`, [neg.id]);
+await q(`insert into productos (negocio_id, categoria_id, nombre, precio, destacado, agotado, activo, etiquetas) values
+  ($1, $2, 'Calentado', 18500, false, false, true, '{salado}'),
+  ($1, $2, 'Huevos rancheros', 17500, true, false, true, '{salado,picante}'),
+  ($1, $2, 'Croissant', 9500, false, true, true, '{dulce}'),
+  ($1, $2, 'Plato viejo', 1000, false, false, false, '{}'),
+  ($1, $3, 'Capuchino', 7000, false, false, true, '{bebida}')`, [neg.id, catDes.id, catBeb.id]);
+
+await caso('carta_publica: sin inactivos, destacados primero, agotados al final', async () => {
+  await como('anon');
+  const [{ r }] = await q(`select carta_publica('cafe-luna') r`);
+  assert.deepEqual(r.categorias.map((c) => c.nombre), ['Desayunos', 'Bebidas']);
+  assert.deepEqual(r.categorias[0].productos.map((p) => p.nombre), ['Huevos rancheros', 'Calentado', 'Croissant']);
+  assert.ok(!JSON.stringify(r).includes('Plato viejo'));
+  assert.equal(r.otros, null);
+  assert.equal((await q(`select carta_publica('no-existe') r`))[0].r, null);
+  assert.equal((await q(`select negocio_publico('cafe-luna') r`))[0].r.tiene_carta, true);
+  assert.equal((await q(`select negocio_publico('sin-club') r`))[0].r.tiene_carta, false);
+});
+await caso('eventos de la carta: tipo inválido no inserta; producto de otro negocio se ignora', async () => {
+  await como('anon');
+  await q(`select registrar_evento_carta('cafe-luna', 'ver_carta', null, 'abc')`);
+  await q(`select registrar_evento_carta('cafe-luna', 'hackear', null, null)`);
+  const [otroProd] = await (async () => { await db.exec('reset role;'); return q(`select id from productos where negocio_id <> $1 limit 1`, [neg.id]); })();
+  await como('anon');
+  await q(`select registrar_evento_carta('cafe-luna', 'ver_producto', $1, null)`, [otroProd.id]);
+  assert.equal((await q(`select count(*)::int n from eventos_carta`))[0].n, 0, 'anon no lee eventos');
+  await db.exec('reset role;');
+  const ev = await q(`select tipo, producto_id from eventos_carta order by id`);
+  assert.deepEqual(ev.map((e) => e.tipo), ['ver_carta', 'ver_producto']);
+  assert.equal(ev[1].producto_id, null);
+});
+await caso('etiquetas solo de la lista permitida', async () => {
+  await db.exec('reset role;');
+  await assert.rejects(q(`insert into productos (negocio_id, nombre, etiquetas) values ($1, 'Raro', '{inventada}')`, [neg.id]), /productos_etiquetas_check/);
+});
+await caso('Elige por mí: nunca agotados; destacado ≈ el doble en 10.000 tiradas (±5 %)', async () => {
+  const { elegir, candidatos, generador } = await import('../public/assets/elegir.js');
+  const prods = [
+    { id: 'a', destacado: true, etiquetas: ['dulce'] }, { id: 'b', etiquetas: ['dulce'] }, { id: 'c', etiquetas: ['dulce'] },
+    { id: 'x', agotado: true, destacado: true, etiquetas: ['dulce'] }, { id: 'd', etiquetas: ['salado'] },
+  ];
+  const azar = generador(42);
+  const n = {};
+  for (let i = 0; i < 10000; i++) { const p = elegir(prods, 'dulce', azar); n[p.id] = (n[p.id] || 0) + 1; }
+  assert.ok(!n.x, 'eligió un agotado'); assert.ok(!n.d, 'eligió algo que no es dulce');
+  const razon = n.a / ((n.b + n.c) / 2);
+  assert.ok(Math.abs(razon - 2) <= 0.1, 'razón destacado/normal = ' + razon.toFixed(3));
+  assert.equal(elegir(prods, 'bebida', azar), null);
+  assert.equal(candidatos(prods, 'sorpresa').length, 4);
+  const a1 = generador(7), a2 = generador(7);
+  assert.equal(elegir(prods, 'sorpresa', a1).id, elegir(prods, 'sorpresa', a2).id, 'misma semilla, mismo resultado');
+});
+
 console.log(`\n${ok} pruebas OK`);

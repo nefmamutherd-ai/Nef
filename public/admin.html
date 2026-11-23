@@ -143,8 +143,16 @@
         <span class="n-espacio"></span>
         <button class="n-btn" id="k-nuevo">Agregar</button>
       </div>
+      <div class="n-tarjeta" id="k-categorias">
+        <h2>Categorías de la carta</h2>
+        <div class="n-herramientas">
+          <div class="n-campo"><label for="k-cat-nueva">Nueva categoría</label><input id="k-cat-nueva" maxlength="60" placeholder="Desayunos"></div>
+          <button class="n-btn secundario" id="k-cat-agregar">Agregar categoría</button>
+        </div>
+        <ul class="n-lista" id="k-cat-lista"></ul>
+      </div>
       <div class="n-tabla-caja"><table class="n-tabla">
-        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Activo</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Agotado hoy</th><th>Activo</th><th></th></tr></thead>
         <tbody id="lista-productos"></tbody>
       </table></div>
     </section>
@@ -259,7 +267,28 @@
     </div>
     <div class="n-campo"><label for="k-nombre">Nombre *</label><input id="k-nombre" name="nombre" maxlength="80" required></div>
     <div class="n-campo"><label for="k-desc">Una línea (opcional)</label><input id="k-desc" name="descripcion" maxlength="140"></div>
-    <div class="n-campo" data-para="plato servicio"><label for="k-precio">Precio</label><input id="k-precio" name="precio" type="number" min="0" step="100" value="0"></div>
+    <div data-para="plato servicio">
+      <div class="n-fila">
+        <div class="n-campo"><label for="k-precio">Precio</label><input id="k-precio" name="precio" type="number" min="0" step="100" value="0"></div>
+        <div class="n-campo"><label for="k-categoria">Categoría</label><select id="k-categoria" name="categoria_id"></select></div>
+      </div>
+      <div class="n-campo"><label>Foto (se recorta cuadrada y se guarda en WebP 1000×1000)</label>
+        <label class="n-subir"><input type="file" id="k-foto" accept="image/*" hidden><b id="k-foto-txt">Subir foto</b><span>Cuadrada, cenital o a 45°, fondo neutro, luz natural.</span></label></div>
+      <div class="n-campo"><label>Etiquetas</label>
+        <div class="n-opciones" id="k-etiquetas">
+          <label><input type="checkbox" value="dulce"><span>Dulce</span></label>
+          <label><input type="checkbox" value="salado"><span>Salado</span></label>
+          <label><input type="checkbox" value="bebida"><span>Bebida</span></label>
+          <label><input type="checkbox" value="vegetariano"><span>Vegetariano</span></label>
+          <label><input type="checkbox" value="vegano"><span>Vegano</span></label>
+          <label><input type="checkbox" value="picante"><span>Picante</span></label>
+          <label><input type="checkbox" value="sin_gluten"><span>Sin gluten</span></label>
+          <label><input type="checkbox" value="nuevo"><span>Nuevo</span></label>
+        </div>
+        <div class="n-ayuda">"Dulce", "Salado" y "Bebida" son los antojos de "Elige por mí".</div></div>
+      <label class="n-interruptor"><div><b>Destacado</b><span>Sale primero en su categoría y pesa doble en "Elige por mí"</span></div><input type="checkbox" name="destacado"></label>
+      <label class="n-interruptor"><div><b>Agotado hoy</b><span>Se ve en gris y "Elige por mí" no lo sugiere</span></div><input type="checkbox" name="agotado"></label>
+    </div>
     <div data-para="maquina">
       <div class="n-campo"><label for="k-video">Video (YouTube o link al archivo)</label><input id="k-video" name="video_url" type="url" placeholder="https://www.youtube.com/watch?v=…"></div>
       <div class="n-campo"><label for="k-paso1">Paso 1</label><input id="k-paso1" name="paso1" maxlength="90"></div>

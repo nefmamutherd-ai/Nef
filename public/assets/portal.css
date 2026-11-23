@@ -81,6 +81,21 @@ body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 va
 .pt-prod.agotado .pt-foto { filter: grayscale(1); opacity: .5; }
 .pt-agotado { font-size: 13px; font-weight: 600; color: var(--alerta); }
 
+/* Cabecera fija de la carta: barra + pestañas juntas. Cada sección de categoría deja espacio al saltar. */
+.pt-fija { position: sticky; top: 0; z-index: 3; background: var(--papel); margin: 0 calc(-1 * var(--e-24)); padding: 0 var(--e-24); }
+.pt-fija .pt-barra { position: static; }
+.pt-seccion { scroll-margin-top: 120px; }
+.pt-prod .pt-foto { order: 2; }
+
+/* "Elige por mí": ventana de la ruleta. El rollo (.pt-rollo) se desliza con transform; el resultado ya está decidido. */
+.pt-ruleta { position: relative; height: 84px; overflow: hidden; border-radius: var(--r-medio); background: var(--papel-hondo); margin: var(--e-16) 0; }
+.pt-ruleta::before, .pt-ruleta::after { content: ""; position: absolute; left: 0; right: 0; height: 18px; z-index: 1; pointer-events: none; }
+.pt-ruleta::before { top: 0; background: linear-gradient(var(--papel-hondo), transparent); }
+.pt-ruleta::after { bottom: 0; background: linear-gradient(transparent, var(--papel-hondo)); }
+.pt-rollo { will-change: transform; }
+.pt-rollo div { height: 84px; display: grid; place-items: center; padding: 0 var(--e-16); text-align: center; font: 700 var(--t-22)/1.2 var(--sans); }
+.pt-ruleta + .pt-precio { text-align: center; margin: 0 0 var(--e-8); }
+
 /* ── Hoja inferior (detalle, Elige por mí, términos) ──────────────── */
 .pt-fondo { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.4); opacity: 0; transition: opacity var(--dur-2) var(--ease); }
 .pt-hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; max-width: 480px; max-height: 92dvh; margin: 0 auto; overflow-y: auto; background: var(--tarjeta); border-radius: var(--r-grande) var(--r-grande) 0 0; box-shadow: var(--sombra-flota); padding: var(--e-12) var(--e-24) calc(var(--e-24) + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform var(--dur-3) var(--ease); }

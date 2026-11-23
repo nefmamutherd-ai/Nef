@@ -37,10 +37,35 @@ function where(params) {
   return { sql: conds.length ? ' where ' + conds.join(' and ') : '', vals };
 }
 
+const archivos = new Map(); // Storage en memoria: 'bucket/ruta' → { crudo, tipo }
+// supabase-js sube los Blob como multipart/form-data: se guarda la parte del archivo con su propio tipo
+function archivoSubido(crudo, tipoPeticion) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(tipoPeticion || '');
+  if (!/^multipart\//i.test(tipoPeticion || '') || !m) return { crudo, tipo: tipoPeticion || 'application/octet-stream' };
+  const limite = Buffer.from('--' + (m[1] || m[2]));
+  let i = crudo.indexOf(limite);
+  while (i >= 0) {
+    const sig = crudo.indexOf(limite, i + limite.length);
+    if (sig < 0) break;
+    const parte = crudo.subarray(i + limite.length + 2, sig - 2);
+    const fin = parte.indexOf('\r\n\r\n');
+    const cabeceras = parte.subarray(0, fin).toString();
+    if (/filename=/i.test(cabeceras) || /content-type:\s*(?!text\/plain)/i.test(cabeceras)) {
+      const t = /content-type:\s*([^\r\n]+)/i.exec(cabeceras);
+      return { crudo: parte.subarray(fin + 4), tipo: t ? t[1].trim() : 'application/octet-stream' };
+    }
+    i = sig;
+  }
+  return { crudo, tipo: 'application/octet-stream' };
+}
+
 http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') return send(res, 204);
   let body = '';
-  for await (const c of req) body += c;
+  const trozos = [];
+  for await (const c of req) trozos.push(c);
+  const crudo = Buffer.concat(trozos);
+  body = crudo.toString();
   const url = new URL(req.url, 'http://x');
   const token = (req.headers.authorization || '').replace('Bearer ', '');
   const role = token === 'admintoken' ? 'authenticated' : 'anon';
@@ -55,6 +80,13 @@ http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/auth/v1/logout')) return send(res, 204);
 
     // Storage mínimo (bucket "informes"): subir (solo admin), firmar (solo rutas registradas) y descargar lo firmado
+    const pub = /^\/storage\/v1\/object\/public\/([\w-]+)\/(.+)$/.exec(url.pathname);
+    if (pub && req.method === 'GET') {
+      const a = pub[1] === 'fotos' && archivos.get(pub[1] + '/' + decodeURIComponent(pub[2]));
+      if (!a) return send(res, 404, { message: 'Object not found' });
+      res.writeHead(200, { 'content-type': a.tipo, ...cors });
+      return res.end(a.crudo);
+    }
     const st = /^\/storage\/v1\/object\/(sign\/)?([\w-]+)\/(.+)$/.exec(url.pathname);
     if (st) {
       const [, firmar, bucket, ruta] = st;
@@ -70,6 +102,7 @@ http.createServer(async (req, res) => {
       }
       if (!firmar && (req.method === 'POST' || req.method === 'PUT')) {
         if (role !== 'authenticated') return send(res, 403, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
+        archivos.set(bucket + '/' + path, archivoSubido(crudo, req.headers['content-type']));
         return send(res, 200, { Key: `${bucket}/${path}`, Id: path });
       }
       return send(res, 404, { message: 'not found' });

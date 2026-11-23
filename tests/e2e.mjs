@@ -506,6 +506,115 @@ await caso('link del dueño: números con definición, informes, celular y escri
   }
 });
 
+console.log('Fase 5');
+const FOTO = fileURLToPath(new URL('./fixtures/foto.png', import.meta.url));
+let negocioId;
+await caso('admin de la carta: categoría, plato con foto WebP y "Agotado hoy" de un toque', async () => {
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { sector: 'cafe' });
+  await servicios({ catalogo: true, club: true });
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  negocioId = n.id;
+  await panel.click('.tab[data-tab=catalogo]');
+  await panel.selectOption('#k-negocio', { label: 'Café Prueba' });
+  await panel.fill('#k-cat-nueva', 'Desayunos');
+  await panel.click('#k-cat-agregar');
+  await panel.waitForSelector('#k-cat-lista li:has-text("Desayunos")');
+  await api('categorias', 'POST', [{ negocio_id: n.id, nombre: 'Cafés', orden: 2 }, { negocio_id: n.id, nombre: 'Postres', orden: 3 }]);
+  const cats = await api(`categorias?negocio_id=eq.${n.id}`);
+  const id = (nom) => cats.find((c) => c.nombre === nom).id;
+  const filas = [];
+  for (let i = 1; i <= 10; i++) filas.push({ negocio_id: n.id, categoria_id: id('Desayunos'), tipo: 'plato', nombre: `Desayuno ${i}`, descripcion: 'Huevos, arepa y café', precio: 12000 + i * 500, etiquetas: ['salado'], destacado: i === 3, agotado: false, activo: true, pasos: [], horario: [] });
+  for (let i = 1; i <= 9; i++) filas.push({ negocio_id: n.id, categoria_id: id('Cafés'), tipo: 'plato', nombre: `Café ${i}`, descripcion: 'De origen, en taza grande', precio: 5000 + i * 300, etiquetas: ['bebida'], destacado: false, agotado: false, activo: true, pasos: [], horario: [] });
+  for (let i = 1; i <= 10; i++) filas.push({ negocio_id: n.id, categoria_id: id('Postres'), tipo: 'plato', nombre: `Postre ${i}`, descripcion: 'Hecho en casa', precio: 7000 + i * 400, etiquetas: ['dulce'], destacado: i === 1, agotado: false, activo: true, pasos: [], horario: [] });
+  await api('productos', 'POST', filas);
+  await catalogoRecargar();
+  // Plato 30, por la interfaz y con foto
+  await panel.click('#k-nuevo');
+  await panel.click('#form-producto label:has(input[value=plato])');
+  await panel.fill('#k-nombre', 'Calentado de la casa');
+  await panel.fill('#k-desc', 'Fríjol, arroz, huevo y arepa');
+  await panel.fill('#k-precio', '18500');
+  await panel.selectOption('#k-categoria', { label: 'Desayunos' });
+  await panel.click('#k-etiquetas label:has(input[value=salado])');
+  await panel.setInputFiles('#k-foto', FOTO);
+  await panel.waitForSelector('#k-foto-txt:has-text("Foto lista")');
+  await panel.screenshot({ path: DIR + 'admin-plato.png' });
+  await panel.click('#k-guardar');
+  await panel.waitForSelector('#lista-productos td:has-text("Calentado de la casa")');
+  const [cal] = await api(`productos?nombre=eq.Calentado de la casa`);
+  assert.match(cal.foto_url, /\/storage\/v1\/object\/public\/fotos\/.+\.webp$/);
+  const foto = await fetch(cal.foto_url);
+  assert.equal(foto.headers.get('content-type'), 'image/webp');
+  const bytes = Buffer.from(await foto.arrayBuffer());
+  assert.equal(bytes.subarray(8, 12).toString(), 'WEBP', 'el archivo guardado es WebP');
+  // "Agotado hoy" de un toque en la tabla
+  await panel.check('#lista-productos tr:has-text("Postre 2") .k-agotado');
+  await panel.waitForTimeout(400);
+  const [p2] = await api(`productos?nombre=eq.Postre 2`);
+  assert.equal(p2.agotado, true);
+  await panel.screenshot({ path: DIR + 'admin-carta.png', fullPage: true });
+});
+async function catalogoRecargar() {
+  await panel.$eval('#k-negocio', (s) => s.dispatchEvent(new Event('change')));
+  await panel.waitForSelector('#lista-productos td:has-text("Postre 10")');
+}
+await caso('carta en el celular: 30 productos, agotado en gris, hoja que cierra con Escape y con "atrás"', async () => {
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('carta: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}`);
+  assert.equal(await p.getAttribute('.pt-boton.principal', 'href'), `/n/${slug}/carta`);
+  await p.click('.pt-boton.principal');
+  await p.waitForURL(new RegExp(`/n/${slug}/carta`));
+  assert.equal(await p.locator('.pt-prod').count(), 30);
+  assert.equal(await p.locator('.pt-pestanas [role=tab]').count(), 3);
+  const agotado = p.locator('.pt-prod:has-text("Postre 2")');
+  assert.match(await agotado.getAttribute('class'), /agotado/);
+  assert.match(await agotado.textContent(), /Agotado hoy/);
+  assert.equal(await p.textContent('#cat-' + (await p.getAttribute('.pt-seccion >> nth=0', 'data-cat')) + ' .pt-prod >> nth=0 >> b'), 'Desayuno 3', 'el destacado sale primero');
+  await sinScrollHorizontal(p);
+  await p.screenshot({ path: DIR + 'carta-movil.png' });
+  await p.screenshot({ path: DIR + 'carta-movil-completa.png', fullPage: true });
+  await p.click('.pt-prod:has-text("Calentado de la casa")');
+  await p.waitForSelector('#hoja-detalle.abierta');
+  await p.waitForTimeout(350);
+  assert.equal(await p.textContent('#d-nombre'), 'Calentado de la casa');
+  await p.screenshot({ path: DIR + 'carta-detalle.png' });
+  await p.keyboard.press('Escape');
+  await p.waitForSelector('#hoja-detalle', { state: 'hidden' });
+  await p.click('.pt-prod:has-text("Café 1")');
+  await p.waitForSelector('#hoja-detalle.abierta');
+  await p.goBack();
+  await p.waitForSelector('#hoja-detalle', { state: 'hidden' });
+  assert.match(p.url(), /\/carta$/, 'atrás cierra la hoja sin salir de la carta');
+  await p.click('.pt-pestanas [role=tab]:has-text("Postres")');
+  await p.waitForFunction(() => document.querySelector('.pt-pestanas [aria-selected=true]').textContent === 'Postres');
+  await p.close();
+  const ev = await api(`eventos_carta?negocio_id=eq.${negocioId}`);
+  assert.ok(ev.some((e) => e.tipo === 'ver_carta') && ev.some((e) => e.tipo === 'ver_producto'));
+});
+await caso('"Elige por mí": sugiere un postre disponible, "Lo pido" se registra y no da monedas', async () => {
+  const movAntes = (await api('movimientos')).length;
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('elige: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}/carta`);
+  await p.click('#elige');
+  await p.waitForSelector('#hoja-elige.abierta');
+  assert.deepEqual(await p.$$eval('#antojos .pt-boton span', (s) => s.map((x) => x.textContent)), ['Algo dulce', 'Algo salado', 'Una bebida', 'Sorpréndeme']);
+  await p.click('#antojos [data-antojo=dulce]');
+  await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 6000 });
+  const elegido = await p.$eval('#rollo div:last-child', (d) => d.textContent);
+  assert.match(elegido, /^Postre \d+$/); assert.notEqual(elegido, 'Postre 2', 'sugirió un agotado');
+  await p.screenshot({ path: DIR + 'elige-por-mi.png' });
+  await p.click('#lo-pido');
+  await p.waitForSelector('#g-frase:not([hidden])');
+  await p.close();
+  const ev = await api(`eventos_carta?negocio_id=eq.${negocioId}`);
+  assert.ok(ev.some((e) => e.tipo === 'girar') && ev.some((e) => e.tipo === 'ruleta_acepto'));
+  assert.equal((await api('movimientos')).length, movAntes, 'girar no da monedas');
+});
+
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));
 console.log(`\n${ok} pruebas OK · capturas en tests/capturas/`);
