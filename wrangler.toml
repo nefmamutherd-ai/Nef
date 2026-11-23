@@ -2,6 +2,13 @@ name = "nef"
 pages_build_output_dir = "public"
 compatibility_date = "2025-01-01"
 
-# Las variables SUPABASE_URL, SUPABASE_ANON_KEY, CONTACTO_WHATSAPP y MARCA
-# se ponen en Cloudflare → tu proyecto → Settings → Variables and Secrets.
-# Para probar en tu computador, cópialas en un archivo .dev.vars (ver README).
+# Variables PÚBLICAS de producción (Cloudflare Pages toma este archivo como fuente de verdad).
+# SUPABASE_URL y SUPABASE_ANON_KEY (llave "publishable") son públicas por diseño: el navegador de cualquier
+# visitante las recibe en /api/config. La seguridad está en las reglas (RLS) de la base.
+# NUNCA va aquí la contraseña de la base de datos ni la llave secreta (sb_secret_… / service_role).
+# En tu computador, .dev.vars tiene prioridad sobre esto (las pruebas usan el Supabase simulado).
+[vars]
+SUPABASE_URL = "https://dzcrgfenrwtmuwojmgfl.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_O6YL4p44eX5QijkzY4RNDw_xLxmQ0R7"
+MARCA = "Nef"
+CONTACTO_WHATSAPP = ""   # tu WhatsApp de ventas, 10 dígitos (ej. "3001234567"): aparece en la landing y en /inactivo
