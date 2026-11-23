@@ -1,27 +1,8 @@
 // /n/<slug> → portal del negocio (SSR). Se arma en el servidor para que cargue al instante después del toque.
 // Estructura: docs/UI.md §3 · Componentes: public/assets/portal.css · Textos y botones: lib/sectores/*.json
-import { rpc, esc, urlDeBoton, colorSeguro, html, redirigir, paginaError, urlSegura } from '../../lib/util.js';
+import { rpc, esc, urlDeBoton, html, redirigir, paginaError, urlSegura } from '../../lib/util.js';
 import { paquete, botonesPortal } from '../../lib/sectores.js';
-
-// Íconos de trazo (docs/UI.md §5)
-const ICONOS = {
-  lista: '<path d="M4 5h16M4 12h16M4 19h10"/>',
-  monedas: '<circle cx="12" cy="12" r="8"/>',
-  estrella: '<path d="m12 4 2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 16.2 7 19l1.2-5.6L4 9.6 9.6 9z"/>',
-  calendario: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/>',
-  reproducir: '<path d="m8 5 11 7-11 7z"/>',
-  flecha: '<path d="m9 6 6 6-6 6"/>',
-};
-const icono = (k, clase = '') => `<svg class="pt-icono${clase}" viewBox="0 0 24 24" aria-hidden="true">${ICONOS[k] || ''}</svg>`;
-
-const COLOR_POR_DEFECTO = '#1f1f1f'; // el negocio no eligió color: se usa el del tema del sector
-
-// Texto blanco o negro según qué tan claro sea el color de la marca
-function textoSobre(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return lum > 0.6 ? '#111111' : '#ffffff';
-}
+import { inicioPagina, firma, icono } from '../../lib/portal.js';
 
 const mayuscula = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 const iniciales = (nombre) =>
@@ -48,11 +29,6 @@ export async function onRequestGet({ params, request, env }) {
   const q = t ? `?t=${t}` : '';
   const href = (b) => `/c/${encodeURIComponent(n.slug)}/${b}${q}`;
   const conTag = (ruta) => (ruta.startsWith('/c/') ? ruta + q : ruta);
-
-  // Color del negocio (si eligió uno); si no, el del tema del sector
-  const color = colorSeguro(n.color);
-  const propio = color.toLowerCase() !== COLOR_POR_DEFECTO;
-  const estiloMarca = propio ? `<style>:root{--marca:${color};--sobre-marca:${textoSobre(color)}}</style>` : '';
 
   // Botones grandes (máximo 3, el primero principal)
   const botones = botonesPortal(n).map((b, i) =>
@@ -88,18 +64,12 @@ export async function onRequestGet({ params, request, env }) {
     : `<div class="pt-logo" aria-hidden="true">${esc(iniciales(n.nombre))}</div>`;
   const debajo = nombreTag || n.ubicacion_etiqueta || n.descripcion || '';
 
-  return html(`<!doctype html><html lang="es" data-tema="${esc(pq.tema)}"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>${esc(n.nombre)}</title>
-${n.descripcion ? `<meta name="description" content="${esc(n.descripcion)}">` : ''}
-${propio ? `<meta name="theme-color" content="${color}">` : ''}
-<link rel="stylesheet" href="/assets/tokens.css"><link rel="stylesheet" href="/assets/portal.css">
-${estiloMarca}
-</head><body class="pt"><main class="pt-pagina">
+  return html(`${inicioPagina(n, { extraHead: n.descripcion ? `<meta name="description" content="${esc(n.descripcion)}">` : '' })}
+<main class="pt-pagina">
   <header class="pt-cabeza">${logo}<h1>${esc(n.nombre)}</h1>${debajo ? `<p>${esc(debajo)}</p>` : ''}</header>
   ${botones.length ? `<div class="pt-botones">${botones.join('')}</div>` : ''}
   ${enlaces.length ? `<nav class="pt-enlaces">${enlaces.join('')}</nav>` : ''}
-  <footer class="pt-firma"><a href="/">Hecho con <img src="/assets/marca/logo-nef-una-tinta.svg" alt="nef" width="38" height="14"></a></footer>
+  ${firma()}
 </main>
 <script>
   (function () {

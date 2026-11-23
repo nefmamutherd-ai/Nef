@@ -104,6 +104,25 @@ body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 va
 .pt-aviso.alerta { color: var(--alerta); background: var(--alerta-suave); }
 .pt-aviso.neutro { color: var(--tinta-2); background: var(--papel-hondo); }
 
+/* QR de la tarjeta (siempre sobre blanco para que se pueda escanear en cualquier tema) */
+.pt-qr { width: 288px; max-width: 100%; margin: var(--e-16) auto; padding: 14px; border-radius: var(--r-medio); background: #fff; line-height: 0; }
+.pt-qr svg { width: 100%; height: auto; }
+.pt-qr + p { text-align: center; color: var(--tinta-2); margin: 0 0 var(--e-8); }
+
+/* Texto largo (política de datos y condiciones del club) */
+.pt-texto { line-height: 1.6; }
+.pt-texto h1 { font: var(--peso-titulo, 500) var(--t-28)/1.15 var(--serif); margin: var(--e-8) 0 var(--e-16); }
+.pt-texto h2 { font: 700 var(--t-18)/1.3 var(--sans); margin: var(--e-32) 0 var(--e-8); }
+.pt-texto p, .pt-texto li { color: var(--tinta-2); }
+.pt-texto ul { padding-left: 1.2em; }
+.pt-texto b { color: var(--tinta); }
+.pt-texto .pt-volver { display: inline-flex; align-items: center; gap: 4px; color: var(--tinta-2); text-decoration: none; font-weight: 600; }
+
+/* Título de la caja: "Caja · Café Luna" + "¿Cuál es tu número?" */
+.pt-caja-titulo { margin-bottom: var(--e-16); }
+.pt-caja-titulo small { display: block; font-size: var(--t-14); color: var(--tinta-2); }
+.pt-caja-titulo h1 { font: 700 var(--t-22)/1.2 var(--sans); margin: 2px 0 0; }
+
 /* ── Formularios (registro al club, PIN de caja) ──────────────────── */
 /* Casilla: <label class="pt-casilla"><input type="checkbox"><span>Texto <a>enlace</a></span></label> */
 .pt-form { display: grid; gap: var(--e-16); text-align: left; }
@@ -151,7 +170,7 @@ body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 va
 .pt-vacio b { display: block; color: var(--tinta); font-size: var(--t-18); margin-bottom: var(--e-4); }
 .pt-toast { position: fixed; left: 50%; bottom: calc(var(--e-24) + env(safe-area-inset-bottom)); z-index: 20; transform: translate(-50%, 20px); opacity: 0; max-width: calc(100% - 32px); padding: 14px 18px; border-radius: var(--r-medio); background: var(--tinta); color: var(--papel); font: 600 15px/1.35 var(--sans); box-shadow: var(--sombra-flota); transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease); }
 .pt-toast.visible { transform: translate(-50%, 0); opacity: 1; }
-.pt-sin-conexion { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--oro-tinta); background: var(--oro-suave); padding: 8px 12px; border-radius: var(--r-chico); }
+.pt-sin-conexion { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--oro-tinta); background: var(--oro-suave); padding: 8px 12px; border-radius: var(--r-chico); margin-bottom: var(--e-16); }
 
 /* ── Celebración (solo: ganar monedas, entrada, ruleta) ──────────── */
 @keyframes pt-salto { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }

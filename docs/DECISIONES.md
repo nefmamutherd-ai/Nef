@@ -2,6 +2,17 @@
 
 Formato: fecha · decisión · por qué. Las más recientes arriba.
 
+- 2026-11-22 · **Valor de la moneda**: `valor_moneda() = 100` → 1 moneda = $100 en premios. Costo de un premio = `ceil(valor_pesos / 100)` ($8.000 = 80 monedas). Modo valor: monedas = `floor(compra × devolucion_pct / 100 / 100)` → compra de $160.000 al 5 % = $8.000 de premio = **80 monedas**. · Tarjeta 2.1; así el dueño piensa en pesos y Nef calcula las monedas.
+- 2026-11-22 · Idempotencia de la caja con la tabla de hechos `operaciones_caja` (op_id → resultado guardado) además de `movimientos.op_id unique`. Reenviar el mismo op_id devuelve exactamente el mismo resultado. · Una visita puede crear dos movimientos (visita + bienvenida); el resultado completo debe repetirse igual.
+- 2026-11-22 · `club_registrar` con un celular ya inscrito solo devuelve el token si el **primer nombre coincide**; si no, `ya_registrado`. · Si bastara el celular, cualquiera que sepa tu número vería tu tarjeta. "¿Cambiaste de celular?" con código por WhatsApp queda para después.
+- 2026-11-22 · `club_tarjeta` no escribe: si las monedas vencieron, las muestra en 0. El movimiento `vencimiento` lo registran la caja (al buscar/sumar/canjear) y `vencer_monedas()` (cálculo nocturno, Fase 4). · Así ninguna RPC pública sin sesión crea movimientos (hay prueba que lo verifica).
+- 2026-11-22 · La página `/n/<slug>/datos` muestra arriba "Plantilla — revisar con abogado" (lo pide la tarjeta 2.4). **Quitarlo cuando el abogado la apruebe.**
+- 2026-11-22 · Componentes nuevos de portal.css: `.pt-qr` (QR sobre blanco, legible en tema oscuro), `.pt-texto` (política y condiciones), `.pt-caja-titulo`. En `componentes.html`.
+- 2026-11-22 · Lo compartido de las páginas de portal (cabeza con tema y color, firma, íconos) vive en `lib/portal.js`; el navegador llama a Supabase con `public/assets/nef-rpc.js`. · Club, datos, caja y portal usan la misma cabeza.
+- 2026-11-22 · Caja: si la red falla, la operación queda en IndexedDB (`nef_caja`/`cola`) y se reenvía al volver (`online` o cada 15 s). Una respuesta con error definitivo (ej. `muy_pronto`) también saca la operación de la cola y se avisa con un toast. · Reintentar algo que el servidor ya rechazó no tiene sentido.
+- 2026-11-22 · El club por empresa (`empresas.club_compartido`) aún no cambia el saldo: las membresías son por sede. · Ningún cliente lo necesita todavía; se hará cuando llegue un gimnasio con varias sedes.
+- 2026-11-22 · Entorno local: todo lo instalado y temporal va a D (`D:\.cache` para npm y Playwright; `d:\Nef provisional\_local` para logs, temporales y la demo). La demo de Jacobo corre en `localhost:4000` con su propio mock (`MOCK_PORT=54322`) y su propio estado de wrangler (`--persist-to`). · Pedido de Jacobo: nada en el disco C.
+
 - 2026-11-21 · Sin repositorio remoto ni Cloudflare: se trabaja en local, con git en la rama `desarrollo` y un commit por fase; el push queda pendiente hasta que exista el remoto. · Pedido de Jacobo: "no hay repo, no hay vercel, todo en local".
 - 2026-11-21 · `resolver_toque` (ahora con `p_dispositivo_id`) y `negocio_publico` se definen en el bloque Fase 1 del esquema, no en el v1. · `negocio_publico` es SQL y lee columnas que se crean en la Fase 1; definirla antes rompe el esquema en una base vacía.
 - 2026-11-21 · RPC pública nueva `tag_publico(slug, codigo)`: solo el nombre del tag ("Mesa 4") si es de ese negocio. · La cabeza del portal muestra el lugar; los nombres de tag no son privados.

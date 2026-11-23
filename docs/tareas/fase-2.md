@@ -6,7 +6,7 @@
 
 ---
 
-### [ ] 2.1 Tablas del club
+### [x] 2.1 Tablas del club
 **Archivos:** `supabase/esquema.sql`, `tests/test_sql.mjs`
 **Pasos:** bloque `-- ===== Fase 2 =====`. Cada tabla con las 4 partes (`AGENTS.md` §6):
 1. Columnas en `negocios`: `devolucion_pct int not null default 5 check (devolucion_pct in (3,5,8))`,
@@ -23,11 +23,11 @@
    Escribe la fórmula y este ejemplo en `docs/DECISIONES.md`.
 4. `sesiones_caja(token text pk default replace(gen_random_uuid()::text,'-',''), negocio_id, expira timestamptz not null, creado)`.
 5. `intentos_pin(id bigint identity, negocio_id, ok boolean, creado)`.
-**Comprobar:** [ ] anon no lee ninguna de estas tablas (prueba) · [ ] esquema 2 veces OK · [ ] verificar ✓.
+**Comprobar:** [x] anon no lee ninguna de estas tablas (prueba) · [x] esquema 2 veces OK · [x] verificar ✓.
 
 ---
 
-### [ ] 2.2 RPC del cliente: registrarse y ver su tarjeta
+### [x] 2.2 RPC del cliente: registrarse y ver su tarjeta
 **Archivos:** `supabase/esquema.sql`, `tests/test_sql.mjs`
 **Pasos:**
 1. `club_registrar(p_slug, p_nombre, p_telefono, p_acepta boolean) returns json`:
@@ -40,15 +40,15 @@
    `vence`. Token inválido → `{"error":"token"}`. **Nunca** devuelve el teléfono.
 3. `grant execute ... to anon, authenticated` para las dos.
 **Comprobar (pruebas SQL nuevas):**
-- [ ] sin autorización → error y no crea filas.
-- [ ] registrarse dos veces con el mismo celular → 1 membresía, mismo token.
-- [ ] recién registrado: `saldo = 0`, `bienvenida_pendiente = 50`.
-- [ ] `club_tarjeta` con token de otro negocio → error.
-- [ ] la respuesta de `club_tarjeta` no contiene la clave `telefono`.
+- [x] sin autorización → error y no crea filas.
+- [x] registrarse dos veces con el mismo celular → 1 membresía, mismo token.
+- [x] recién registrado: `saldo = 0`, `bienvenida_pendiente = 50`.
+- [x] `club_tarjeta` con token de otro negocio → error.
+- [x] la respuesta de `club_tarjeta` no contiene la clave `telefono`.
 
 ---
 
-### [ ] 2.3 RPC de la caja: PIN, sesión, sumar y canjear (idempotente)
+### [x] 2.3 RPC de la caja: PIN, sesión, sumar y canjear (idempotente)
 **Archivos:** `supabase/esquema.sql`, `tests/test_sql.mjs`
 **Pasos** (todas `security definer set search_path = public, extensions`):
 1. `fijar_pin_caja(p_negocio uuid, p_pin text)` — solo admin (`es_admin()`), PIN de 4 a 6 dígitos, guarda
@@ -68,17 +68,17 @@
 6. `caja_canje(p_sesion, p_token, p_premio uuid, p_op_id uuid)`: idempotente igual; saldo suficiente o
    `{"error":"saldo"}`; movimiento `canje` negativo.
 **Comprobar (pruebas SQL nuevas):**
-- [ ] 11.º intento de PIN en una hora → bloqueado aunque el PIN sea correcto.
-- [ ] sesión vencida (cambia `nef.ahora` a +13 h) → error.
-- [ ] primera visita activa la bienvenida (saldo = 50 + 10).
-- [ ] misma `op_id` dos veces → el saldo sube una sola vez.
-- [ ] segunda visita a la hora → `muy_pronto`; a las 3 h → suma.
-- [ ] canje sin saldo → `saldo` y no crea movimiento.
-- [ ] `anon` no puede ejecutar `_sesion_valida`.
+- [x] 11.º intento de PIN en una hora → bloqueado aunque el PIN sea correcto.
+- [x] sesión vencida (cambia `nef.ahora` a +13 h) → error.
+- [x] primera visita activa la bienvenida (saldo = 50 + 10).
+- [x] misma `op_id` dos veces → el saldo sube una sola vez.
+- [x] segunda visita a la hora → `muy_pronto`; a las 3 h → suma.
+- [x] canje sin saldo → `saldo` y no crea movimiento.
+- [x] `anon` no puede ejecutar `_sesion_valida`.
 
 ---
 
-### [ ] 2.4 Pantallas del cliente: unirse, tarjeta y datos
+### [x] 2.4 Pantallas del cliente: unirse, tarjeta y datos
 **Archivos:** `functions/n/[slug]/club.js`, `functions/n/[slug]/datos.js`, `public/assets/club.js` (nuevos), `tests/e2e.mjs`
 **Leer antes:** `docs/UI.md` filas "Registro al club", "Mis monedas", "Mi código", "Datos y términos"
 **Pasos:**
@@ -93,13 +93,13 @@
    derechos, cómo pedir borrado) + condiciones del club (cómo se gana, valor de premios, vencimiento 12 meses — Ley 1480).
    Marca arriba: "Plantilla — revisar con abogado".
 **Comprobar:**
-- [ ] e2e: registrarse (390×844) → tarjeta con 0 y aviso de bienvenida pendiente; captura `club-tarjeta.png`.
-- [ ] e2e: recargar la página → sigue mostrando la tarjeta (token guardado).
-- [ ] verificar --e2e ✓.
+- [x] e2e: registrarse (390×844) → tarjeta con 0 y aviso de bienvenida pendiente; captura `club-tarjeta.png`.
+- [x] e2e: recargar la página → sigue mostrando la tarjeta (token guardado).
+- [x] verificar --e2e ✓.
 
 ---
 
-### [ ] 2.5 Caja con PIN y sin conexión
+### [x] 2.5 Caja con PIN y sin conexión
 **Archivos:** `functions/caja/[slug].js`, `public/assets/caja.js` (nuevos), `tests/e2e.mjs`
 **Leer antes:** `docs/UI.md` sección "Caja"
 **Pasos:**
@@ -112,22 +112,22 @@
    `.pt-sin-conexion` con el número pendiente. Al volver (`online` o cada 15 s) reenvía en orden y borra de la cola
    solo lo que respondió OK. Como la RPC es idempotente, reenviar nunca suma doble.
 **Comprobar:**
-- [ ] e2e: PIN malo → mensaje con intentos; PIN bueno → buscar al cliente registrado en 2.4 → Sumar → saldo 60.
-- [ ] e2e: con un **segundo cliente** registrado en la misma prueba (para no chocar con `horas_entre_visitas`):
+- [x] e2e: PIN malo → mensaje con intentos; PIN bueno → buscar al cliente registrado en 2.4 → Sumar → saldo 60.
+- [x] e2e: con un **segundo cliente** registrado en la misma prueba (para no chocar con `horas_entre_visitas`):
       `context.setOffline(true)` → Sumar → aparece "Guardado…" → `setOffline(false)` → la cola se vacía y su saldo
       subió **una** sola vez.
-- [ ] Capturas `caja-ficha.png` y `caja-sin-conexion.png` revisadas. verificar --e2e ✓.
+- [x] Capturas `caja-ficha.png` y `caja-sin-conexion.png` revisadas. verificar --e2e ✓.
 
 ---
 
-### [ ] 2.6 Admin: PIN, devolución y premios
+### [x] 2.6 Admin: PIN, devolución y premios
 **Archivos:** `public/admin.html`, `tests/e2e.mjs`
 **Pasos:** en el negocio: campo PIN (llama `fijar_pin_caja`), `.n-opciones` devolución 3/5/8 %, modo visita/valor,
 monedas por visita, bienvenida; lista de premios (nombre, valor en pesos, activo) y al lado el costo en monedas calculado.
-**Comprobar:** [ ] e2e: crear premio de $8.000 → se ve "80 monedas" en la tarjeta del cliente · [ ] verificar --e2e ✓.
+**Comprobar:** [x] e2e: crear premio de $8.000 → se ve "80 monedas" en la tarjeta del cliente · [x] verificar --e2e ✓.
 
 ---
 
-### [ ] 2.7 Cierre de la fase 2
-**Comprobar:** [ ] Criterios de la Fase 2 de `docs/PLAN.md` cumplidos · [ ] el botón de reseña no suma nada (prueba SQL: no existe
-ninguna RPC pública que cree movimientos) · [ ] PROGRESO.md · [ ] `git push origin desarrollo`.
+### [x] 2.7 Cierre de la fase 2
+**Comprobar:** [x] Criterios de la Fase 2 de `docs/PLAN.md` cumplidos · [x] el botón de reseña no suma nada (prueba SQL: no existe
+ninguna RPC pública que cree movimientos) · [x] PROGRESO.md · [ ] `git push origin desarrollo` (sin remoto).

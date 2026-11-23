@@ -50,3 +50,20 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Revisión de seguridad: tablas nuevas con RLS y prueba de anon; RPC con `search_path`; nada privado en RPC públicas;
   todo escapado; la cookie no guarda IP ni datos personales.
 - Pendiente: `git push origin desarrollo` (no existe el remoto). Aviso viejo del verificador en `stats.js` (innerHTML): se rehace en la Fase 4.
+
+### Fase 2 · Club de monedas + caja sin conexión — hecha
+- **BD**: reglas del club en `negocios` (devolución 3/5/8, modo visita/valor, monedas por visita, bienvenida, horas entre visitas,
+  nombres de moneda, `pin_caja_hash`); tablas `clientes`, `membresias`, `premios`, `movimientos`, `operaciones_caja`,
+  `sesiones_caja`, `intentos_pin` (todas con RLS). Destino de tag `club`.
+- **RPC**: `club_publico`, `club_registrar` (bienvenida pendiente), `club_tarjeta` (sin teléfono), `fijar_pin_caja` (solo admin),
+  `caja_entrar` (bloqueo 10/hora, sesión 12 h), `caja_buscar`, `caja_visita` y `caja_canje` (idempotentes por `op_id`),
+  vencimiento a 12 meses (`_vencer_membresia`, `vencer_monedas`).
+- **Pantallas**: `/n/<slug>/club` (inscripción → tarjeta con anillo, un aviso, "Mostrar mi código" con QR, premios),
+  `/n/<slug>/datos` (Ley 1581 + Ley 1480, plantilla), `/caja/<slug>` (PIN → número → Sumar/Canjear, cola sin conexión en IndexedDB),
+  admin con club, PIN y premios (costo en monedas calculado).
+- Pruebas: test:sql **37 OK** (20 nuevas) · test:e2e **19 OK** (4 nuevas, incluida la caja con la red cortada) · verificar ✓.
+- Capturas revisadas: `club-registro.png`, `club-tarjeta.png`, `club-codigo.png`, `club-datos.png`, `caja-ficha.png`,
+  `caja-sin-conexion.png`, `admin-club-premios.png`.
+- Seguridad: tablas con RLS y prueba de anon; PIN con bcrypt y nunca expuesto; teléfono nunca en tarjeta ni caja; internas con
+  `revoke`; prueba de que ninguna RPC pública crea monedas salvo la caja con sesión.
+- Pendiente: push (sin remoto). "¿Cambiaste de celular?" (recuperar la tarjeta) no está; hoy se recupera inscribiéndose otra vez con el mismo nombre.

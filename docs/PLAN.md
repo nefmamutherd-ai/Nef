@@ -57,9 +57,9 @@
   La RPC `caja_visita` recibe ese id y es **idempotente** (mismo id = no suma dos veces).
 - Términos del club visibles (cómo se gana, valor de premios, vencimiento) — Ley 1480.
 **Listo cuando**
-- [ ] Pruebas SQL: bienvenida única, antifraude de horas, canje sin saldo rechazado, idempotencia por id.
-- [ ] e2e: registro → caja suma (también con la red cortada en Playwright → reconecta → se envía una vez).
-- [ ] El botón de reseña sigue sin sumar nada.
+- [x] Pruebas SQL: bienvenida única, antifraude de horas, canje sin saldo rechazado, idempotencia por id.
+- [x] e2e: registro → caja suma (también con la red cortada en Playwright → reconecta → se envía una vez).
+- [x] El botón de reseña sigue sin sumar nada.
 
 ## Fase 3 — Paquete gimnasio
 **Construir**

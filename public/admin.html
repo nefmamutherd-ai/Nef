@@ -134,6 +134,41 @@
     <div class="n-campo"><label for="f-links">Otros enlaces (uno por línea: Título | link)</label>
       <textarea id="f-links" name="links" placeholder="Pide a domicilio | https://…&#10;Reserva una mesa | https://…"></textarea></div>
 
+    <div class="n-etiqueta">Club de monedas</div>
+    <div class="n-campo"><label>Cómo se ganan</label>
+      <div class="n-opciones" id="f-modo">
+        <label><input type="radio" name="modo_monedas" value="visita" checked><span>Por visita</span></label>
+        <label><input type="radio" name="modo_monedas" value="valor"><span>Por valor de la compra</span></label>
+      </div>
+    </div>
+    <div class="n-campo"><label>Devolución (modo por valor)</label>
+      <div class="n-opciones" id="f-devolucion">
+        <label><input type="radio" name="devolucion_pct" value="3"><span>3 %</span></label>
+        <label><input type="radio" name="devolucion_pct" value="5" checked><span>5 %</span></label>
+        <label><input type="radio" name="devolucion_pct" value="8"><span>8 %</span></label>
+      </div>
+      <div class="n-ayuda">1 moneda = $100 en premios. Una compra de $160.000 al 5 % da 80 monedas.</div>
+    </div>
+    <div class="n-fila">
+      <div class="n-campo"><label for="f-porvisita">Monedas por visita</label><input id="f-porvisita" name="monedas_por_visita" type="number" min="0" max="1000" value="10"></div>
+      <div class="n-campo"><label for="f-bienvenida">Bienvenida</label><input id="f-bienvenida" name="bienvenida" type="number" min="0" max="10000" value="50"></div>
+      <div class="n-campo"><label for="f-pin">PIN de la caja</label><input id="f-pin" name="pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" placeholder="Sin cambios">
+        <div class="n-ayuda">4 a 6 números. Cambiarlo cierra las cajas abiertas.</div></div>
+    </div>
+    <div id="premios-bloque" hidden>
+      <div class="n-campo"><label>Premios</label></div>
+      <div class="n-tabla-caja"><table class="n-tabla">
+        <thead><tr><th>Premio</th><th>Valor</th><th class="n-der">Cuesta</th><th>Activo</th></tr></thead>
+        <tbody id="lista-premios"></tbody>
+      </table></div>
+      <div class="n-herramientas">
+        <div class="n-campo"><label for="p-nombre">Premio nuevo</label><input id="p-nombre" placeholder="Capuchino"></div>
+        <div class="n-campo"><label for="p-valor">Valor en pesos</label><input id="p-valor" type="number" min="100" step="100" placeholder="8000"></div>
+        <button type="button" class="n-btn secundario" id="p-agregar">Agregar premio</button>
+      </div>
+      <div class="n-ayuda" id="link-caja"></div>
+    </div>
+
     <div class="n-etiqueta">Privado (solo tú lo ves)</div>
     <div class="n-fila">
       <div class="n-campo"><label for="f-plan">Plan</label><select id="f-plan" name="plan"><option value="basico">Básico</option><option value="pro">Pro</option><option value="cortesia">Cortesía / prueba</option></select></div>
@@ -303,14 +338,62 @@ function abrirNegocio(n = null) {
       if (!el.name) continue;
       if (el.name === 'links') el.value = (n.links || []).map((l) => `${l.titulo} | ${l.url}`).join('\n');
       else if (el.name.startsWith('srv_')) el.checked = !!(n.servicios || {})[el.name.slice(4)];
-      else if (el.type === 'radio') el.checked = (n[el.name] || 'cafe') === el.value;
+      else if (el.type === 'radio') el.checked = String(n[el.name]) === el.value;
+      else if (el.name === 'pin') el.value = '';
       else if (el.type === 'checkbox') el.checked = !!n[el.name];
       else el.value = n[el.name] ?? '';
     }
   }
   actualizarAyudaSlug();
+  $('#premios-bloque').hidden = !n;
+  if (n) {
+    $('#link-caja').textContent = `Caja de este negocio: ${ORIGEN}/caja/${n.slug}`;
+    cargarPremios(n.id);
+  }
   $('#dlg-negocio').showModal();
 }
+
+// ---------------- Premios (dentro del negocio) ----------------
+let valorMoneda = 100;
+sb.rpc('valor_moneda').then(({ data }) => { if (data) valorMoneda = data; });
+const costo = (valor) => Math.ceil((+valor || 0) / valorMoneda);
+let premios = [];
+async function cargarPremios(negocioId) {
+  const { data, error: err } = await sb.from('premios').select('*').eq('negocio_id', negocioId).order('valor_pesos');
+  if (err) { toast('No se cargaron los premios: ' + err.message); return; }
+  premios = data;
+  pintarPremios();
+}
+function pintarPremios() {
+  const tb = $('#lista-premios');
+  if (!premios.length) { tb.innerHTML = '<tr><td colspan="4"><div class="n-vacio"><b>Sin premios</b>Agrega el primero abajo.</div></td></tr>'; return; }
+  tb.innerHTML = premios.map((p) => `<tr data-id="${esc(p.id)}">
+      <td><div class="n-campo"><input data-campo="nombre" value="${esc(p.nombre)}" aria-label="Nombre del premio"></div></td>
+      <td><div class="n-campo"><input data-campo="valor_pesos" type="number" min="100" step="100" value="${esc(p.valor_pesos)}" aria-label="Valor en pesos"></div></td>
+      <td class="n-der costo">${costo(p.valor_pesos)} monedas</td>
+      <td><input type="checkbox" data-campo="activo" aria-label="Activo" ${p.activo ? 'checked' : ''}></td>
+    </tr>`).join('');
+  tb.querySelectorAll('[data-campo]').forEach((el) => el.addEventListener('change', async () => {
+    const tr = el.closest('tr');
+    const campo = el.dataset.campo;
+    const valor = el.type === 'checkbox' ? el.checked : campo === 'valor_pesos' ? +el.value : el.value.trim();
+    const { error: err } = await sb.from('premios').update({ [campo]: valor }).eq('id', tr.dataset.id);
+    if (err) { toast('No se guardó: ' + err.message); return; }
+    Object.assign(premios.find((p) => p.id === tr.dataset.id), { [campo]: valor });
+    tr.querySelector('.costo').textContent = `${costo(premios.find((p) => p.id === tr.dataset.id).valor_pesos)} monedas`;
+    toast('Premio guardado');
+  }));
+}
+$('#p-agregar').addEventListener('click', async () => {
+  const nombre = $('#p-nombre').value.trim();
+  const valor = +$('#p-valor').value;
+  if (!editando || !nombre || !(valor > 0)) { toast('Escribe el nombre y el valor en pesos'); return; }
+  const { error: err } = await sb.from('premios').insert({ negocio_id: editando.id, nombre, valor_pesos: valor });
+  if (err) { toast('No se agregó: ' + err.message); return; }
+  $('#p-nombre').value = ''; $('#p-valor').value = '';
+  toast(`Premio agregado: cuesta ${costo(valor)} monedas`);
+  cargarPremios(editando.id);
+});
 function actualizarAyudaSlug() { $('#n-slug-ayuda').textContent = `${ORIGEN}/n/${fN.slug.value || '…'}`; }
 fN.nombre.addEventListener('input', () => { if (!slugTocado) fN.slug.value = slugify(fN.nombre.value); actualizarAyudaSlug(); });
 fN.slug.addEventListener('input', () => { slugTocado = true; fN.slug.value = fN.slug.value.toLowerCase().replace(/[^a-z0-9-]/g, ''); actualizarAyudaSlug(); });
@@ -336,12 +419,22 @@ fN.addEventListener('submit', async (e) => {
     wifi_nombre: v('wifi_nombre'), wifi_clave: v('wifi_clave'), links,
     sector: fN.sector.value || 'cafe', servicios, ubicacion_etiqueta: v('ubicacion_etiqueta'),
     plan: fN.plan.value, activo: fN.activo.checked, contacto_nombre: v('contacto_nombre'), contacto_telefono: v('contacto_telefono'), notas: v('notas'),
+    modo_monedas: fN.modo_monedas.value || 'visita', devolucion_pct: +(fN.devolucion_pct.value || 5),
+    monedas_por_visita: Math.max(0, parseInt(fN.monedas_por_visita.value, 10) || 0), bienvenida: Math.max(0, parseInt(fN.bienvenida.value, 10) || 0),
   };
+  const pin = fN.pin.value.trim();
+  if (pin && !/^\d{4,6}$/.test(pin)) { error($('#n-error'), 'El PIN de la caja debe tener de 4 a 6 números.'); return; }
   const q = editando ? sb.from('negocios').update(datos).eq('id', editando.id) : sb.from('negocios').insert(datos);
   const { error: err } = await q;
   if (err) {
     error($('#n-error'), err.code === '23505' ? 'Esa dirección web ya la usa otro negocio. Cambia la "Dirección web".' : 'No se pudo guardar: ' + err.message);
     return;
+  }
+  if (pin) {
+    let id = editando && editando.id;
+    if (!id) { const { data } = await sb.from('negocios').select('id').eq('slug', datos.slug); id = data && data[0] && data[0].id; }
+    const { error: errPin } = await sb.rpc('fijar_pin_caja', { p_negocio: id, p_pin: pin });
+    if (errPin) { error($('#n-error'), 'El negocio se guardó, pero el PIN no: ' + errPin.message); return; }
   }
   $('#dlg-negocio').close();
   toast('Negocio guardado');
