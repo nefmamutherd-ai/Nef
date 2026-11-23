@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+<defs>
+  <filter id="grano" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/>
+    <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .16 0"/>
+    <feComposite in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="vetas" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".012 .22" numOctaves="3" seed="9"/>
+    <feColorMatrix values="0 0 0 0 .25  0 0 0 0 .15  0 0 0 0 .07  0 0 0 .5 0"/>
+  </filter>
+  <filter id="sombra" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dx="10" dy="16"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="sombraChica" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="4"/><feOffset dx="3" dy="5"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <radialGradient id="plato" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#fffdf8"/><stop offset=".78" stop-color="#f1ebe0"/><stop offset="1" stop-color="#ddd3c4"/></radialGradient>
+  <radialGradient id="platoAzul" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#eef2f2"/><stop offset=".8" stop-color="#cfdad8"/><stop offset="1" stop-color="#9fb2b0"/></radialGradient>
+  <radialGradient id="platoTierra" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#e9d6c0"/><stop offset=".8" stop-color="#c99a72"/><stop offset="1" stop-color="#9c6b46"/></radialGradient>
+  <radialGradient id="yema" cx="40%" cy="35%" r="65%"><stop offset="0" stop-color="#ffd35c"/><stop offset=".7" stop-color="#f6a51a"/><stop offset="1" stop-color="#d9800b"/></radialGradient>
+  <radialGradient id="cafe" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#6b3a1c"/><stop offset=".85" stop-color="#3d1f0d"/><stop offset="1" stop-color="#2a1408"/></radialGradient>
+  <radialGradient id="espuma" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#f6e7cf"/><stop offset=".7" stop-color="#dcb98c"/><stop offset="1" stop-color="#a8713f"/></radialGradient>
+  <radialGradient id="choco" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#7a4a2e"/><stop offset="1" stop-color="#43220f"/></radialGradient>
+  <radialGradient id="dorado" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f7cf7d"/><stop offset=".6" stop-color="#d99a3e"/><stop offset="1" stop-color="#a8641e"/></radialGradient>
+  <radialGradient id="crema" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#efdcb8"/></radialGradient>
+  <radialGradient id="aguacate" cx="40%" cy="40%" r="70%"><stop offset="0" stop-color="#e9efa0"/><stop offset=".55" stop-color="#a9c45a"/><stop offset="1" stop-color="#4f7a2a"/></radialGradient>
+  <radialGradient id="salsa" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#e0462c"/><stop offset="1" stop-color="#9c2414"/></radialGradient>
+</defs>
+<rect width="600" height="600" fill="#a97a50"/>
+<rect width="600" height="600" filter="url(#vetas)"/>
+<g filter="url(#sombra)"><circle cx="260" cy="280" r="152.25" fill="url(#plato)"/></g>
+<g filter="url(#sombraChica)"><circle cx="260" cy="280" r="121" fill="#fbf7ef" stroke="#e4dacb" stroke-width="3"/>
+<path d="M375 262 q46 4 46 26 q0 22 -46 26" fill="none" stroke="#f3ede2" stroke-width="18" stroke-linecap="round"/></g>
+<circle cx="260" cy="280" r="105" fill="url(#choco)"/><ellipse cx="235" cy="250" rx="34" ry="12" fill="#fff" opacity=".1"/><g filter="url(#sombraChica)"><rect x="400" y="380" width="54" height="54" rx="8" fill="#fbf6e6" stroke="#eadfc4" stroke-width="3"/><rect x="446" y="350" width="54" height="54" rx="8" fill="#fbf6e6" stroke="#eadfc4" stroke-width="3"/><rect x="492" y="320" width="54" height="54" rx="8" fill="#fbf6e6" stroke="#eadfc4" stroke-width="3"/></g>
+     <g filter="url(#sombraChica)"><circle cx="460" cy="180" r="62" fill="url(#dorado)"/><circle cx="460" cy="180" r="62" fill="none" stroke="#a8641e" stroke-width="4" opacity=".5"/></g><rect width="600" height="600" filter="url(#grano)" fill="#000" opacity=".55"/></svg>

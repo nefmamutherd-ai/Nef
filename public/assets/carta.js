@@ -1,8 +1,10 @@
-// Carta: pestañas que siguen el scroll, hoja de detalle y "Elige por mí".
+// Carta: aparición al hacer scroll, pestañas que siguen el scroll, hoja de detalle y "Elige por mí" (tragamonedas).
 // Datos → textContent. Girar NO da monedas ni premios (regla 2): solo sugiere un plato.
+// El resultado se decide ANTES de animar; la animación solo lo muestra.
 import { rpc, hoja } from '/assets/nef-rpc.js';
 import { ANTOJOS, elegir, candidatos } from '/assets/elegir.js';
 
+document.documentElement.classList.add('con-js');
 const raiz = document.getElementById('carta');
 const slug = raiz.dataset.slug;
 const tag = raiz.dataset.tag || null;
@@ -10,10 +12,29 @@ const $ = (id) => document.getElementById(id);
 const productos = JSON.parse($('datos-carta').textContent || '[]');
 const porId = new Map(productos.map((p) => [p.id, p]));
 const pesos = (n) => '$' + new Intl.NumberFormat('es-CO').format(n || 0);
-const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const evento = (tipo, producto = null) => rpc('registrar_evento_carta', { p_slug: slug, p_tipo: tipo, p_producto: producto, p_tag: tag }).catch(() => {});
+const SVG = (d) => `<svg class="pt-icono" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const ICONO_ANTOJO = {
+  dulce: '<path d="M4 13h16l-2 7H6z"/><path d="M6 13a6 6 0 0 1 12 0"/><path d="M12 4v3"/>',
+  salado: '<path d="M3 12h18"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M9 8c0-2 1-3 3-4M14 8c0-1.5.6-2.5 2-3"/>',
+  bebida: '<path d="M5 8h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M9 3v2M13 3v2"/>',
+  sorpresa: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01"/>',
+};
 
 evento('ver_carta');
+
+// ── Aparecer al hacer scroll (escalonado dentro de cada tanda) ─────────────────────
+const porRevelar = [...document.querySelectorAll('.pt-revela')];
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((ents) => {
+    ents.filter((e) => e.isIntersecting).forEach((e, i) => {
+      e.target.style.transitionDelay = `${i * 70}ms`;
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  porRevelar.forEach((el) => io.observe(el));
+} else porRevelar.forEach((el) => el.classList.add('visible'));
 
 // ── Pestañas: tocar → ir a la sección; hacer scroll → se marca la visible ──────────
 const pestanas = [...document.querySelectorAll('.pt-pestanas [data-cat]')];
@@ -26,8 +47,8 @@ let saltando = false;
 pestanas.forEach((b) => b.addEventListener('click', () => {
   saltando = true;
   marcar(b.dataset.cat);
-  $('cat-' + b.dataset.cat).scrollIntoView({ behavior: reducido ? 'auto' : 'smooth', block: 'start' });
-  setTimeout(() => (saltando = false), 700);
+  $('cat-' + b.dataset.cat).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => (saltando = false), 800);
 }));
 if (pestanas.length && 'IntersectionObserver' in window) {
   const io = new IntersectionObserver((entradas) => {
@@ -64,7 +85,7 @@ $('hoja-detalle').querySelectorAll('[data-cerrar]').forEach((b) => b.addEventLis
 $('hoja-detalle').previousElementSibling.addEventListener('click', cerrarDetalle);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('hoja-detalle').hidden) cerrarDetalle(); });
 
-// ── Elige por mí: el resultado se decide ANTES de animar ───────────────────────────
+// ── Elige por mí ─────────────────────────────────────────────────────────────────
 const elige = hoja($('hoja-elige'));
 let antojo = 'sorpresa';
 let elegido = null;
@@ -74,50 +95,101 @@ for (const a of ANTOJOS) {
   b.type = 'button';
   b.className = 'pt-boton';
   b.dataset.antojo = a.id;
+  const i = document.createElement('i');
+  i.innerHTML = SVG(ICONO_ANTOJO[a.id]); // ícono fijo del código, no datos
   const s = document.createElement('span');
   s.textContent = a.texto;
-  b.append(s);
+  b.append(i, s);
   b.addEventListener('click', () => { antojo = a.id; girar(); });
   $('antojos').append(b);
 }
-$('elige').addEventListener('click', () => {
+function mostrarAntojos() {
+  $('e-titulo').textContent = '¿Qué se te antoja?';
   $('antojos').hidden = false;
   $('giro').hidden = true;
   $('g-vacio').hidden = true;
-  elige.abrir();
-});
+}
+$('elige').addEventListener('click', () => { mostrarAntojos(); elige.abrir(); });
+
+function fila(p) {
+  const d = document.createElement('div');
+  if (p.foto_url) { const img = document.createElement('img'); img.src = p.foto_url; img.alt = ''; d.append(img); }
+  else { const s = document.createElement('span'); s.className = 'pt-sin-foto'; d.append(s); }
+  const t = document.createElement('span');
+  t.textContent = p.nombre;
+  d.append(t);
+  return d;
+}
+
+function confeti() {
+  const c = $('confeti');
+  c.textContent = '';
+  const colores = ['var(--marca)', 'var(--oro)', 'var(--tinta)', 'var(--ok)', 'var(--papel-hondo)'];
+  for (let k = 0; k < 28; k++) {
+    const i = document.createElement('i');
+    const ang = (Math.PI * 2 * k) / 28 + Math.random() * 0.3;
+    const dist = 90 + Math.random() * 120;
+    i.style.setProperty('--x', `${Math.cos(ang) * dist}px`);
+    i.style.setProperty('--y', `${Math.sin(ang) * dist - 40}px`);
+    i.style.setProperty('--r', `${Math.round(Math.random() * 720 - 360)}deg`);
+    i.style.background = colores[k % colores.length];
+    i.style.animationDelay = `${Math.random() * 80}ms`;
+    c.append(i);
+  }
+}
 
 function girar() {
-  elegido = elegir(productos, antojo);
+  elegido = elegir(productos, antojo); // ← decidido aquí, antes de animar
   $('antojos').hidden = true;
   $('g-acciones').hidden = true;
+  $('g-resultado').hidden = true;
   $('g-frase').hidden = true;
-  $('g-precio').textContent = '';
   if (!elegido) { $('g-vacio').hidden = false; $('antojos').hidden = false; return; }
   $('g-vacio').hidden = true;
   $('giro').hidden = false;
+  $('e-titulo').textContent = 'Girando…';
   evento('girar', elegido.id);
-  // Rollo: nombres al azar de los candidatos y, al final, el elegido
+
+  // Rollo: muchos platos al azar del antojo y, al final, el elegido (queda en la ventana del centro)
   const c = candidatos(productos, antojo);
-  const nombres = reducido ? [] : Array.from({ length: 14 }, () => c[Math.floor(Math.random() * c.length)].nombre);
-  nombres.push(elegido.nombre);
+  const lista = Array.from({ length: 26 }, () => c[Math.floor(Math.random() * c.length)]);
+  lista.push(elegido, c[Math.floor(Math.random() * c.length)]);
   const rollo = $('rollo');
   rollo.textContent = '';
-  for (const nom of nombres) { const d = document.createElement('div'); d.textContent = nom; rollo.append(d); }
+  lista.forEach((p, k) => { const f = fila(p); if (k === lista.length - 2) f.dataset.elegido = ''; rollo.append(f); });
+  const maquina = $('maquina');
+  maquina.classList.remove('gano');
+  maquina.classList.add('girando');
   rollo.style.transition = 'none';
   rollo.style.transform = 'translateY(0)';
-  const fin = () => {
-    $('g-precio').textContent = pesos(elegido.precio);
-    $('g-acciones').hidden = false;
-    const r = document.querySelector('.pt-ruleta');
-    r.classList.remove('pt-celebra'); void r.offsetWidth; r.classList.add('pt-celebra');
+  const ALTO = 80;
+  const destino = (lista.length - 2) * ALTO;
+  const DURA = 3200;
+  // Vibración en cada "clic" mientras frena (donde el celular lo permita)
+  const inicio = performance.now();
+  let ultimo = -1;
+  const facil = (x) => 1 - Math.pow(1 - x, 4);
+  const tic = (ahora) => {
+    const x = Math.min(1, (ahora - inicio) / DURA);
+    const fila = Math.floor((facil(x) * destino) / ALTO);
+    if (fila !== ultimo) { ultimo = fila; if (x > 0.45 && navigator.vibrate) navigator.vibrate(8); }
+    if (x < 1) requestAnimationFrame(tic);
   };
-  if (reducido) { fin(); return; }
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    rollo.style.transition = 'transform 2200ms cubic-bezier(.12,.8,.2,1)';
-    rollo.style.transform = `translateY(-${(nombres.length - 1) * 84}px)`;
+    rollo.style.transition = `transform ${DURA}ms cubic-bezier(.12,.75,.15,1)`;
+    rollo.style.transform = `translateY(-${destino}px)`;
+    requestAnimationFrame(tic);
   }));
-  rollo.addEventListener('transitionend', fin, { once: true });
+  rollo.addEventListener('transitionend', () => {
+    maquina.classList.remove('girando');
+    maquina.classList.add('gano');
+    confeti();
+    if (navigator.vibrate) navigator.vibrate([20, 40, 30]);
+    $('e-titulo').textContent = '¡Esta es para ti!';
+    $('g-precio').textContent = pesos(elegido.precio);
+    $('g-resultado').hidden = false;
+    $('g-acciones').hidden = false;
+  }, { once: true });
 }
 $('otra-vez').addEventListener('click', girar);
 $('lo-pido').addEventListener('click', () => {
@@ -125,6 +197,7 @@ $('lo-pido').addEventListener('click', () => {
   evento('ruleta_acepto', elegido.id);
   $('g-acciones').hidden = true;
   const f = $('g-frase');
-  f.textContent = 'Muéstrale esto a quien te atiende.';
+  f.textContent = `Pídele a quien te atiende: ${elegido.nombre}.`;
   f.hidden = false;
+  confeti();
 });

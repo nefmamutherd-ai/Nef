@@ -185,10 +185,40 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
   .faq summary { font-size: 24px; }
   .cierre .btn { width: auto; }
 }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* ── Movimiento (2026-11-23): con el lenguaje de la marca — el punto, las ondas de "acerca el celular", la mandarina ── */
+@keyframes sube { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes subraya { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes flota { 0%, 100% { transform: rotate(4deg) translateY(0); } 50% { transform: rotate(2.5deg) translateY(-12px); } }
+@keyframes onda { 0% { transform: scale(.55); opacity: .7; } 100% { transform: scale(2.3); opacity: 0; } }
+@keyframes cinta { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes acerca { 0%, 62%, 100% { transform: translate(0, 0) rotate(-8deg); } 72% { transform: translate(14px, -10px) rotate(-4deg); } 80% { transform: translate(0, 0) rotate(-8deg); } }
+.hero h1 .pal { display: inline-block; opacity: 0; animation: sube .7s cubic-bezier(.2, .8, .2, 1) both; }
+.hero h1 em { position: relative; display: inline-block; }
+.hero h1 em::after { content: ""; position: absolute; left: 2px; right: 4px; bottom: -2px; height: 6px; border-radius: 3px; background: var(--mandarina); transform-origin: left; transform: scaleX(0); animation: subraya .8s cubic-bezier(.2, .8, .2, 1) 1.05s forwards; }
+.hero .tx > :not(h1) { animation: sube .8s cubic-bezier(.2, .8, .2, 1) both; }
+.hero .tx > .lead { animation-delay: .55s; } .hero .tx > .acc { animation-delay: .7s; } .hero .tx > .nota { animation-delay: .85s; }
+.hero .vis { animation: sube .9s cubic-bezier(.2, .8, .2, 1) .3s both; }
+.hero .tel { animation: flota 6s ease-in-out 1.2s infinite; }
+.hero .punto { animation: acerca 5s cubic-bezier(.2, .8, .2, 1) 2s infinite; overflow: visible; }
+.hero .punto .ondas i { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--mandarina); animation: onda 2.8s cubic-bezier(.2, .8, .2, 1) infinite; pointer-events: none; }
+.hero .punto .ondas i:nth-child(2) { animation-delay: .9s; } .hero .punto .ondas i:nth-child(3) { animation-delay: 1.8s; }
+.btn { transition: transform .18s cubic-bezier(.2, .8, .2, 1), background-color .15s ease, box-shadow .2s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn.p:hover { box-shadow: 0 10px 22px -12px var(--mandarina); }
+.cinta { overflow: hidden; border-block: 1px solid var(--arena); margin: 0 calc(-1 * var(--lado)) var(--entre-secciones); padding: 14px 0; }
+.cinta > div { display: flex; width: max-content; animation: cinta 26s linear infinite; }
+.cinta span { font: 800 22px var(--titulos); letter-spacing: -.02em; white-space: nowrap; padding: 0 22px; display: inline-flex; align-items: center; gap: 44px; }
+.cinta span::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--mandarina); box-shadow: 0 0 0 4px var(--papel), 0 0 0 6px var(--mandarina); }
+/* Aparecer al hacer scroll (el JS agrega .rv y luego .visto); sin JS todo se ve */
+.rv { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .8s cubic-bezier(.2, .8, .2, 1); }
+.rv.visto { opacity: 1; transform: none; }
+.paso, .kpi, .precio, .faq details { transition: transform .25s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease; }
+.paso:hover { transform: translateY(-4px); }
+.paso .cap img { transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
+.paso:hover .cap img { transform: translateY(-6px) rotate(-1deg); }
+.kpi .num { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -202,7 +232,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
   <!-- 1. Portada -->
   <header class="hero">
     <div class="tx">
-      <h1>Clientes que <em>vuelven</em>.</h1>
+      <h1><span class="pal" style="animation-delay:.05s">Clientes</span> <span class="pal" style="animation-delay:.17s">que</span> <span class="pal" style="animation-delay:.29s"><em>vuelven</em>.</span></h1>
       <p class="lead">Un punto en la mesa, la recepción o la máquina. Tu cliente acerca el celular, ve tu carta, junta monedas y te deja la reseña. Tú sabes quién dejó de venir.</p>
       <div class="acc">
         <a class="btn p js-wa" href="#cierre">Quiero Nef en mi negocio</a>
@@ -213,9 +243,10 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     <!-- TODO(Jacobo): reemplazar por la foto real del sticker en una mesa (WebP, 1200×1400). Mientras tanto: la captura del portal. -->
     <div class="vis" aria-hidden="true">
       <div class="tel"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"></div>
-      <div class="punto"><img src="/assets/marca/simbolo-nef.svg" alt="" width="60" height="60"></div>
+      <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><img src="/assets/marca/simbolo-nef.svg" alt="" width="60" height="60"></div>
     </div>
   </header>
+  <div class="cinta" aria-hidden="true"><div><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span></div></div>
 
   <!-- 2. Cómo funciona -->
   <section class="sec" id="como-funciona">
@@ -359,6 +390,36 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     var url = 'https://wa.me/' + d + '?text=' + encodeURIComponent('Hola, quiero información de Nef para mi negocio');
     document.querySelectorAll('.js-wa').forEach(function (a) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; });
   }
+
+  // ── Aparecer al hacer scroll (escalonado) y números que cuentan ──
+  (function () {
+    if (!('IntersectionObserver' in window)) return;
+    var piezas = document.querySelectorAll('.sec > *, .pasos > .paso, .kpis > .kpi, #lista-precios > .precio, .faq > details, .cierre > *');
+    var io = new IntersectionObserver(function (ents) {
+      var n = 0;
+      ents.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var el = e.target;
+        el.style.transitionDelay = (n++ * 90) + 'ms';
+        el.classList.add('visto');
+        io.unobserve(el);
+        el.querySelectorAll('.num').forEach(contar);
+        if (el.classList.contains('num')) contar(el);
+      });
+    }, { rootMargin: '0px 0px -10% 0px' });
+    piezas.forEach(function (el) { el.classList.add('rv'); io.observe(el); });
+    function contar(el) {
+      var fin = parseInt(el.textContent.replace(/\D/g, ''), 10);
+      if (!fin || el.dataset.contado) return;
+      el.dataset.contado = '1';
+      var t0 = performance.now();
+      (function paso(ahora) {
+        var x = Math.min(1, (ahora - t0) / 1200);
+        el.textContent = String(Math.round(fin * (1 - Math.pow(1 - x, 3))));
+        if (x < 1) requestAnimationFrame(paso);
+      })(t0);
+    }
+  })();
 
   // ── "Tócalo tú": solo se muestra si el negocio de demostración existe (Fase 7). ──
   var demo = document.getElementById('demo');

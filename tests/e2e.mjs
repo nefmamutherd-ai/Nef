@@ -604,7 +604,7 @@ await caso('"Elige por mí": sugiere un postre disponible, "Lo pido" se registra
   assert.deepEqual(await p.$$eval('#antojos .pt-boton span', (s) => s.map((x) => x.textContent)), ['Algo dulce', 'Algo salado', 'Una bebida', 'Sorpréndeme']);
   await p.click('#antojos [data-antojo=dulce]');
   await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 6000 });
-  const elegido = await p.$eval('#rollo div:last-child', (d) => d.textContent);
+  const elegido = await p.$eval('#rollo [data-elegido]', (d) => d.textContent);
   assert.match(elegido, /^Postre \d+$/); assert.notEqual(elegido, 'Postre 2', 'sugirió un agotado');
   await p.screenshot({ path: DIR + 'elige-por-mi.png' });
   await p.click('#lo-pido');

@@ -24,8 +24,8 @@ export async function onRequestGet({ params, request, env }) {
 
   <div id="cargando"><div class="pt-cargando"></div><div class="pt-cargando"></div></div>
 
-  <section id="registro" class="pt-club" hidden>
-    <div class="pt-neg">${esc(n.nombre)}</div>
+  <section id="registro" class="pt-club pt-entra" hidden>
+    <div class="pt-neg pt-versalitas">${esc(n.nombre)}</div>
     <h1>Únete al club de ${esc(n.nombre)}</h1>
     <p class="pt-frase">${c.bienvenida > 0 ? `Recibe <b>${esc(c.bienvenida)} ${plural}</b> de bienvenida en tu primera visita.` : `Gana ${plural} cada vez que vengas.`}</p>
     <form class="pt-form" id="form-registro" novalidate>
@@ -41,9 +41,10 @@ export async function onRequestGet({ params, request, env }) {
     </form>
   </section>
 
-  <section id="tarjeta" class="pt-club" hidden>
-    <div class="pt-neg" id="t-neg">${esc(n.nombre)}</div>
+  <section id="tarjeta" class="pt-club pt-entra" hidden>
+    <div class="pt-neg pt-versalitas" id="t-neg">${esc(n.nombre)}</div>
     <h1 id="t-hola">Hola</h1>
+    <div class="pt-filete" aria-hidden="true"><i></i></div>
     <div class="pt-saldo" id="t-saldo"><div><b id="t-numero">0</b><span>${plural}</span></div></div>
     <p class="pt-frase" id="t-frase"></p>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>

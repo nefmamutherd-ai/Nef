@@ -28,6 +28,19 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('visible'), 3000);
 }
 
+// El número sube de 0 a su valor (900 ms); el texto final siempre es el exacto
+function contar(el, hasta) {
+  const fin = Number(hasta) || 0;
+  if (fin <= 0) { el.textContent = numero(0); return; }
+  const t0 = performance.now();
+  const paso = (ahora) => {
+    const x = Math.min(1, (ahora - t0) / 900);
+    el.textContent = numero(Math.round(fin * (1 - Math.pow(1 - x, 3))));
+    if (x < 1) requestAnimationFrame(paso); else el.textContent = numero(fin);
+  };
+  requestAnimationFrame(paso);
+}
+
 let tokenActual = null;
 const hojaCodigo = hoja($('hoja-codigo'));
 const hojaPremios = hoja($('hoja-premios'));
@@ -49,13 +62,13 @@ function frase(el, partes) {
 
 function pintarTarjeta(t) {
   $('t-hola').textContent = `Hola, ${String(t.nombre || '').split(' ')[0]}`;
-  $('t-numero').textContent = numero(t.saldo);
+  contar($('t-numero'), t.saldo);
   const alcanzables = (t.premios || []).filter((p) => p.alcanzable);
   const progreso = t.cercano ? Math.min(100, Math.round((t.saldo / t.cercano.costo) * 100)) : (t.premios || []).length ? 100 : 0;
-  $('t-saldo').style.setProperty('--progreso', String(progreso));
+  requestAnimationFrame(() => requestAnimationFrame(() => $('t-saldo').style.setProperty('--progreso', String(progreso))));
 
   if (t.cercano) frase($('t-frase'), ['Te faltan ', { b: numero(t.cercano.faltan) }, ' para un ', { b: t.cercano.nombre }]);
-  else if (alcanzables.length) frase($('t-frase'), ['¡Ya puedes canjear ', { b: alcanzables[alcanzables.length - 1].nombre }, '!']);
+  else if (alcanzables.length) frase($('t-frase'), ['Muéstrale tu código al cajero y ', { b: 'canjea tu premio' }, '.']);
   else frase($('t-frase'), [`Muestra tu código en la caja cada vez que vengas y gana ${plural}.`]);
 
   // Nivel discreto junto al negocio
@@ -115,12 +128,19 @@ function pintarTarjeta(t) {
   }
   for (const p of t.premios || []) {
     const d = document.createElement('div');
-    d.className = 'pt-dato';
-    const s = document.createElement('small');
-    s.textContent = `${numero(p.costo)} ${plural} · ${pesos(p.valor_pesos)}${p.alcanzable ? ' · ¡Ya te alcanza!' : ''}`;
+    d.className = 'pt-premio' + (p.alcanzable ? ' listo' : '');
     const b = document.createElement('b');
     b.textContent = p.nombre;
-    d.append(s, b);
+    const s = document.createElement('small');
+    s.textContent = p.alcanzable ? '¡Ya te alcanza!' : `${numero(p.costo)} ${plural}`;
+    const barra = document.createElement('div');
+    barra.className = 'pt-barrita';
+    const i = document.createElement('i');
+    i.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / p.costo)));
+    barra.append(i);
+    const v = document.createElement('small');
+    v.textContent = `${numero(p.costo)} ${plural} · vale ${pesos(p.valor_pesos)}`;
+    d.append(b, s, barra, v);
     lista.append(d);
   }
   mostrar('tarjeta');

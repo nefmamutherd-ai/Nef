@@ -199,3 +199,137 @@ a.pt-prod { text-decoration: none; }
 /* ── Celebración (solo: ganar monedas, entrada, ruleta) ──────────── */
 @keyframes pt-salto { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .pt-celebra { animation: pt-salto var(--dur-3) var(--ease); }
+
+/* =====================================================================
+   CAPA EDITORIAL (2026-11-23): la carta impresa de un buen café + la maqueta aprobada.
+   Papel con grano, serif grande, filetes finos, colores planos del negocio, fotos de verdad.
+   Sin degradados de luz, sin brillos, sin neón. Animaciones sobrias que se ven siempre.
+   ===================================================================== */
+:root { --linea-fina: color-mix(in srgb, var(--tinta) 14%, transparent); --tinta-marca: color-mix(in srgb, var(--marca) 80%, var(--tinta)); }
+
+/* Papel con grano (muy sutil) */
+body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E"); }
+[data-tema="energia"] body.pt, body.pt[data-tema="energia"] { background-image: none; }
+
+@keyframes pt-sube { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pt-dibuja { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.pt-entra > * { animation: pt-sube .6s cubic-bezier(.2, .8, .2, 1) both; }
+.pt-entra > :nth-child(1) { animation-delay: .04s; } .pt-entra > :nth-child(2) { animation-delay: .12s; }
+.pt-entra > :nth-child(3) { animation-delay: .2s; } .pt-entra > :nth-child(4) { animation-delay: .28s; }
+.pt-entra > :nth-child(5) { animation-delay: .36s; } .pt-entra > :nth-child(n+6) { animation-delay: .42s; }
+.con-js .pt-revela { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .6s cubic-bezier(.2, .8, .2, 1); }
+.con-js .pt-revela.visible { opacity: 1; transform: none; }
+
+/* Filete con el punto de Nef al centro: ──── ◉ ──── */
+.pt-filete { display: flex; align-items: center; gap: 12px; color: var(--marca); margin: 18px auto; max-width: 220px; }
+.pt-filete::before, .pt-filete::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .55; transform-origin: center; animation: pt-dibuja .8s cubic-bezier(.2, .8, .2, 1) both .2s; }
+.pt-filete i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px currentColor; }
+.pt-versalitas { font: 600 12px/1.4 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--tinta-2); }
+
+/* ── Portal ── */
+.pt-portada { padding-top: var(--e-16); margin-bottom: 28px; }
+.pt-portada .pt-logo { width: 96px; height: 96px; font-size: 38px; box-shadow: 0 0 0 6px var(--papel), 0 0 0 7px color-mix(in srgb, var(--marca) 45%, transparent); }
+.pt-portada h1 { font-size: 36px; letter-spacing: -.015em; margin: 22px 0 6px; }
+.pt-portada .pt-versalitas { display: block; }
+.pt-portada p { margin: 0; }
+.pt-portada .pt-lugar { margin-top: 2px; }
+.pt-portada .pt-lugar::before, .pt-portada .pt-lugar::after { content: "—"; margin: 0 8px; color: var(--tinta-3); }
+[data-tema="energia"] .pt-portada .pt-logo { box-shadow: 0 0 0 6px var(--papel), 0 0 0 7px color-mix(in srgb, var(--marca) 60%, transparent); }
+
+.pt-boton { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1fr 1fr; column-gap: 14px; min-height: 82px; padding: 0 18px;
+  border: 1px solid var(--linea); box-shadow: 0 1px 0 var(--linea); transition: transform var(--dur-1) var(--ease), border-color var(--dur-2) var(--ease); }
+.pt-boton:active { transform: scale(.98); }
+.pt-boton > .pt-ico { grid-row: 1 / 3; align-self: center; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--marca) 11%, var(--tarjeta)); color: var(--tinta-marca); }
+[data-tema="energia"] .pt-boton > .pt-ico { color: var(--marca); background: color-mix(in srgb, var(--marca) 14%, var(--tarjeta)); }
+.pt-boton > span { grid-column: 2; align-self: end; }
+.pt-boton > em { grid-column: 2; align-self: start; margin-top: 3px; font: 500 14px/1.3 var(--sans); font-style: normal; color: var(--tinta-2); }
+.pt-boton > .pt-flecha { grid-column: 3; grid-row: 1 / 3; align-self: center; transition: transform var(--dur-2) var(--ease); }
+.pt-boton:hover > .pt-flecha { transform: translateX(3px); }
+.pt-boton.principal { border-color: var(--marca); box-shadow: 0 10px 24px -16px var(--marca); }
+.pt-boton.principal > .pt-ico { background: color-mix(in srgb, var(--sobre-marca) 18%, transparent); color: var(--sobre-marca); }
+.pt-boton.principal > em { color: currentColor; opacity: .8; }
+
+/* Enlaces: "WiFi · WhatsApp · Instagram" como en una carta impresa */
+.pt-enlaces.pt-puntos { gap: 6px 0; }
+.pt-puntos > a, .pt-puntos > details { display: inline-flex; align-items: center; }
+.pt-puntos > :not(:last-child)::after { content: "·"; margin: 0 12px; color: var(--tinta-3); text-decoration: none; display: inline-block; }
+
+/* ── Carta ── */
+.pt-carta-cabeza { text-align: center; padding: 6px 0 4px; }
+.pt-carta-cabeza h1 { font: var(--peso-titulo, 500) 46px/1 var(--serif); letter-spacing: -.02em; margin: 6px 0 0; }
+.pt-carta-cabeza .pt-volver { position: absolute; left: 12px; top: 18px; padding: 8px; color: var(--tinta); }
+.pt-elige { display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; padding: 10px 18px; border-radius: var(--r-pildora); cursor: pointer;
+  border: 1.5px solid var(--marca); background: var(--tarjeta); color: var(--tinta-marca); font: 700 15px var(--sans); transition: transform var(--dur-1) var(--ease); }
+.pt-elige:active { transform: scale(.96); }
+.pt-elige .pt-icono { width: 20px; height: 20px; transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.pt-elige:hover .pt-icono { transform: rotate(180deg); }
+[data-tema="energia"] .pt-elige { color: var(--marca); }
+.pt-fija { padding-top: 8px; }
+.pt-pestanas { justify-content: center; border-bottom-color: var(--linea-fina); }
+.pt-pestanas button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+
+.pt-seccion { padding-top: 6px; }
+.pt-seccion > .pt-categoria { display: flex; align-items: baseline; gap: 12px; font-size: 30px; margin: 30px 0 14px; }
+.pt-seccion > .pt-categoria small { font: 700 13px var(--sans); letter-spacing: .12em; color: var(--marca); }
+.pt-seccion > .pt-categoria::after { content: ""; flex: 1; height: 1px; background: var(--linea-fina); align-self: center; }
+
+/* Plato estrella: foto grande */
+.pt-seccion .pt-prod.pt-estrella { display: block; width: 100%; padding: 0; margin: 0 0 18px; border: 0; background: var(--tarjeta); border-radius: 24px; overflow: hidden; text-align: left;
+  color: inherit; cursor: pointer; box-shadow: 0 1px 0 var(--linea), 0 18px 40px -28px rgba(31, 27, 23, .55); transition: transform var(--dur-1) var(--ease); }
+.pt-seccion .pt-prod.pt-estrella:active { transform: scale(.985); }
+.pt-seccion .pt-estrella img, .pt-seccion .pt-estrella .pt-sin-foto { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; background: var(--papel-hondo); transition: transform 1.2s cubic-bezier(.2, .8, .2, 1); }
+.pt-estrella:hover img { transform: scale(1.04); }
+.pt-estrella .pt-tx { padding: 16px 18px 18px; }
+.pt-estrella .pt-sello { display: inline-block; font: 700 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--marca); margin-bottom: 4px; }
+.pt-estrella b { display: block; font: var(--peso-titulo, 500) 26px/1.15 var(--serif); }
+.pt-estrella small { display: block; margin: 6px 0 10px; color: var(--tinta-2); font-size: 15px; }
+.pt-estrella .pt-precio { font-size: 20px; }
+
+/* Platos: foto redonda, nombre ······ precio, descripción */
+.pt-seccion .pt-prod { gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--linea-fina); align-items: center; }
+.pt-seccion .pt-prod .pt-foto { order: -1; width: 84px; height: 84px; border-radius: 50%; box-shadow: 0 8px 18px -10px rgba(31, 27, 23, .6); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+.pt-seccion .pt-prod:hover .pt-foto { transform: rotate(-8deg) scale(1.04); }
+.pt-linea { display: flex; align-items: baseline; gap: 6px; }
+.pt-linea b { font: var(--peso-titulo, 500) 19px/1.25 var(--serif) !important; }
+.pt-linea i { flex: 1; min-width: 16px; border-bottom: 2px dotted var(--linea); transform: translateY(-4px); }
+.pt-linea .pt-precio { margin: 0; font-size: 16px; white-space: nowrap; }
+.pt-seccion .pt-prod small { white-space: normal; }
+.pt-seccion .pt-prod.agotado .pt-foto { filter: grayscale(1); opacity: .45; }
+
+/* ── "Elige por mí": tragamonedas (solo sugiere un plato; no hay premio) ── */
+.pt-antojos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pt-antojos .pt-boton { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; min-height: 104px; padding: 14px 16px; }
+.pt-antojos .pt-boton > i { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: color-mix(in srgb, var(--marca) 12%, var(--tarjeta)); color: var(--tinta-marca); }
+.pt-antojos .pt-boton > i .pt-icono { width: 22px; height: 22px; }
+.pt-maquina { position: relative; margin: 12px 0 8px; padding: 12px; border-radius: 24px; background: var(--tinta); color: var(--papel); }
+.pt-luces { display: flex; justify-content: space-between; padding: 2px 8px 10px; }
+.pt-luces i { width: 8px; height: 8px; border-radius: 50%; background: var(--marca); opacity: .3; }
+.pt-maquina.girando .pt-luces i { animation: pt-foco .4s steps(2) infinite; }
+.pt-maquina.girando .pt-luces i:nth-child(2n) { animation-delay: .2s; }
+.pt-maquina.gano .pt-luces i { opacity: 1; }
+@keyframes pt-foco { 0% { opacity: .25; } 100% { opacity: 1; } }
+.pt-ruleta { height: 240px; margin: 0; border-radius: 16px; background: var(--papel); color: var(--tinta); }
+.pt-ruleta::before { background: linear-gradient(var(--papel) 15%, transparent); height: 70px; }
+.pt-ruleta::after { background: linear-gradient(transparent, var(--papel) 85%); height: 70px; }
+.pt-ventana { position: absolute; left: 6px; right: 6px; top: 80px; height: 80px; z-index: 2; border-radius: 14px; pointer-events: none; border: 2px solid var(--marca); }
+.pt-rollo div { height: 80px; display: flex; align-items: center; gap: 14px; padding: 0 16px; text-align: left; font: var(--peso-titulo, 500) 21px/1.15 var(--serif); }
+.pt-rollo div:first-child { margin-top: 80px; }
+.pt-rollo img, .pt-rollo .pt-sin-foto { flex: none; width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: var(--papel-hondo); }
+.pt-maquina.gano .pt-ventana { animation: pt-salto .5s var(--ease) 2; }
+.pt-confeti { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 5; pointer-events: none; }
+.pt-confeti i { position: absolute; width: 8px; height: 13px; border-radius: 2px; opacity: 0; animation: pt-confeti 1.2s cubic-bezier(.2, .8, .2, 1) forwards; }
+@keyframes pt-confeti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)); } }
+.pt-resultado { text-align: center; animation: pt-sube .45s cubic-bezier(.2, .8, .2, 1) both; }
+.pt-resultado .pt-precio { display: inline-block; font-size: 20px; margin: 4px 0; }
+
+/* ── Club ── */
+@property --progreso { syntax: "<number>"; inherits: false; initial-value: 0; }
+.pt-club .pt-saldo { width: 236px; height: 236px; transition: --progreso 1.5s cubic-bezier(.2, .8, .2, 1);
+  background: radial-gradient(closest-side, var(--papel) 87%, transparent 88%), conic-gradient(from -90deg, var(--oro) calc(var(--progreso) * 1%), var(--oro-suave) 0); }
+.pt-premio { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--linea-fina); }
+.pt-premio b { font: var(--peso-titulo, 500) 19px var(--serif); }
+.pt-premio small { color: var(--tinta-2); font-size: 13px; font-weight: 600; }
+.pt-premio .pt-barrita { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--oro-suave); overflow: hidden; }
+.pt-premio .pt-barrita i { display: block; height: 100%; width: calc(var(--v, 0) * 100%); border-radius: 3px; background: var(--oro); transform-origin: left; animation: pt-dibuja .9s cubic-bezier(.2, .8, .2, 1) both .2s; }
+.pt-premio.listo small { color: var(--ok); }

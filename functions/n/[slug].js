@@ -33,7 +33,7 @@ export async function onRequestGet({ params, request, env }) {
   // Botones grandes (máximo 3, el primero principal)
   const botones = botonesPortal(n).map((b, i) =>
     `<a class="pt-boton${i === 0 ? ' principal' : ''}" href="${esc(conTag(b.ruta))}" data-boton="${esc(b.id)}">` +
-    `${icono(b.icono)}<span>${esc(b.texto)}</span>${icono('flecha', ' pt-flecha')}</a>`
+    `<i class="pt-ico">${icono(b.icono)}</i><span>${esc(b.texto)}</span>${b.detalle ? `<em>${esc(b.detalle)}</em>` : ''}${icono('flecha', ' pt-flecha')}</a>`
   );
 
   // Enlaces de texto (lo secundario). Todos pasan por /c/<slug>/<boton> para contar el clic.
@@ -62,13 +62,13 @@ export async function onRequestGet({ params, request, env }) {
   const logo = urlSegura(n.logo_url)
     ? `<div class="pt-logo"><img src="${esc(urlSegura(n.logo_url))}" alt=""></div>`
     : `<div class="pt-logo" aria-hidden="true">${esc(iniciales(n.nombre))}</div>`;
-  const debajo = nombreTag || n.ubicacion_etiqueta || n.descripcion || '';
+  const lugar = nombreTag || n.ubicacion_etiqueta || '';
 
   return html(`${inicioPagina(n, { extraHead: n.descripcion ? `<meta name="description" content="${esc(n.descripcion)}">` : '' })}
 <main class="pt-pagina">
-  <header class="pt-cabeza">${logo}<h1>${esc(n.nombre)}</h1>${debajo ? `<p>${esc(debajo)}</p>` : ''}</header>
-  ${botones.length ? `<div class="pt-botones">${botones.join('')}</div>` : ''}
-  ${enlaces.length ? `<nav class="pt-enlaces">${enlaces.join('')}</nav>` : ''}
+  <header class="pt-cabeza pt-portada pt-entra">${logo}<h1>${esc(n.nombre)}</h1>${lugar ? `<p class="pt-versalitas pt-lugar">${esc(lugar)}</p>` : ''}<div class="pt-filete" aria-hidden="true"><i></i></div>${n.descripcion ? `<p class="pt-versalitas">${esc(n.descripcion)}</p>` : ''}</header>
+  ${botones.length ? `<div class="pt-botones pt-entra">${botones.join('')}</div>` : ''}
+  ${enlaces.length ? `<nav class="pt-enlaces pt-puntos">${enlaces.join('')}</nav>` : ''}
   ${firma()}
 </main>
 <script>

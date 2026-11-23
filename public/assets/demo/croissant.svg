@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+<defs>
+  <filter id="grano" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/>
+    <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .16 0"/>
+    <feComposite in2="SourceGraphic" operator="in"/>
+  </filter>
+  <filter id="vetas" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".012 .22" numOctaves="3" seed="9"/>
+    <feColorMatrix values="0 0 0 0 .25  0 0 0 0 .15  0 0 0 0 .07  0 0 0 .5 0"/>
+  </filter>
+  <filter id="sombra" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dx="10" dy="16"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="sombraChica" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="4"/><feOffset dx="3" dy="5"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <radialGradient id="plato" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#fffdf8"/><stop offset=".78" stop-color="#f1ebe0"/><stop offset="1" stop-color="#ddd3c4"/></radialGradient>
+  <radialGradient id="platoAzul" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#eef2f2"/><stop offset=".8" stop-color="#cfdad8"/><stop offset="1" stop-color="#9fb2b0"/></radialGradient>
+  <radialGradient id="platoTierra" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#e9d6c0"/><stop offset=".8" stop-color="#c99a72"/><stop offset="1" stop-color="#9c6b46"/></radialGradient>
+  <radialGradient id="yema" cx="40%" cy="35%" r="65%"><stop offset="0" stop-color="#ffd35c"/><stop offset=".7" stop-color="#f6a51a"/><stop offset="1" stop-color="#d9800b"/></radialGradient>
+  <radialGradient id="cafe" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#6b3a1c"/><stop offset=".85" stop-color="#3d1f0d"/><stop offset="1" stop-color="#2a1408"/></radialGradient>
+  <radialGradient id="espuma" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#f6e7cf"/><stop offset=".7" stop-color="#dcb98c"/><stop offset="1" stop-color="#a8713f"/></radialGradient>
+  <radialGradient id="choco" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#7a4a2e"/><stop offset="1" stop-color="#43220f"/></radialGradient>
+  <radialGradient id="dorado" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f7cf7d"/><stop offset=".6" stop-color="#d99a3e"/><stop offset="1" stop-color="#a8641e"/></radialGradient>
+  <radialGradient id="crema" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#efdcb8"/></radialGradient>
+  <radialGradient id="aguacate" cx="40%" cy="40%" r="70%"><stop offset="0" stop-color="#e9efa0"/><stop offset=".55" stop-color="#a9c45a"/><stop offset="1" stop-color="#4f7a2a"/></radialGradient>
+  <radialGradient id="salsa" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#e0462c"/><stop offset="1" stop-color="#9c2414"/></radialGradient>
+</defs>
+<rect width="600" height="600" fill="#b98a5c"/>
+<rect width="600" height="600" filter="url(#vetas)"/>
+<g filter="url(#sombra)"><circle cx="300" cy="300" r="235" fill="url(#platoAzul)"/></g>
+<circle cx="300" cy="300" r="173.9" fill="none" stroke="#000" stroke-opacity=".06" stroke-width="3"/>
+<circle cx="300" cy="300" r="169.2" fill="#fff" fill-opacity=".12"/>
+    <g filter="url(#sombra)"><ellipse cx="199" cy="307" rx="36" ry="46" transform="rotate(-54 199 307)" fill="url(#dorado)" stroke="#9a5418" stroke-opacity=".4" stroke-width="4"/><ellipse cx="243" cy="269" rx="44" ry="62" transform="rotate(-27 243 269)" fill="url(#dorado)" stroke="#9a5418" stroke-opacity=".4" stroke-width="4"/><ellipse cx="300" cy="255" rx="52" ry="78" transform="rotate(0 300 255)" fill="url(#dorado)" stroke="#9a5418" stroke-opacity=".4" stroke-width="4"/><ellipse cx="357" cy="269" rx="44" ry="62" transform="rotate(27 357 269)" fill="url(#dorado)" stroke="#9a5418" stroke-opacity=".4" stroke-width="4"/><ellipse cx="401" cy="307" rx="36" ry="46" transform="rotate(54 401 307)" fill="url(#dorado)" stroke="#9a5418" stroke-opacity=".4" stroke-width="4"/></g>
+    <ellipse cx="373.6" cy="265.2" rx="5.4" ry="3.3" transform="rotate(66 373.6 265.2)" fill="#f5e2b8"/><ellipse cx="397.9" cy="281.8" rx="6.0" ry="3.7" transform="rotate(85 397.9 281.8)" fill="#f5e2b8"/><ellipse cx="323.1" cy="232.9" rx="6.3" ry="3.9" transform="rotate(37 323.1 232.9)" fill="#f5e2b8"/><ellipse cx="307.3" cy="341.1" rx="5.1" ry="3.2" transform="rotate(57 307.3 341.1)" fill="#f5e2b8"/><ellipse cx="241.5" cy="192.8" rx="6.1" ry="3.8" transform="rotate(40 241.5 192.8)" fill="#f5e2b8"/><ellipse cx="354.1" cy="218.7" rx="6.5" ry="4.0" transform="rotate(66 354.1 218.7)" fill="#f5e2b8"/><ellipse cx="273.5" cy="173.2" rx="5.4" ry="3.4" transform="rotate(67 273.5 173.2)" fill="#f5e2b8"/><ellipse cx="255.1" cy="239.0" rx="5.6" ry="3.5" transform="rotate(55 255.1 239.0)" fill="#f5e2b8"/><ellipse cx="277.4" cy="257.2" rx="4.5" ry="2.8" transform="rotate(147 277.4 257.2)" fill="#f5e2b8"/><ellipse cx="257.9" cy="257.3" rx="4.2" ry="2.6" transform="rotate(124 257.9 257.3)" fill="#f5e2b8"/><ellipse cx="352.4" cy="210.5" rx="4.8" ry="3.0" transform="rotate(85 352.4 210.5)" fill="#f5e2b8"/><ellipse cx="301.8" cy="325.2" rx="5.9" ry="3.6" transform="rotate(153 301.8 325.2)" fill="#f5e2b8"/><ellipse cx="241.1" cy="206.0" rx="4.3" ry="2.7" transform="rotate(49 241.1 206.0)" fill="#f5e2b8"/><ellipse cx="262.9" cy="196.4" rx="4.9" ry="3.1" transform="rotate(95 262.9 196.4)" fill="#f5e2b8"/><ellipse cx="353.6" cy="281.1" rx="5.7" ry="3.5" transform="rotate(119 353.6 281.1)" fill="#f5e2b8"/><ellipse cx="291.6" cy="260.8" rx="5.3" ry="3.3" transform="rotate(119 291.6 260.8)" fill="#f5e2b8"/><ellipse cx="337.3" cy="325.1" rx="9.4" ry="5.8" transform="rotate(70 337.3 325.1)" fill="#fbefd6"/><ellipse cx="289.9" cy="210.4" rx="8.9" ry="5.5" transform="rotate(63 289.9 210.4)" fill="#fbefd6"/><ellipse cx="227.9" cy="264.5" rx="8.1" ry="5.0" transform="rotate(90 227.9 264.5)" fill="#fbefd6"/><ellipse cx="285.7" cy="208.8" rx="9.1" ry="5.6" transform="rotate(72 285.7 208.8)" fill="#fbefd6"/><ellipse cx="276.9" cy="270.1" rx="7.2" ry="4.4" transform="rotate(175 276.9 270.1)" fill="#fbefd6"/><ellipse cx="291.6" cy="340.8" rx="7.9" ry="4.9" transform="rotate(129 291.6 340.8)" fill="#fbefd6"/><ellipse cx="253.2" cy="256.2" rx="8.8" ry="5.5" transform="rotate(72 253.2 256.2)" fill="#fbefd6"/><ellipse cx="378.5" cy="261.8" rx="9.2" ry="5.7" transform="rotate(97 378.5 261.8)" fill="#fbefd6"/><rect width="600" height="600" filter="url(#grano)" fill="#000" opacity=".55"/></svg>

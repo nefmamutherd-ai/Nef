@@ -105,3 +105,21 @@ on conflict (id) do nothing;
 -- PIN de las cajas de demostración: 1234 (solo si aún no tienen)
 update public.negocios set pin_caja_hash = extensions.crypt('1234', extensions.gen_salt('bf'))
 where id in ('d0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000000a2') and pin_caja_hash is null;
+
+-- Fotos (ilustraciones) de los platos de la demo, servidas por el propio sitio. Solo si el plato aún no tiene foto.
+update public.productos p set foto_url = v.foto
+from (values
+  ('d0000000-0000-4000-8000-00000000a001', '/assets/demo/calentado.svg'),
+  ('d0000000-0000-4000-8000-00000000a002', '/assets/demo/tostada-aguacate.svg'),
+  ('d0000000-0000-4000-8000-00000000a003', '/assets/demo/huevos-rancheros.svg'),
+  ('d0000000-0000-4000-8000-00000000a004', '/assets/demo/changua.svg'),
+  ('d0000000-0000-4000-8000-00000000a005', '/assets/demo/capuchino.svg'),
+  ('d0000000-0000-4000-8000-00000000a006', '/assets/demo/tinto.svg'),
+  ('d0000000-0000-4000-8000-00000000a007', '/assets/demo/cafe-filtrado.svg'),
+  ('d0000000-0000-4000-8000-00000000a008', '/assets/demo/chocolate.svg'),
+  ('d0000000-0000-4000-8000-00000000a009', '/assets/demo/torta-chocolate.svg'),
+  ('d0000000-0000-4000-8000-00000000a010', '/assets/demo/croissant.svg'),
+  ('d0000000-0000-4000-8000-00000000a011', '/assets/demo/galleta-avena.svg'),
+  ('d0000000-0000-4000-8000-00000000a012', '/assets/demo/natas.svg')
+) as v(id, foto)
+where p.id = v.id::uuid and p.foto_url is null;

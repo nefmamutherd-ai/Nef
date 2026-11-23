@@ -52,9 +52,7 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root { --dur-1: 1ms; --dur-2: 1ms; --dur-3: 1ms; }
-}
+/* Las animaciones se muestran siempre, también con "reducir movimiento" (decisión de Jacobo, 2026-11-23). */
 
 /* =====================================================================
    TEMAS POR SECTOR — se activan con data-tema en <html>.
