@@ -557,6 +557,9 @@ declare
   v_nombre text;
   v_saldo int;
   v_cercano json;
+  v_semana date;
+  v_racha json;
+  v_dorada json;
 begin
   select * into n from public.negocios where slug = lower(trim(p_slug)) and activo;
   if not found then return json_build_object('error', 'token'); end if;
@@ -572,6 +575,10 @@ begin
   where p.negocio_id = n.id and p.activo and public.costo_premio(p.valor_pesos) > v_saldo
   order by p.valor_pesos, p.orden limit 1;
 
+  v_semana := date_trunc('week', (public._ahora() at time zone 'America/Bogota')::date)::date;
+  v_racha := public._racha_vigente(m.racha_semanas, m.ultima_semana, m.comodin_mes, v_semana);
+  v_dorada := public._hora_dorada(n.id, public._ahora());
+
   return json_build_object(
     'negocio', n.nombre, 'nombre', v_nombre, 'saldo', v_saldo,
     'bienvenida_pendiente', m.bienvenida_pendiente, 'visitas', m.visitas,
@@ -579,6 +586,15 @@ begin
     'moneda_plural', n.moneda_plural, 'moneda_singular', n.moneda_singular,
     'premios', public._premios_json(n.id, v_saldo),
     'cercano', v_cercano,
+    'nivel', public._nivel(n.id, m.total_ganado),
+    'racha', v_racha,
+    'hora_dorada', v_dorada,
+    'proxima_hora_dorada', case when v_dorada is null then public._proxima_hora_dorada(n.id, public._ahora()) end,
+    'aviso', public._aviso_tarjeta(m.bienvenida_pendiente, v_dorada,
+      (select p.nombre from public.premios p where p.negocio_id = n.id and p.activo and public.costo_premio(p.valor_pesos) <= v_saldo
+       order by p.valor_pesos desc limit 1),
+      case when (v_racha->>'en_riesgo')::boolean then (v_racha->>'semanas')::int end,
+      v_cercano),
     'movimientos', (
       select coalesce(json_agg(json_build_object('tipo', x.tipo, 'monedas', x.monedas, 'creado', x.creado) order by x.creado desc, x.id desc), '[]'::json)
       from (select mv.* from public.movimientos mv where mv.membresia_id = m.id order by mv.creado desc, mv.id desc limit 10) x
@@ -694,7 +710,10 @@ begin
     'visitas', m.visitas, 'ultima_visita', m.ultima_visita,
     'puede_sumar', m.ultima_visita is null or public._ahora() >= v_desde,
     'desde', case when m.ultima_visita is not null and public._ahora() < v_desde then v_desde end,
-    'premios', public._premios_json(v_negocio, m.saldo)
+    'premios', public._premios_json(v_negocio, m.saldo),
+    'nivel', public._nivel(v_negocio, m.total_ganado),
+    'racha', public._racha_vigente(m.racha_semanas, m.ultima_semana, m.comodin_mes,
+                                   date_trunc('week', (public._ahora() at time zone 'America/Bogota')::date)::date)
   );
 end $$;
 
@@ -709,6 +728,10 @@ declare
   v_monedas int;
   v_bienvenida int;
   v_res jsonb;
+  v_dorada json;
+  v_extra int;
+  v_racha json;
+  v_bono_racha int;
 begin
   if v_negocio is null then return json_build_object('error', 'sesion'); end if;
   if p_op_id is null then return json_build_object('error', 'op_id'); end if;
@@ -733,6 +756,16 @@ begin
   end if;
   v_bienvenida := m.bienvenida_pendiente;
 
+  -- Hora dorada (Fase 6): base × multiplicador; el extra va como movimiento aparte
+  v_dorada := public._hora_dorada(v_negocio, public._ahora());
+  v_extra := case when v_dorada is null then 0
+                  else floor(v_monedas * (v_dorada->>'multiplicador')::numeric)::int - v_monedas end;
+  -- Racha semanal (Fase 6): semana = lunes en Bogotá; comodín una vez al mes; bono cada 4 semanas
+  v_racha := public._avanzar_racha(m.racha_semanas, m.ultima_semana, m.comodin_mes,
+                                   date_trunc('week', (public._ahora() at time zone 'America/Bogota')::date)::date);
+  v_bono_racha := case when (v_racha->>'racha')::int > coalesce(m.racha_semanas, 0) and (v_racha->>'racha')::int % 4 = 0
+                       then n.bono_racha else 0 end;
+
   insert into public.operaciones_caja (op_id, negocio_id, membresia_id, tipo, creado)
   values (p_op_id, v_negocio, m.id, 'visita', public._ahora());
 
@@ -742,18 +775,31 @@ begin
     insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, creado)
     values (m.id, v_negocio, 'bienvenida', v_bienvenida, public._ahora());
   end if;
+  if v_extra > 0 then
+    insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, detalle, creado)
+    values (m.id, v_negocio, 'bono_hora_dorada', v_extra, '×' || (v_dorada->>'multiplicador'), public._ahora());
+  end if;
+  if v_bono_racha > 0 then
+    insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, detalle, creado)
+    values (m.id, v_negocio, 'bono_racha', v_bono_racha, (v_racha->>'racha') || ' semanas', public._ahora());
+  end if;
 
   update public.membresias set
-    saldo = saldo + v_monedas + v_bienvenida,
-    total_ganado = total_ganado + v_monedas + v_bienvenida,
+    saldo = saldo + v_monedas + v_bienvenida + v_extra + v_bono_racha,
+    total_ganado = total_ganado + v_monedas + v_bienvenida + v_extra + v_bono_racha,
     visitas = visitas + 1,
     bienvenida_pendiente = 0,
     ultima_visita = public._ahora(),
-    vence = public._ahora() + interval '12 months'
+    vence = public._ahora() + interval '12 months',
+    racha_semanas = (v_racha->>'racha')::int,
+    ultima_semana = (v_racha->>'semana')::date,
+    comodin_mes = (v_racha->>'comodin_mes')::date
   where id = m.id
   returning * into m;
 
-  v_res := jsonb_build_object('ok', true, 'monedas', v_monedas, 'bienvenida', v_bienvenida, 'saldo', m.saldo);
+  v_res := jsonb_build_object('ok', true, 'monedas', v_monedas, 'bienvenida', v_bienvenida, 'hora_dorada', v_extra,
+    'bono_racha', v_bono_racha, 'racha', m.racha_semanas, 'saldo', m.saldo,
+    'nivel', public._nivel(v_negocio, m.total_ganado)::jsonb);
   update public.operaciones_caja set resultado = v_res where op_id = p_op_id;
   return v_res::json;
 end $$;
@@ -1709,3 +1755,117 @@ end $$;
 
 grant execute on function public.carta_publica(text)                          to anon, authenticated;
 grant execute on function public.registrar_evento_carta(text, text, uuid, text) to anon, authenticated;
+
+-- =====================================================================
+-- ===== Fase 6 =====  club que engancha: hora dorada, racha con comodín, niveles y aviso único.
+-- (caja_visita, club_tarjeta y caja_buscar, definidas en la Fase 2, ya llaman a estas funciones)
+-- =====================================================================
+alter table public.negocios add column if not exists bono_racha int not null default 30 check (bono_racha between 0 and 10000);
+alter table public.negocios add column if not exists niveles jsonb not null default
+  '[{"nombre":"Visitante","desde":0},{"nombre":"Habitual","desde":200},{"nombre":"De la casa","desde":600},{"nombre":"Leyenda","desde":1500}]'::jsonb;
+alter table public.membresias add column if not exists racha_semanas int not null default 0;
+alter table public.membresias add column if not exists ultima_semana date;   -- lunes (Bogotá) de la última semana con visita
+alter table public.membresias add column if not exists comodin_mes date;     -- primer día del mes en que usó el comodín
+
+create table if not exists public.horas_doradas (
+  id            uuid primary key default gen_random_uuid(),
+  negocio_id    uuid not null references public.negocios(id) on delete cascade,
+  dia_semana    int not null check (dia_semana between 0 and 6),   -- 0 = domingo
+  hora_inicio   time not null,
+  hora_fin      time not null check (hora_fin > hora_inicio),
+  multiplicador numeric not null default 2 check (multiplicador between 1 and 3),
+  activo        boolean not null default true,
+  creado        timestamptz not null default now()
+);
+create index if not exists horas_doradas_negocio_idx on public.horas_doradas(negocio_id);
+alter table public.horas_doradas enable row level security;
+drop policy if exists admin_todo on public.horas_doradas;
+create policy admin_todo on public.horas_doradas for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- Hora dorada activa en un momento (hora Bogotá) o null
+create or replace function public._hora_dorada(p_negocio uuid, p_momento timestamptz)
+returns json language sql stable as $$
+  select json_build_object('multiplicador', h.multiplicador, 'desde', to_char(h.hora_inicio, 'HH24:MI'), 'hasta', to_char(h.hora_fin, 'HH24:MI'))
+  from public.horas_doradas h
+  where h.negocio_id = p_negocio and h.activo
+    and h.dia_semana = extract(dow from p_momento at time zone 'America/Bogota')::int
+    and (p_momento at time zone 'America/Bogota')::time >= h.hora_inicio
+    and (p_momento at time zone 'America/Bogota')::time < h.hora_fin
+  order by h.multiplicador desc limit 1
+$$;
+
+-- Próxima hora dorada en los 7 días siguientes (para "Próxima hora dorada: martes 3–5 p. m.")
+create or replace function public._proxima_hora_dorada(p_negocio uuid, p_momento timestamptz)
+returns json language sql stable as $$
+  with l as (select (p_momento at time zone 'America/Bogota') as t)
+  select json_build_object('dia', h.dia_semana, 'desde', to_char(h.hora_inicio, 'HH24:MI'), 'hasta', to_char(h.hora_fin, 'HH24:MI'),
+                           'multiplicador', h.multiplicador)
+  from public.horas_doradas h, l
+  where h.negocio_id = p_negocio and h.activo
+  order by ((h.dia_semana - extract(dow from l.t)::int + 7) % 7)
+           + case when h.dia_semana = extract(dow from l.t)::int and h.hora_inicio <= l.t::time then 7 else 0 end,
+           h.hora_inicio
+  limit 1
+$$;
+
+-- Nivel por monedas GANADAS en total (canjear no baja el nivel). Se calcula, no se guarda.
+create or replace function public._nivel(p_negocio uuid, p_total int)
+returns json language sql stable as $$
+  with nv as (
+    select x.nombre, x.desde, row_number() over (order by x.desde) as i
+    from public.negocios n, jsonb_to_recordset(n.niveles) as x(nombre text, desde int)
+    where n.id = p_negocio
+  ),
+  actual as (select * from nv where desde <= coalesce(p_total, 0) order by desde desc limit 1),
+  sig as (select * from nv where desde > coalesce(p_total, 0) order by desde limit 1)
+  select json_build_object('nombre', (select nombre from actual), 'desde', (select desde from actual),
+    'siguiente', (select json_build_object('nombre', nombre, 'desde', desde, 'faltan', desde - coalesce(p_total, 0)) from sig))
+$$;
+
+-- Avanzar la racha con una visita en la semana p_semana (lunes). Pura: la prueban los 4 casos.
+--   misma semana → igual · semana siguiente → +1 · saltó 1 semana y no usó comodín este mes → +1 y gasta el comodín · si no → 1
+create or replace function public._avanzar_racha(p_racha int, p_ultima date, p_comodin date, p_semana date)
+returns json language sql immutable as $$
+  select case
+    when p_ultima is null then json_build_object('racha', 1, 'semana', p_semana, 'comodin_mes', p_comodin, 'uso_comodin', false)
+    when p_semana = p_ultima then json_build_object('racha', greatest(coalesce(p_racha, 0), 1), 'semana', p_semana, 'comodin_mes', p_comodin, 'uso_comodin', false)
+    when p_semana = p_ultima + 7 then json_build_object('racha', coalesce(p_racha, 0) + 1, 'semana', p_semana, 'comodin_mes', p_comodin, 'uso_comodin', false)
+    when p_semana = p_ultima + 14 and (p_comodin is null or p_comodin <> date_trunc('month', p_semana)::date)
+      then json_build_object('racha', coalesce(p_racha, 0) + 1, 'semana', p_semana, 'comodin_mes', date_trunc('month', p_semana)::date, 'uso_comodin', true)
+    else json_build_object('racha', 1, 'semana', p_semana, 'comodin_mes', p_comodin, 'uso_comodin', false)
+  end
+$$;
+
+-- Racha que se le muestra al cliente hoy: viva si vino esta semana, la pasada, o hace 2 con comodín disponible
+create or replace function public._racha_vigente(p_racha int, p_ultima date, p_comodin date, p_semana date)
+returns json language sql immutable as $$
+  select case
+    when p_ultima is null or coalesce(p_racha, 0) = 0 then json_build_object('semanas', 0, 'esta_semana', false, 'en_riesgo', false)
+    when p_ultima = p_semana then json_build_object('semanas', p_racha, 'esta_semana', true, 'en_riesgo', false)
+    when p_ultima = p_semana - 7 then json_build_object('semanas', p_racha, 'esta_semana', false, 'en_riesgo', true)
+    when p_ultima = p_semana - 14 and (p_comodin is null or p_comodin <> date_trunc('month', p_semana)::date)
+      then json_build_object('semanas', p_racha, 'esta_semana', false, 'en_riesgo', true)
+    else json_build_object('semanas', 0, 'esta_semana', false, 'en_riesgo', false)
+  end
+$$;
+
+-- Aviso ÚNICO de la tarjeta, con prioridad fija:
+-- (1) bienvenida pendiente → (2) hora dorada activa → (3) premio alcanzable → (4) racha en riesgo → (5) te faltan N
+create or replace function public._aviso_tarjeta(p_bienvenida int, p_dorada json, p_premio text, p_racha_riesgo int, p_cercano json)
+returns json language sql immutable as $$
+  select case
+    when coalesce(p_bienvenida, 0) > 0 then json_build_object('tipo', 'bienvenida', 'n', p_bienvenida)
+    when p_dorada is not null then json_build_object('tipo', 'hora_dorada', 'hasta', p_dorada->>'hasta', 'multiplicador', (p_dorada->>'multiplicador')::numeric)
+    when p_premio is not null then json_build_object('tipo', 'premio', 'nombre', p_premio)
+    when coalesce(p_racha_riesgo, 0) > 0 then json_build_object('tipo', 'racha', 'semanas', p_racha_riesgo)
+    when p_cercano is not null then json_build_object('tipo', 'faltan', 'n', (p_cercano->>'faltan')::int, 'nombre', p_cercano->>'nombre')
+    else null end
+$$;
+
+revoke execute on function public._hora_dorada(uuid, timestamptz)                 from public, anon, authenticated;
+revoke execute on function public._proxima_hora_dorada(uuid, timestamptz)         from public, anon, authenticated;
+revoke execute on function public._nivel(uuid, int)                               from public, anon, authenticated;
+revoke execute on function public._avanzar_racha(int, date, date, date)           from public, anon, authenticated;
+revoke execute on function public._racha_vigente(int, date, date, date)           from public, anon, authenticated;
+revoke execute on function public._aviso_tarjeta(int, json, text, int, json)      from public, anon, authenticated;

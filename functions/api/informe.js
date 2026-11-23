@@ -1,7 +1,7 @@
 // /api/informe?k=<token del dueño>&id=<informe> → redirige a una URL firmada de 1 hora del PDF.
 // Valida el token con la RPC informe_ruta (solo devuelve rutas de SU negocio) y firma con la anon key:
 // la política de Storage solo deja firmar rutas registradas en public.informes. Nunca la llave de servicio.
-import { rpc, html, redirigir } from '../../lib/util.js';
+import { rpc, html, redirigir, cabecerasSupabase } from '../../lib/util.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const noDisponible = () => html(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env }) {
     if (!ruta) return noDisponible();
     const r = await fetch(`${env.SUPABASE_URL}/storage/v1/object/sign/informes/${ruta.split('/').map(encodeURIComponent).join('/')}`, {
       method: 'POST',
-      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      headers: cabecerasSupabase(env.SUPABASE_ANON_KEY),
       body: JSON.stringify({ expiresIn: 3600 }),
     });
     if (!r.ok) return noDisponible();

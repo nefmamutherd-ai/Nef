@@ -1,13 +1,19 @@
 // Llamar una RPC pública de Supabase desde el navegador (portales, club y caja).
 // Requiere <script src="/api/config"></script> antes (define window.TOQUE con url y anon).
 // Si no hay red, lanza un Error con .sinRed = true (la caja lo usa para guardar en la cola).
+export function cabecerasSupabase(llave) {
+  const h = { apikey: llave, 'Content-Type': 'application/json' };
+  if (!String(llave || '').startsWith('sb_')) h.Authorization = `Bearer ${llave}`;
+  return h;
+}
+
 export async function rpc(fn, args) {
   const cfg = window.TOQUE || {};
   let r;
   try {
     r = await fetch(`${cfg.url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
-      headers: { apikey: cfg.anon, Authorization: `Bearer ${cfg.anon}`, 'Content-Type': 'application/json' },
+      headers: cabecerasSupabase(cfg.anon),
       body: JSON.stringify(args || {}),
     });
   } catch (e) {

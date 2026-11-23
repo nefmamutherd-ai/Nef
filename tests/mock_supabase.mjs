@@ -16,6 +16,8 @@ await db.exec(`
   grant usage on schema public to anon, authenticated;
 `);
 await db.exec(fs.readFileSync(process.argv[2] || new URL('../supabase/esquema.sql', import.meta.url), 'utf8'));
+// Opcional (demo local): SQL extra separado por ';' en MOCK_SQL_EXTRA, ej. supabase/demo.sql
+for (const extra of (process.env.MOCK_SQL_EXTRA || '').split(';').filter(Boolean)) await db.exec(fs.readFileSync(extra, 'utf8'));
 await db.exec(`grant select, insert, update, delete on all tables in schema public to anon, authenticated;
   insert into auth.users values ('${ADMIN}'); insert into public.admins values ('${ADMIN}');`);
 

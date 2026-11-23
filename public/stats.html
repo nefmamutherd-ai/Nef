@@ -31,6 +31,7 @@
 </main>
 <script type="module">
   import { renderStats } from '/assets/stats.js';
+  import { cabecerasSupabase } from '/assets/nef-rpc.js';
   const cfg = window.TOQUE || {};
   const token = new URLSearchParams(location.search).get('k') || '';
   const cont = document.getElementById('contenido');
@@ -72,7 +73,7 @@
     const dias = +document.getElementById('dias').value;
     const r = await fetch(`${cfg.url}/rest/v1/rpc/stats_token`, {
       method: 'POST',
-      headers: { apikey: cfg.anon, Authorization: `Bearer ${cfg.anon}`, 'Content-Type': 'application/json' },
+      headers: cabecerasSupabase(cfg.anon),
       body: JSON.stringify({ p_token: token, p_dias: dias }),
     });
     const data = r.ok ? await r.json() : null;

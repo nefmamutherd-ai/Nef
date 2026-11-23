@@ -6,7 +6,7 @@
 (dueño: Jacobo López): un chip NFC + QR en la mesa, la recepción o la máquina; el cliente acerca el celular,
 entra al portal del negocio, y el negocio lo conoce, lo premia y lo recupera. Primeros nichos: cafés y
 gimnasios. Motor común + paquetes por sector + servicios activables.
-**Nunca escribas lógica de un sector en el motor**: lo propio de cada sector va en `lib/sectores/*.json`.
+**Nunca escribas lógica de un sector en el motor**: lo propio de cada sector va en `lib/sectores/*.js`.
 
 ## Lee esto primero (en este orden)
 1. `docs/PRODUCTO.md` — **qué** es Nef. Fuente de verdad: si otro documento lo contradice, gana este.

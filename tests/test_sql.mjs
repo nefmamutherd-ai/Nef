@@ -407,7 +407,7 @@ await caso('abandono de octubre = 60 de 180 (0,3333)', async () => {
 });
 await caso('umbral de "en riesgo" en SQL = el de lib/sectores/*.json', async () => {
   for (const s of ['cafe', 'gimnasio']) {
-    const pq = JSON.parse(fs.readFileSync(new URL(`../lib/sectores/${s}.json`, import.meta.url), 'utf8'));
+    const pq = (await import(`../lib/sectores/${s}.js`)).default;
     assert.equal((await q(`select _sector_en_riesgo_dias($1) r`, [s]))[0].r, pq.en_riesgo_dias, s);
   }
 });
@@ -625,6 +625,98 @@ await caso('Elige por mí: nunca agotados; destacado ≈ el doble en 10.000 tira
   assert.equal(candidatos(prods, 'sorpresa').length, 4);
   const a1 = generador(7), a2 = generador(7);
   assert.equal(elegir(prods, 'sorpresa', a1).id, elegir(prods, 'sorpresa', a2).id, 'misma semilla, mismo resultado');
+});
+
+console.log('Fase 6 · club que engancha');
+await db.exec('reset role;');
+const [cr] = await q(`insert into negocios (slug, nombre, servicios, bienvenida, monedas_por_visita, bono_racha)
+  values ('cafe-racha','Café Racha','{"base":true,"club":true}', 0, 10, 30) returning id`);
+await q(`insert into horas_doradas (negocio_id, dia_semana, hora_inicio, hora_fin, multiplicador) values ($1, 2, '15:00', '17:00', 2)`, [cr.id]);
+await como('authenticated', ADMIN);
+await q(`select fijar_pin_caja($1, '1357')`, [cr.id]);
+
+await caso('racha: misma semana, semana siguiente, salto con comodín, salto sin comodín, salto doble', async () => {
+  await db.exec('reset role;');
+  const av = async (r, u, c, s) => (await q(`select _avanzar_racha($1, $2::date, $3::date, $4::date) r`, [r, u, c, s]))[0].r;
+  assert.equal((await av(3, '2026-11-30', null, '2026-11-30')).racha, 3);
+  assert.equal((await av(3, '2026-11-23', null, '2026-11-30')).racha, 4);
+  const conComodin = await av(3, '2026-11-16', null, '2026-11-30');
+  assert.equal(conComodin.racha, 4); assert.equal(conComodin.uso_comodin, true); assert.equal(conComodin.comodin_mes, '2026-11-01');
+  assert.equal((await av(3, '2026-11-16', '2026-11-01', '2026-11-30')).racha, 1, 'el comodín ya se usó este mes');
+  assert.equal((await av(3, '2026-11-16', '2026-10-01', '2026-11-30')).racha, 4, 'el comodín de octubre no cuenta en noviembre');
+  assert.equal((await av(3, '2026-11-09', null, '2026-11-30')).racha, 1, 'saltó dos semanas');
+  assert.equal((await av(0, null, null, '2026-11-30')).racha, 1);
+});
+await caso('hora dorada: dentro de la franja = base × 2 (extra aparte); fuera = base', async () => {
+  await como('anon');
+  const [{ r: reg }] = await q(`select club_registrar('cafe-racha','Sofía','3112223344', true) r`);
+  await db.exec(`set nef.ahora = '2026-12-01 16:00-05'`); // martes 4 p. m.
+  const ses = (await q(`select caja_entrar('cafe-racha','1357') r`))[0].r.sesion;
+  const [{ r: a }] = await q(`select caja_visita($1, $2, $3) r`, [ses, reg.token, uid()]);
+  assert.equal(a.monedas, 10); assert.equal(a.hora_dorada, 10); assert.equal(a.saldo, 20); assert.equal(a.racha, 1);
+  await db.exec(`set nef.ahora = '2026-12-01 19:30-05'`); // mismo martes, 7:30 p. m.: fuera de la franja
+  const [{ r: b }] = await q(`select caja_visita($1, $2, $3) r`, [ses, reg.token, uid()]);
+  assert.equal(b.hora_dorada, 0); assert.equal(b.saldo, 30); assert.equal(b.racha, 1, 'misma semana no sube la racha');
+  await db.exec('reset role;');
+  assert.equal((await q(`select count(*)::int n from movimientos where tipo = 'bono_hora_dorada' and negocio_id = $1`, [cr.id]))[0].n, 1);
+  await db.exec(`reset nef.ahora`);
+});
+await caso('bono de racha al llegar a 4 semanas seguidas; la tarjeta muestra racha y nivel', async () => {
+  await como('anon');
+  const [{ r: reg }] = await q(`select club_registrar('cafe-racha','Mateo','3125556677', true) r`);
+  let ultimo;
+  for (const dia of ['2026-11-11', '2026-11-18', '2026-11-25', '2026-12-02']) { // miércoles seguidos, 10 a. m.
+    await db.exec(`set nef.ahora = '${dia} 10:00-05'`);
+    const ses = (await q(`select caja_entrar('cafe-racha','1357') r`))[0].r.sesion;
+    ultimo = (await q(`select caja_visita($1, $2, $3) r`, [ses, reg.token, uid()]))[0].r;
+  }
+  assert.equal(ultimo.racha, 4); assert.equal(ultimo.bono_racha, 30); assert.equal(ultimo.saldo, 4 * 10 + 30);
+  assert.equal(ultimo.nivel.nombre, 'Visitante'); assert.equal(ultimo.nivel.siguiente.nombre, 'Habitual'); assert.equal(ultimo.nivel.siguiente.faltan, 130);
+  await db.exec(`set nef.ahora = '2026-12-09 09:00-05'`); // la semana siguiente, aún sin venir: racha en riesgo
+  const [{ r: t }] = await q(`select club_tarjeta('cafe-racha', $1) r`, [reg.token]);
+  assert.deepEqual(t.racha, { semanas: 4, esta_semana: false, en_riesgo: true });
+  assert.equal(t.nivel.nombre, 'Visitante');
+  assert.equal(t.aviso.tipo, 'racha');
+  await db.exec(`reset nef.ahora`);
+});
+await caso('niveles por total ganado (canjear no baja el nivel)', async () => {
+  await db.exec('reset role;');
+  const nv = async (t) => (await q(`select _nivel($1, $2) r`, [cr.id, t]))[0].r;
+  assert.equal((await nv(0)).nombre, 'Visitante');
+  assert.equal((await nv(200)).nombre, 'Habitual');
+  assert.equal((await nv(599)).siguiente.faltan, 1);
+  const top = await nv(5000);
+  assert.equal(top.nombre, 'Leyenda'); assert.equal(top.siguiente, null);
+});
+await caso('aviso único: prioridad bienvenida → hora dorada → premio → racha → te faltan', async () => {
+  await db.exec('reset role;');
+  const av = async (b, d, p, r, c) => (await q(`select _aviso_tarjeta($1, $2::json, $3, $4, $5::json) r`, [b, d, p, r, c]))[0].r;
+  const dorada = JSON.stringify({ multiplicador: 2, desde: '15:00', hasta: '17:00' });
+  const cerca = JSON.stringify({ nombre: 'Capuchino', costo: 80, faltan: 30 });
+  assert.equal((await av(50, dorada, 'Galleta', 3, cerca)).tipo, 'bienvenida');
+  assert.equal((await av(0, dorada, 'Galleta', 3, cerca)).tipo, 'hora_dorada');
+  assert.equal((await av(0, null, 'Galleta', 3, cerca)).tipo, 'premio');
+  assert.equal((await av(0, null, null, 3, cerca)).tipo, 'racha');
+  assert.deepEqual(await av(0, null, null, null, cerca), { tipo: 'faltan', n: 30, nombre: 'Capuchino' });
+  assert.equal(await av(0, null, null, null, null), null);
+});
+
+console.log('Fase 7 · vender y cobrar');
+await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y demo-gym (6 máquinas, 4 clases)', async () => {
+  await db.exec('reset role;');
+  const demo = fs.readFileSync(new URL('../supabase/demo.sql', import.meta.url), 'utf8');
+  await db.exec(demo);
+  await db.exec(demo);
+  await como('anon');
+  const [{ r: c }] = await q(`select carta_publica('demo-cafe') r`);
+  assert.equal(c.categorias.flatMap((x) => x.productos).length, 12);
+  assert.equal((await q(`select club_publico('demo-cafe') r`))[0].r.premios.length, 3);
+  assert.equal((await q(`select maquinas_publicas('demo-gym') r`))[0].r.length, 6);
+  const [{ r: t }] = await q(`select resolver_toque('demoprensa','nfc',null) r`);
+  assert.equal(t.destino, 'producto'); assert.ok(t.producto_id);
+  assert.ok((await q(`select caja_entrar('demo-cafe','1234') r`))[0].r.sesion, 'la caja demo abre con 1234');
+  await db.exec('reset role;');
+  assert.equal((await q(`select count(*)::int n from productos where negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and tipo = 'clase'`))[0].n, 4);
 });
 
 console.log(`\n${ok} pruebas OK`);
