@@ -480,4 +480,93 @@ await caso('entrada por NFC: una por día, sin monedas; sin entrada_nfc no regis
   await db.exec(`reset nef.ahora`);
 });
 
+console.log('Fase 4 · estadísticas y estudio');
+await db.exec('reset role;');
+const [ge] = await q(`insert into negocios (slug, nombre, sector) values ('gym-estudio','Gym Estudio','gimnasio') returning id, token_stats`);
+await como('authenticated', ADMIN);
+for (let i = 0; i < filasGym.length; i += 5000)
+  await q(`select importar_entradas($1, $2::jsonb) r`, [ge.id, JSON.stringify(filasGym.slice(i, i + 5000))]);
+await db.exec('reset role;');
+// Hechos con fecha fija: 3 escaneos de una máquina el 30 nov, 1 toque el 29, 1 clic de reseña, una venta y un canje
+const [maqE] = await q(`insert into productos (negocio_id, tipo, nombre) values ($1, 'maquina', 'Remo') returning id`, [ge.id]);
+const [tagE] = await q(`insert into tags (negocio_id, nombre, destino, producto_id) values ($1, 'Remo', 'producto', $2) returning id`, [ge.id, maqE.id]);
+await q(`insert into toques (tag_id, negocio_id, medio, creado) values
+  ($1,$2,'nfc','2026-11-30 10:00-05'), ($1,$2,'qr','2026-11-30 11:00-05'), ($1,$2,'nfc','2026-11-30 19:00-05'), ($1,$2,'nfc','2026-11-29 23:30-05')`, [tagE.id, ge.id]);
+await q(`insert into clicks (negocio_id, boton, creado) values ($1, 'resena', '2026-11-30 12:00-05')`, [ge.id]);
+const [cliE] = await q(`insert into clientes (telefono, nombre) values ('573209998877', 'Estudio Prueba') returning id`);
+const [memE] = await q(`insert into membresias (cliente_id, negocio_id, acepto_datos_at, creado) values ($1, $2, now(), '2026-11-30 09:00-05') returning id`, [cliE.id, ge.id]);
+await q(`insert into movimientos (membresia_id, negocio_id, tipo, monedas, valor_compra, creado) values
+  ($1, $2, 'visita', 100, 200000, '2026-11-30 09:00-05'), ($1, $2, 'canje', -100, null, '2026-11-30 09:05-05')`, [memE.id, ge.id]);
+
+await caso('frecuencia, retorno a 30 días y recencia al 30 nov = lo esperado del CSV', async () => {
+  assert.deepEqual((await q(`select metrica_frecuencia($1, '2026-11-30') r`, [ge.id]))[0].r, { clientes: 160, promedio: 11.5, mediana: 13 });
+  assert.equal(Number((await q(`select metrica_retorno_30($1, '2026-11-30') r`, [ge.id]))[0].r), 0.875);
+  assert.deepEqual((await q(`select metrica_recencia($1, '2026-11-30') r`, [ge.id]))[0].r, { clientes: 200, promedio: 12.6, mediana: 0 });
+  assert.equal((await q(`select metrica_visitas($1, '2026-11-30') r`, [ge.id]))[0].r, 140);
+});
+await caso('visitas al portal, inscritos, uso de máquinas y devolución real', async () => {
+  assert.equal((await q(`select metrica_visitas_portal($1, '2026-11-30') r`, [ge.id]))[0].r, 3);
+  assert.equal((await q(`select metrica_visitas_portal($1, '2026-11-29') r`, [ge.id]))[0].r, 1);
+  assert.equal((await q(`select metrica_clics_resena($1, '2026-11-30') r`, [ge.id]))[0].r, 1);
+  assert.deepEqual((await q(`select metrica_inscritos($1, '2026-11-30') r`, [ge.id]))[0].r, { total: 1, nuevos: 1 });
+  assert.deepEqual((await q(`select metrica_inscritos($1, '2026-11-29') r`, [ge.id]))[0].r, { total: 0, nuevos: 0 });
+  assert.deepEqual((await q(`select metrica_uso_maquinas($1, '2026-11-30') r`, [ge.id]))[0].r, { [maqE.id]: 3 });
+  assert.deepEqual((await q(`select metrica_devolucion_real($1, '2026-11-30') r`, [ge.id]))[0].r, { premios: 10000, ventas: 200000, tasa: 0.05 });
+});
+await caso('recalcular dos veces da los mismos valores; el panel lee lo guardado + hoy en vivo', async () => {
+  await db.exec(`set nef.ahora = '2026-12-01 09:00-05'`);
+  const foto = async () => JSON.stringify(await q(`select fecha, metrica, valor, detalle from metricas_diarias where negocio_id = $1 order by fecha, metrica`, [ge.id]));
+  assert.equal((await q(`select recalcular_metricas($1, '2026-11-28') r`, [ge.id]))[0].r, 3);
+  const a = await foto();
+  await q(`select recalcular_metricas($1, '2026-11-28')`, [ge.id]);
+  assert.equal(await foto(), a);
+  const fila = async (f, m) => (await q(`select valor, detalle from metricas_diarias where negocio_id = $1 and fecha = $2 and metrica = $3`, [ge.id, f, m]))[0];
+  assert.equal(Number((await fila('2026-11-30', 'activos')).valor), 160);
+  assert.equal(Number((await fila('2026-11-30', 'en_riesgo')).valor), 40);
+  assert.equal(Number((await fila('2026-11-30', 'visitas_portal')).valor), 3);
+  const n1 = (await q(`select _nivel1($1, 3) r`, [ge.id]))[0].r;
+  assert.equal(n1.desde, '2026-11-29'); assert.equal(n1.visitas_portal, 4); assert.equal(n1.clics_resena, 1);
+  assert.equal(n1.conversion_resena, 0.25); assert.equal(n1.inscritos_nuevos, 1);
+  assert.deepEqual(n1.devolucion_real, { premios: 10000, ventas: 200000, tasa: 0.05 });
+  assert.deepEqual(n1.uso_maquinas, [{ nombre: 'Remo', n: 4 }]); // 3 del 30 nov + 1 del 29 (mismo tag)
+  assert.equal(n1.horas_pico[1][6], 140); assert.equal(n1.serie_visitas_portal.length, 3);
+  // Si se borra lo guardado, el panel calcula en vivo y da lo mismo
+  await q(`delete from metricas_diarias where negocio_id = $1`, [ge.id]);
+  const n2 = (await q(`select _nivel1($1, 3) r`, [ge.id]))[0].r;
+  assert.deepEqual(n2, n1);
+  assert.ok((await q(`select recalcular_todo('2026-11-30') r`))[0].r >= 1);
+  await db.exec(`reset nef.ahora`);
+});
+await caso('anónimo no lee metricas_diarias ni llama recalcular, exportar o las métricas', async () => {
+  await como('anon');
+  assert.equal((await q(`select count(*)::int n from metricas_diarias`))[0].n, 0);
+  await assert.rejects(q(`select recalcular_metricas($1, '2026-11-01')`, [ge.id]), /permission denied/);
+  await assert.rejects(q(`select exportar_estudio($1, '2026-09-01', '2026-11-30')`, [ge.id]), /permission denied/);
+  await assert.rejects(q(`select metrica_frecuencia($1, '2026-11-30')`, [ge.id]), /permission denied/);
+  await como('authenticated', '22222222-2222-2222-2222-222222222222');
+  await assert.rejects(q(`select admin_recalcular($1, '2026-11-01')`, [ge.id]), /no autorizado/);
+  await assert.rejects(q(`select exportar_estudio($1, '2026-09-01', '2026-11-30')`, [ge.id]), /no autorizado/);
+});
+await caso('exportar para el estudio: sin nombres ni teléfonos, ids anonimizados distintos en cada exportación', async () => {
+  await como('authenticated', ADMIN);
+  const [{ r }] = await q(`select exportar_estudio($1, '2026-09-01', '2026-11-30') r`, [ge.id]);
+  assert.equal(r.visitas.length, 5780); assert.equal(r.entradas.length, 5780); assert.equal(r.clientes.length, 1); assert.equal(r.canjes.length, 1);
+  const txt = JSON.stringify(r);
+  for (const prohibido of ['telefono', 'nombre', '573209998877', '3001000', 'Estudio Prueba', 'Laura', 'Gómez']) assert.ok(!txt.includes(prohibido), 'contiene ' + prohibido);
+  assert.match(r.visitas[0].cliente, /^[0-9a-f]{32}$/);
+  const [{ r: r2 }] = await q(`select exportar_estudio($1, '2026-09-01', '2026-11-30') r`, [ge.id]);
+  assert.notEqual(r.visitas[0].cliente, r2.visitas[0].cliente, 'la sal cambia en cada exportación');
+});
+await caso('informes: el token de otro negocio no obtiene la ruta', async () => {
+  await db.exec('reset role;');
+  const [inf] = await q(`insert into informes (negocio_id, periodo, ruta) values ($1, '2026 · 4.º trimestre', $2) returning id`, [ge.id, ge.id + '/' + uid() + '.pdf']);
+  await como('anon');
+  assert.match((await q(`select informe_ruta($1, $2) r`, [ge.token_stats, inf.id]))[0].r, /\.pdf$/);
+  assert.equal((await q(`select informe_ruta($1, $2) r`, [neg.token_stats, inf.id]))[0].r, null);
+  assert.equal((await q(`select informe_ruta('inventado', $1) r`, [inf.id]))[0].r, null);
+  const [{ r: t }] = await q(`select stats_token($1, 7) r`, [ge.token_stats]);
+  assert.equal(t.informes.length, 1); assert.ok(!('ruta' in t.informes[0]));
+  assert.equal((await q(`select count(*)::int n from informes`))[0].n, 0);
+});
+
 console.log(`\n${ok} pruebas OK`);

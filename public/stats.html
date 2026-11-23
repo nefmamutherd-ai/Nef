@@ -4,32 +4,69 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Estadísticas</title>
-<style>
-  body { margin: 0; background: #f4f3ef; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #0b0b0b; }
-  header { padding: 22px 18px 6px; max-width: 860px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; }
-  h1 { margin: 0; font-size: 24px; }
-  header p { margin: 4px 0 0; color: #52514e; font-size: 14px; }
-  select { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid #d6d5d0; background: #fff; }
-  main { max-width: 860px; margin: 0 auto; padding: 12px 18px 40px; }
-  .msg { padding: 40px 0; text-align: center; color: #52514e; }
-</style>
+<title>Estadísticas · Nef</title>
+<link rel="stylesheet" href="/assets/nef-ui.css">
 <script src="/api/config"></script>
 </head>
-<body>
-<header>
-  <div><h1 id="titulo">Estadísticas</h1><p>Cómo usan tus clientes tu portal · <span id="marca">Nef</span></p></div>
-  <label>Periodo
-    <select id="dias"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select>
-  </label>
+<body class="nef">
+<header class="n-barra">
+  <img class="n-logo" src="/assets/marca/logo-nef.svg" alt="nef" width="70" height="26">
+  <span class="n-espacio"></span>
+  <span class="n-negocio" id="barra-negocio"></span>
 </header>
-<main id="contenido"><div class="msg">Cargando…</div></main>
+<main class="n-contenido">
+  <div class="n-encabezado">
+    <div><div class="n-etiqueta">Estadísticas</div><h1 id="titulo">Tu negocio</h1><p>Cómo usan tus clientes tu portal. Pasa el dedo o el mouse por cada "?" para ver qué significa.</p></div>
+    <div class="n-campo"><label for="dias">Periodo</label>
+      <select id="dias"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select></div>
+  </div>
+  <div class="n-rejilla">
+  <div id="contenido"><div class="n-tarjeta"><div class="n-cargando"></div></div></div>
+  <section class="n-tarjeta" id="informes" hidden>
+    <h2>Informes del estudio</h2>
+    <p>El análisis trimestral de tus datos, en lenguaje simple.</p>
+    <ul class="n-lista" id="lista-informes"></ul>
+  </section>
+  </div>
+</main>
 <script type="module">
   import { renderStats } from '/assets/stats.js';
-  const cfg = window.TOQUE;
-  document.getElementById('marca').textContent = cfg.marca;
+  const cfg = window.TOQUE || {};
   const token = new URLSearchParams(location.search).get('k') || '';
   const cont = document.getElementById('contenido');
+  const vacio = (titulo, texto) => {
+    cont.textContent = '';
+    const d = document.createElement('div'); d.className = 'n-tarjeta n-vacio';
+    const b = document.createElement('b'); b.textContent = titulo;
+    d.append(b, texto); cont.append(d);
+  };
+
+  function pintarInformes(lista) {
+    const sec = document.getElementById('informes');
+    const ul = document.getElementById('lista-informes');
+    ul.textContent = '';
+    sec.hidden = false;
+    if (!lista.length) {
+      const li = document.createElement('li');
+      const v = document.createElement('div'); v.className = 'n-vacio n-principal';
+      const b = document.createElement('b'); b.textContent = 'Aún no hay informes';
+      v.append(b, 'El primero llega al cerrar el trimestre.');
+      li.append(v); ul.append(li);
+      return;
+    }
+    for (const i of lista) {
+      const li = document.createElement('li');
+      const p = document.createElement('div'); p.className = 'n-principal';
+      const b = document.createElement('b'); b.textContent = i.periodo;
+      const s = document.createElement('span'); s.textContent = 'Publicado el ' + new Date(i.creado).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+      p.append(b, s);
+      const a = document.createElement('a'); a.className = 'n-btn chico secundario'; a.textContent = 'Abrir';
+      a.href = '/api/informe?k=' + encodeURIComponent(token) + '&id=' + encodeURIComponent(i.id);
+      a.target = '_blank'; a.rel = 'noopener';
+      li.append(p, a);
+      ul.append(li);
+    }
+  }
 
   async function cargar() {
     const dias = +document.getElementById('dias').value;
@@ -39,13 +76,15 @@
       body: JSON.stringify({ p_token: token, p_dias: dias }),
     });
     const data = r.ok ? await r.json() : null;
-    if (!data) { cont.innerHTML = '<div class="msg">Este link de estadísticas no es válido.</div>'; return; }
+    if (!data) { vacio('Este link no es válido', 'Pídele a Nef un link nuevo.'); return; }
     document.getElementById('titulo').textContent = data.negocio;
+    document.getElementById('barra-negocio').textContent = data.negocio;
     document.title = `Estadísticas · ${data.negocio}`;
-    renderStats(cont, data.stats);
+    await renderStats(cont, data.stats);
+    pintarInformes(data.informes || []);
   }
   document.getElementById('dias').addEventListener('change', cargar);
-  cargar().catch(() => (cont.innerHTML = '<div class="msg">No pudimos cargar las estadísticas. Intenta de nuevo.</div>'));
+  cargar().catch(() => vacio('No pudimos cargar las estadísticas', 'Revisa tu internet e intenta de nuevo.'));
 </script>
 </body>
 </html>

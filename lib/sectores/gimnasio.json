@@ -2,12 +2,50 @@
   "sector": "gimnasio",
   "nombre": "Gimnasio",
   "tema": "energia",
-  "palabras": { "lugar": "máquina", "catalogo": "clases", "item": "clase", "visita": "entrada" },
+  "palabras": {
+    "lugar": "máquina",
+    "catalogo": "clases",
+    "item": "clase",
+    "visita": "entrada"
+  },
   "botones": [
-    { "servicio": "catalogo", "id": "clases", "texto": "Clases de hoy", "icono": "calendario", "ruta": "/n/{slug}/clases" },
-    { "servicio": "club", "id": "monedas", "texto": "Mis monedas", "icono": "monedas", "ruta": "/n/{slug}/club" },
-    { "servicio": "base", "id": "resena", "texto": "Déjanos tu reseña", "icono": "estrella", "ruta": "/c/{slug}/resena", "requiere": "resena_url" }
+    {
+      "servicio": "catalogo",
+      "id": "clases",
+      "texto": "Clases de hoy",
+      "icono": "calendario",
+      "ruta": "/n/{slug}/clases"
+    },
+    {
+      "servicio": "club",
+      "id": "monedas",
+      "texto": "Mis monedas",
+      "icono": "monedas",
+      "ruta": "/n/{slug}/club"
+    },
+    {
+      "servicio": "base",
+      "id": "resena",
+      "texto": "Déjanos tu reseña",
+      "icono": "estrella",
+      "ruta": "/c/{slug}/resena",
+      "requiere": "resena_url"
+    }
   ],
-  "monedas": { "modo": "asistencia", "plural": "monedas", "singular": "moneda" },
-  "en_riesgo_dias": 10
+  "monedas": {
+    "modo": "asistencia",
+    "plural": "monedas",
+    "singular": "moneda"
+  },
+  "en_riesgo_dias": 10,
+  "estadisticas": [
+    "visitas_portal",
+    "activos",
+    "abandono",
+    "en_riesgo",
+    "inscritos",
+    "frecuencia",
+    "conversion_resena",
+    "uso_maquinas"
+  ]
 }

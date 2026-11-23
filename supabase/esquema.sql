@@ -1277,3 +1277,347 @@ revoke execute on function public.metrica_horas_pico(uuid, date)           from 
 revoke execute on function public._racha(uuid, text, date)                 from public, anon, authenticated;
 revoke execute on function public.metrica_racha(uuid, date)                from public, anon, authenticated;
 revoke execute on function public._stats_gimnasio(uuid, boolean)           from public, anon, authenticated;
+
+-- =====================================================================
+-- ===== Fase 4 =====  estadísticas nivel 1 (metricas_diarias), exportación anónima
+-- para el estudio e informes en PDF. Definiciones exactas: PRODUCTO.md §8.
+-- =====================================================================
+
+create table if not exists public.metricas_diarias (
+  negocio_id uuid not null references public.negocios(id) on delete cascade,
+  fecha      date not null,
+  metrica    text not null,
+  valor      numeric,
+  detalle    jsonb,
+  creado     timestamptz not null default now(),
+  primary key (negocio_id, fecha, metrica)
+);
+alter table public.metricas_diarias enable row level security;
+drop policy if exists admin_todo on public.metricas_diarias;
+create policy admin_todo on public.metricas_diarias for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- ---------- Métricas que faltaban (todas: p_negocio, p_fecha = día en hora Bogotá) ----------
+
+-- Visitas al portal: toques + escaneos del día
+create or replace function public.metrica_visitas_portal(p_negocio uuid, p_fecha date)
+returns int language sql stable as $$
+  select count(*)::int from public.toques q
+  where q.negocio_id = p_negocio and (q.creado at time zone 'America/Bogota')::date = p_fecha
+$$;
+
+-- Clics en "Déjanos tu reseña" del día (numerador de la conversión a reseña)
+create or replace function public.metrica_clics_resena(p_negocio uuid, p_fecha date)
+returns int language sql stable as $$
+  select count(*)::int from public.clicks c
+  where c.negocio_id = p_negocio and c.boton = 'resena' and (c.creado at time zone 'America/Bogota')::date = p_fecha
+$$;
+
+-- Clientes inscritos: total hasta el día y nuevos ese día
+create or replace function public.metrica_inscritos(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  select json_build_object(
+    'total', count(*) filter (where (m.creado at time zone 'America/Bogota')::date <= p_fecha),
+    'nuevos', count(*) filter (where (m.creado at time zone 'America/Bogota')::date = p_fecha))
+  from public.membresias m where m.negocio_id = p_negocio
+$$;
+
+-- Visitas registradas (caja o entradas) del día
+create or replace function public.metrica_visitas(p_negocio uuid, p_fecha date)
+returns int language sql stable as $$
+  select count(*)::int from public._visitas(p_negocio) where dia = p_fecha
+$$;
+
+-- Frecuencia: visitas registradas por cliente en los últimos 30 días (promedio y mediana), entre quienes vinieron
+create or replace function public.metrica_frecuencia(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with p as (select persona, count(*) as n from public._visitas(p_negocio) where dia between p_fecha - 29 and p_fecha group by persona)
+  select json_build_object('clientes', count(*), 'promedio', round(avg(n), 2),
+    'mediana', percentile_cont(0.5) within group (order by n)) from p
+$$;
+
+-- Retorno a 30 días: % de clientes con ≥ 2 visitas en 30 días (entre los que tuvieron ≥ 1)
+create or replace function public.metrica_retorno_30(p_negocio uuid, p_fecha date)
+returns numeric language sql stable as $$
+  with p as (select persona, count(*) as n from public._visitas(p_negocio) where dia between p_fecha - 29 and p_fecha group by persona)
+  select case when count(*) = 0 then null else round(count(*) filter (where n >= 2)::numeric / count(*), 4) end from p
+$$;
+
+-- Recencia: días desde la última visita, por cliente (promedio y mediana)
+create or replace function public.metrica_recencia(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with p as (select persona, p_fecha - max(dia) as d from public._visitas(p_negocio) where dia <= p_fecha group by persona)
+  select json_build_object('clientes', count(*), 'promedio', round(avg(d), 2),
+    'mediana', percentile_cont(0.5) within group (order by d)) from p
+$$;
+
+-- Devolución real (30 días): valor de premios canjeados ÷ ventas registradas en caja
+create or replace function public.metrica_devolucion_real(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with m as (
+    select mv.* from public.movimientos mv
+    where mv.negocio_id = p_negocio and (mv.creado at time zone 'America/Bogota')::date between p_fecha - 29 and p_fecha
+  )
+  select json_build_object(
+    'premios', coalesce((select sum(-monedas) from m where tipo = 'canje'), 0) * public.valor_moneda(),
+    'ventas', coalesce((select sum(valor_compra) from m where tipo = 'visita'), 0),
+    'tasa', case when coalesce((select sum(valor_compra) from m where tipo = 'visita'), 0) = 0 then null
+                 else round(coalesce((select sum(-monedas) from m where tipo = 'canje'), 0) * public.valor_moneda()::numeric
+                            / (select sum(valor_compra) from m where tipo = 'visita'), 4) end)
+$$;
+
+-- Uso de máquinas: escaneos del día en tags que abren una máquina
+create or replace function public.metrica_uso_maquinas(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  select coalesce(json_object_agg(x.producto_id, x.n), '{}'::json) from (
+    select t.producto_id, count(*) as n from public.toques q join public.tags t on t.id = q.tag_id
+    where q.negocio_id = p_negocio and t.producto_id is not null and (q.creado at time zone 'America/Bogota')::date = p_fecha
+    group by t.producto_id
+  ) x
+$$;
+
+-- Todas las métricas de un día (lo que se guarda en metricas_diarias)
+create or replace function public._metricas_dia(p_negocio uuid, p_fecha date)
+returns table (metrica text, valor numeric, detalle jsonb)
+language sql stable as $$
+  with ins as (select public.metrica_inscritos(p_negocio, p_fecha)::jsonb as j),
+  fr as (select public.metrica_frecuencia(p_negocio, p_fecha)::jsonb as j),
+  re as (select public.metrica_recencia(p_negocio, p_fecha)::jsonb as j),
+  dv as (select public.metrica_devolucion_real(p_negocio, p_fecha)::jsonb as j),
+  ab as (select public.metrica_abandono_mensual(p_negocio, p_fecha)::jsonb as j),
+  um as (select public.metrica_uso_maquinas(p_negocio, p_fecha)::jsonb as j),
+  hr as (
+    select jsonb_build_object('dow', extract(dow from p_fecha)::int,
+      'horas', (select jsonb_agg(coalesce((select count(*) from public._visitas(p_negocio) v where v.dia = p_fecha and v.hora = h), 0) order by h)
+                from generate_series(0, 23) h)) as j
+  )
+  select 'visitas_portal', public.metrica_visitas_portal(p_negocio, p_fecha)::numeric, null::jsonb
+  union all select 'clics_resena', public.metrica_clics_resena(p_negocio, p_fecha), null
+  union all select 'visitas', public.metrica_visitas(p_negocio, p_fecha), null
+  union all select 'inscritos_total', (select (j->>'total')::numeric from ins), null
+  union all select 'inscritos_nuevos', (select (j->>'nuevos')::numeric from ins), null
+  union all select 'activos', public.metrica_activos(p_negocio, p_fecha), null
+  union all select 'en_riesgo', json_array_length(public.metrica_en_riesgo(p_negocio, p_fecha)), null
+  union all select 'frecuencia', (select (j->>'promedio')::numeric from fr), (select j from fr)
+  union all select 'retorno_30', public.metrica_retorno_30(p_negocio, p_fecha), null
+  union all select 'recencia', (select (j->>'mediana')::numeric from re), (select j from re)
+  union all select 'abandono_mensual', (select (j->>'tasa')::numeric from ab), (select j from ab)
+  union all select 'devolucion_real', (select (j->>'tasa')::numeric from dv), (select j from dv)
+  union all select 'ventas', coalesce((select sum(valor_compra) from public.movimientos mv
+      where mv.negocio_id = p_negocio and mv.tipo = 'visita' and (mv.creado at time zone 'America/Bogota')::date = p_fecha), 0), null
+  union all select 'premios_valor', coalesce((select sum(-monedas) from public.movimientos mv
+      where mv.negocio_id = p_negocio and mv.tipo = 'canje' and (mv.creado at time zone 'America/Bogota')::date = p_fecha), 0) * public.valor_moneda(), null
+  union all select 'uso_maquinas', (select coalesce(sum(value::numeric), 0) from um, jsonb_each_text(um.j)), (select j from um)
+  union all select 'visitas_por_hora', (select sum(x::numeric) from hr, jsonb_array_elements_text(hr.j->'horas') x), (select j from hr)
+$$;
+
+-- Recalcula un rango (por defecto hasta ayer). Interna: el admin la llama con admin_recalcular.
+create or replace function public.recalcular_metricas(p_negocio uuid, p_desde date, p_hasta date default null)
+returns int language plpgsql security definer set search_path = public as $$
+declare
+  v_hasta date := coalesce(p_hasta, (public._ahora() at time zone 'America/Bogota')::date - 1);
+  v_dia date;
+  v_n int := 0;
+begin
+  if p_desde is null or p_desde > v_hasta then return 0; end if;
+  if v_hasta - p_desde > 800 then raise exception 'Rango demasiado largo'; end if;
+  delete from public.metricas_diarias where negocio_id = p_negocio and fecha between p_desde and v_hasta;
+  v_dia := p_desde;
+  while v_dia <= v_hasta loop
+    insert into public.metricas_diarias (negocio_id, fecha, metrica, valor, detalle)
+    select p_negocio, v_dia, x.metrica, x.valor, x.detalle from public._metricas_dia(p_negocio, v_dia) x
+    on conflict (negocio_id, fecha, metrica) do update set valor = excluded.valor, detalle = excluded.detalle, creado = now();
+    v_n := v_n + 1;
+    v_dia := v_dia + 1;
+  end loop;
+  return v_n;
+end $$;
+
+-- Cálculo nocturno (supabase/cron.sql): todos los negocios activos
+create or replace function public.recalcular_todo(p_desde date)
+returns int language plpgsql security definer set search_path = public as $$
+declare r record; v int := 0;
+begin
+  perform public.vencer_monedas();
+  for r in select id from public.negocios where activo loop
+    v := v + public.recalcular_metricas(r.id, p_desde);
+  end loop;
+  return v;
+end $$;
+
+create or replace function public.admin_recalcular(p_negocio uuid, p_desde date)
+returns int language plpgsql security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  return public.recalcular_metricas(p_negocio, greatest(p_desde, (public._ahora() at time zone 'America/Bogota')::date - 400));
+end $$;
+
+-- ---------- Informes en PDF (Storage, bucket privado "informes"; ver supabase/storage.sql) ----------
+create table if not exists public.informes (
+  id         uuid primary key default gen_random_uuid(),
+  negocio_id uuid not null references public.negocios(id) on delete cascade,
+  periodo    text not null check (char_length(periodo) between 2 and 40),   -- ej. "2026 · 4.º trimestre"
+  ruta       text not null unique,                                         -- <negocio_id>/<uuid>.pdf (no adivinable)
+  creado     timestamptz not null default now()
+);
+create index if not exists informes_negocio_idx on public.informes(negocio_id, creado);
+alter table public.informes enable row level security;
+drop policy if exists admin_todo on public.informes;
+create policy admin_todo on public.informes for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- ---------- Nivel 1 para los paneles: días pasados de metricas_diarias + hoy en vivo ----------
+create or replace function public._nivel1(p_negocio uuid, p_dias int)
+returns json language sql stable as $$
+  with lim as (
+    select (public._ahora() at time zone 'America/Bogota')::date as hoy,
+           (public._ahora() at time zone 'America/Bogota')::date - (greatest(1, least(p_dias, 365)) - 1) as desde
+  ),
+  dias as (select generate_series(lim.desde, lim.hoy, interval '1 day')::date as d from lim),
+  -- Día pasado guardado → se lee; día sin guardar o de hoy → se calcula en vivo
+  m as (
+    select d.d as fecha, md.metrica, md.valor, md.detalle
+    from dias d join public.metricas_diarias md on md.negocio_id = p_negocio and md.fecha = d.d
+    where d.d < (select hoy from lim)
+    union all
+    select d.d, x.metrica, x.valor, x.detalle
+    from dias d cross join lateral public._metricas_dia(p_negocio, d.d) x
+    where d.d = (select hoy from lim)
+       or not exists (select 1 from public.metricas_diarias md2 where md2.negocio_id = p_negocio and md2.fecha = d.d)
+  ),
+  suma as (select metrica, sum(valor) as total from m group by metrica),
+  hoy as (select metrica, valor, detalle from m where fecha = (select hoy from lim)),
+  horas as (
+    select dw, h, sum(n)::int as n from (
+      select (m.detalle->>'dow')::int as dw, (x.ord - 1)::int as h, x.n::int as n
+      from m, jsonb_array_elements_text(m.detalle->'horas') with ordinality x(n, ord)
+      where m.metrica = 'visitas_por_hora'
+    ) y group by dw, h
+  ),
+  maq as (
+    select key as producto_id, sum(value::int) as n from m, jsonb_each_text(m.detalle)
+    where m.metrica = 'uso_maquinas' group by key
+  ),
+  s as (select * from suma)
+  select json_build_object(
+    'desde', (select desde from lim), 'hasta', (select hoy from lim), 'dias', greatest(1, least(p_dias, 365)),
+    'visitas_portal', coalesce((select total from s where metrica = 'visitas_portal'), 0),
+    'clics_resena', coalesce((select total from s where metrica = 'clics_resena'), 0),
+    'conversion_resena', case when coalesce((select total from s where metrica = 'visitas_portal'), 0) = 0 then null
+      else round((select total from s where metrica = 'clics_resena') / (select total from s where metrica = 'visitas_portal'), 4) end,
+    'visitas', coalesce((select total from s where metrica = 'visitas'), 0),
+    'inscritos_total', (select valor from hoy where metrica = 'inscritos_total'),
+    'inscritos_nuevos', coalesce((select total from s where metrica = 'inscritos_nuevos'), 0),
+    'activos', (select valor from hoy where metrica = 'activos'),
+    'en_riesgo', (select valor from hoy where metrica = 'en_riesgo'),
+    'frecuencia', (select detalle from hoy where metrica = 'frecuencia'),
+    'retorno_30', (select valor from hoy where metrica = 'retorno_30'),
+    'recencia', (select detalle from hoy where metrica = 'recencia'),
+    'abandono_mensual', (select detalle from hoy where metrica = 'abandono_mensual'),
+    'devolucion_real', json_build_object(
+      'premios', coalesce((select total from s where metrica = 'premios_valor'), 0),
+      'ventas', coalesce((select total from s where metrica = 'ventas'), 0),
+      'tasa', case when coalesce((select total from s where metrica = 'ventas'), 0) = 0 then null
+        else round(coalesce((select total from s where metrica = 'premios_valor'), 0) / (select total from s where metrica = 'ventas'), 4) end),
+    'uso_maquinas', (select coalesce(json_agg(json_build_object('nombre', p.nombre, 'n', maq.n) order by maq.n desc, p.nombre), '[]'::json)
+                     from maq join public.productos p on p.id::text = maq.producto_id),
+    'horas_pico', (select json_agg((select json_agg(coalesce((select horas.n from horas where horas.dw = d.d and horas.h = hh.h), 0) order by hh.h)
+                                    from generate_series(0, 23) hh(h)) order by d.d) from generate_series(0, 6) d(d)),
+    'serie_visitas_portal', (select json_agg(json_build_object('dia', d.d, 'n', coalesce((select valor from m where m.fecha = d.d and m.metrica = 'visitas_portal'), 0)) order by d.d) from dias d),
+    'serie_visitas', (select json_agg(json_build_object('dia', d.d, 'n', coalesce((select valor from m where m.fecha = d.d and m.metrica = 'visitas'), 0)) order by d.d) from dias d)
+  )
+$$;
+
+create or replace function public.stats_admin(p_negocio uuid, p_dias int default 30)
+returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then
+    raise exception 'no autorizado';
+  end if;
+  return (public._stats_negocio(p_negocio, p_dias)::jsonb
+          || jsonb_build_object('sector', (select sector from public.negocios where id = p_negocio),
+                                'nivel1', public._nivel1(p_negocio, p_dias),
+                                'gimnasio', public._stats_gimnasio(p_negocio, true)))::json;
+end $$;
+
+create or replace function public.stats_token(p_token text, p_dias int default 30)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('negocio', n.nombre, 'color', n.color,
+    'stats', (public._stats_negocio(n.id, p_dias)::jsonb
+              || jsonb_build_object('sector', n.sector, 'nivel1', public._nivel1(n.id, p_dias),
+                                    'gimnasio', public._stats_gimnasio(n.id, false)))::json,
+    'informes', (select coalesce(json_agg(json_build_object('id', i.id, 'periodo', i.periodo, 'creado', i.creado) order by i.creado desc), '[]'::json)
+                 from public.informes i where i.negocio_id = n.id))
+  from public.negocios n where n.token_stats = p_token;
+$$;
+
+-- ---------- Exportar para el estudio (solo admin): ids anonimizados, sin nombres ni teléfonos ----------
+create or replace function public.exportar_estudio(p_negocio uuid, p_desde date, p_hasta date)
+returns json language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_sal text := encode(extensions.gen_random_bytes(16), 'hex');   -- aleatoria por exportación; no se guarda
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  return json_build_object(
+    'negocio', (select json_build_object('sector', sector, 'desde', p_desde, 'hasta', p_hasta) from public.negocios where id = p_negocio),
+    'visitas', (
+      select coalesce(json_agg(json_build_object(
+        'cliente', md5(v.persona || v_sal), 'fecha', v.dia, 'hora', v.hora, 'dia_semana', v.dow,
+        'origen', case when v.persona like 's:%' then 'entrada' else 'caja' end) order by v.momento), '[]'::json)
+      from public._visitas(p_negocio) v where v.dia between p_desde and p_hasta),
+    'clientes', (
+      select coalesce(json_agg(json_build_object(
+        'cliente', md5('c:' || m.id::text || v_sal), 'inscrito', (m.creado at time zone 'America/Bogota')::date,
+        'visitas', m.visitas, 'saldo', m.saldo, 'total_ganado', m.total_ganado,
+        'ultima_visita', (m.ultima_visita at time zone 'America/Bogota')::date) order by m.creado), '[]'::json)
+      from public.membresias m where m.negocio_id = p_negocio),
+    'canjes', (
+      select coalesce(json_agg(json_build_object(
+        'cliente', md5('c:' || mv.membresia_id::text || v_sal), 'fecha', (mv.creado at time zone 'America/Bogota')::date,
+        'monedas', -mv.monedas, 'valor_pesos', -mv.monedas * public.valor_moneda(), 'premio', p.nombre) order by mv.creado), '[]'::json)
+      from public.movimientos mv left join public.premios p on p.id = mv.premio_id
+      where mv.negocio_id = p_negocio and mv.tipo = 'canje'
+        and (mv.creado at time zone 'America/Bogota')::date between p_desde and p_hasta),
+    'entradas', (
+      select coalesce(json_agg(json_build_object(
+        'socio', md5('s:' || e.socio_id::text || v_sal), 'fecha', (e.fecha_hora at time zone 'America/Bogota')::date,
+        'hora', extract(hour from e.fecha_hora at time zone 'America/Bogota')::int, 'origen', e.origen,
+        'plan', s.plan) order by e.fecha_hora), '[]'::json)
+      from public.entradas e join public.socios s on s.id = e.socio_id
+      where e.negocio_id = p_negocio and (e.fecha_hora at time zone 'America/Bogota')::date between p_desde and p_hasta)
+  );
+end $$;
+
+-- El link del dueño pide la ruta de UN informe con su token; un token de otro negocio no obtiene nada
+create or replace function public.informe_ruta(p_token text, p_informe uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select i.ruta from public.informes i join public.negocios n on n.id = i.negocio_id
+  where n.token_stats = p_token and i.id = p_informe
+$$;
+
+-- Permisos
+revoke execute on function public.metrica_visitas_portal(uuid, date)   from public, anon, authenticated;
+revoke execute on function public.metrica_clics_resena(uuid, date)     from public, anon, authenticated;
+revoke execute on function public.metrica_inscritos(uuid, date)        from public, anon, authenticated;
+revoke execute on function public.metrica_visitas(uuid, date)          from public, anon, authenticated;
+revoke execute on function public.metrica_frecuencia(uuid, date)       from public, anon, authenticated;
+revoke execute on function public.metrica_retorno_30(uuid, date)       from public, anon, authenticated;
+revoke execute on function public.metrica_recencia(uuid, date)         from public, anon, authenticated;
+revoke execute on function public.metrica_devolucion_real(uuid, date)  from public, anon, authenticated;
+revoke execute on function public.metrica_uso_maquinas(uuid, date)     from public, anon, authenticated;
+revoke execute on function public._metricas_dia(uuid, date)            from public, anon, authenticated;
+revoke execute on function public.recalcular_metricas(uuid, date, date) from public, anon, authenticated;
+revoke execute on function public.recalcular_todo(date)                from public, anon, authenticated;
+revoke execute on function public._nivel1(uuid, int)                   from public, anon, authenticated;
+revoke execute on function public.admin_recalcular(uuid, date)         from public, anon;
+grant  execute on function public.admin_recalcular(uuid, date)         to authenticated;
+revoke execute on function public.exportar_estudio(uuid, date, date)   from public, anon;
+grant  execute on function public.exportar_estudio(uuid, date, date)   to authenticated;
+grant  execute on function public.informe_ruta(text, uuid)             to anon, authenticated;
+
+-- Para la política de Storage (storage.sql): ¿esta ruta es un informe registrado? (anon no puede leer la tabla)
+create or replace function public.informe_existe(p_ruta text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.informes where ruta = p_ruta)
+$$;
+grant execute on function public.informe_existe(text) to anon, authenticated;

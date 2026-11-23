@@ -440,6 +440,72 @@ await caso('entrada por NFC: registra una vez al día y muestra la racha; sin en
   await servicios({ entrada_nfc: false });
 });
 
+console.log('Fase 4');
+const PDF = fileURLToPath(new URL('./fixtures/informe.pdf', import.meta.url));
+await caso('admin: cada número tiene su "?" con la definición', async () => {
+  await panel.click('.tab[data-tab=stats]');
+  await panel.selectOption('#s-negocio', { label: 'Café Prueba' });
+  await panel.waitForSelector('.viz-root .n-kpi');
+  const defs = await panel.$$eval('.viz-root .n-kpi', (ks) => ks.map((k) => (k.querySelector('.n-def[data-def]') || {}).dataset?.def || ''));
+  assert.ok(defs.length >= 6, 'kpis: ' + defs.length);
+  assert.ok(defs.every((d) => d.length > 10), 'definición vacía');
+  assert.ok(defs.includes('Socios con ≥ 1 entrada en los últimos 14 días.'), 'gimnasio muestra Activos');
+});
+await caso('exportar para el estudio: descarga 4 CSV + LEEME sin teléfonos ni nombres', async () => {
+  const descargas = [];
+  const listo = new Promise((ok) => panel.on('download', async (d) => { descargas.push(d); if (descargas.length === 5) ok(); }));
+  await panel.fill('#e-desde', '2026-09-01');
+  await panel.fill('#e-hasta', '2026-11-30');
+  await panel.click('#e-exportar');
+  await Promise.race([listo, new Promise((_, mal) => setTimeout(() => mal(new Error('descargas: ' + descargas.length)), 60000))]);
+  const nombres = descargas.map((d) => d.suggestedFilename()).sort();
+  assert.deepEqual(nombres.map((n) => n.replace(/^.*_(\w+)\.(csv|txt)$/, '$1.$2')), ['LEEME.txt', 'canjes.csv', 'clientes.csv', 'entradas.csv', 'visitas.csv']);
+  for (const d of descargas) {
+    const txt = fs.readFileSync(await d.path(), 'utf8');
+    assert.ok(!/3001000|3001112233|Laura|Martínez|telefono/.test(txt), d.suggestedFilename() + ' tiene datos personales');
+  }
+  const entradas = descargas.find((d) => d.suggestedFilename().endsWith('_entradas.csv'));
+  assert.equal(fs.readFileSync(await entradas.path(), 'utf8').trim().split('\n').length, 5780 + 1 + 1, 'cabecera + 5.780 importadas + 1 NFC');
+});
+let tokenDueno, informeId;
+await caso('informe en PDF: el admin lo sube y el dueño lo abre con su link (URL firmada)', async () => {
+  await panel.fill('#inf-periodo', '2026 · 4.º trimestre');
+  await panel.setInputFiles('#inf-archivo', PDF);
+  await panel.waitForSelector('#lista-informes-admin li:has-text("2026 · 4.º trimestre")');
+  await panel.locator('#estudio').scrollIntoViewIfNeeded();
+  await panel.screenshot({ path: DIR + 'admin-estudio.png' });
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  tokenDueno = n.token_stats;
+  const [inf] = await api(`informes?negocio_id=eq.${n.id}`);
+  informeId = inf.id;
+  const [s, loc] = await ir(`/api/informe?k=${tokenDueno}&id=${informeId}`);
+  assert.equal(s, 302); assert.match(loc, /\/storage\/v1\/object\/sign\/informes\/.+\.pdf\?token=/);
+  const r = await fetch(loc);
+  assert.equal(r.headers.get('content-type'), 'application/pdf');
+});
+await caso('informe: un token de otro negocio no obtiene la URL', async () => {
+  await api('negocios', 'POST', { slug: 'otro-' + slug, nombre: 'Otro Negocio' });
+  const [otro] = await api(`negocios?slug=eq.otro-${slug}`);
+  assert.ok(otro.token_stats && otro.token_stats !== tokenDueno);
+  assert.equal((await ir(`/api/informe?k=${otro.token_stats}&id=${informeId}`))[0], 404);
+  assert.equal((await ir(`/api/informe?k=inventado&id=${informeId}`))[0], 404);
+});
+await caso('link del dueño: números con definición, informes, celular y escritorio', async () => {
+  for (const [w, h, nombre] of [[390, 844, 'stats-dueno-movil.png'], [1280, 860, 'stats-dueno-escritorio.png']]) {
+    const p = await ctx.newPage();
+    p.on('pageerror', (e) => errores.push('stats dueño: ' + e.message));
+    await p.setViewportSize({ width: w, height: h });
+    await p.goto(`${BASE}/stats?k=${tokenDueno}`);
+    await p.waitForSelector('.viz-root .n-kpi');
+    assert.ok(await p.$$eval('.n-kpi', (ks) => ks.every((k) => (k.querySelector('.n-def') || {}).dataset?.def)));
+    await p.waitForSelector('#informes:not([hidden]) li:has-text("2026 · 4.º trimestre")');
+    assert.ok(!(await p.content()).includes('300100'), 'el link del dueño muestra teléfonos');
+    await sinScrollHorizontal(p);
+    await p.screenshot({ path: DIR + nombre, fullPage: true });
+    await p.close();
+  }
+});
+
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));
 console.log(`\n${ok} pruebas OK · capturas en tests/capturas/`);

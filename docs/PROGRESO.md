@@ -86,3 +86,18 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Capturas revisadas: `admin-importar.png`, `admin-importar-ok.png`, `admin-en-riesgo.png`, `admin-catalogo.png`, `maquina-ficha.png`,
   `clases-hoy.png`, `entrada-movil.png`. Bug encontrado y arreglado: los enlaces `a.pt-accion` heredaban el color del texto (botón vacío en tema oscuro); hay prueba.
 - Seguridad: tablas nuevas con RLS (prueba de anon), métricas internas con `revoke`, teléfonos solo en `stats_admin`, importar solo admin.
+
+### Fase 4 · Estadísticas nivel 1 + soporte del estudio — hecha
+- **BD**: `metricas_diarias` + métricas que faltaban (`metrica_visitas_portal`, `_clics_resena`, `_inscritos`, `_visitas`, `_frecuencia`,
+  `_retorno_30`, `_recencia`, `_devolucion_real`, `_uso_maquinas`), `_metricas_dia`, `recalcular_metricas`, `recalcular_todo`,
+  `admin_recalcular`, `_nivel1` (guardado + hoy en vivo), `exportar_estudio` (anónimo), `informes` + `informe_ruta`/`informe_existe`.
+- `supabase/cron.sql` (pg_cron 2:00 a. m. Bogotá; se corre a mano) y `supabase/storage.sql` (bucket privado `informes`).
+- **Pantallas**: `stats.js` rehecho con `nef-ui.css` (cada número con su "?" y la definición exacta; qué números ve cada sector sale del paquete),
+  `/stats?k=` rehecho con la marca Nef + "Informes del estudio", admin con "Exportar para el estudio", "Recalcular" y subida de PDF.
+  `/api/informe` (URL firmada de 1 hora) y `/api/sectores`.
+- **Estudio**: `docs/ESTUDIO.md` (secciones, prueba por pregunta, mínimos de datos) y `estudio/plantilla.R` (probado con R 4.6.1).
+- Pruebas: test:sql **54 OK** (6 nuevas) · test:e2e **29 OK** (5 nuevas) · verificar ✓ (y sin avisos).
+- Capturas revisadas: `stats-dueno-movil.png`, `stats-dueno-escritorio.png`, `admin-estudio.png`.
+- Seguridad: anon no lee `metricas_diarias` ni llama recalcular/exportar/métricas (prueba); la exportación no trae nombres ni teléfonos
+  (prueba SQL y e2e sobre los archivos descargados); un token de otro negocio no abre el informe (prueba SQL y e2e).
+- Para Jacobo: correr `supabase/cron.sql` y `supabase/storage.sql` en Supabase después de `esquema.sql`.

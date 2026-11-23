@@ -53,6 +53,27 @@ http.createServer(async (req, res) => {
       return send(res, 200, { access_token: 'admintoken', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'r', user });
     }
     if (url.pathname.startsWith('/auth/v1/logout')) return send(res, 204);
+
+    // Storage mínimo (bucket "informes"): subir (solo admin), firmar (solo rutas registradas) y descargar lo firmado
+    const st = /^\/storage\/v1\/object\/(sign\/)?([\w-]+)\/(.+)$/.exec(url.pathname);
+    if (st) {
+      const [, firmar, bucket, ruta] = st;
+      const path = decodeURIComponent(ruta);
+      if (firmar && req.method === 'POST') {
+        const r = await db.query(`select public.informe_existe($1) as ok`, [path]);
+        if (bucket !== 'informes' || !r.rows[0].ok) return send(res, 400, { statusCode: '404', error: 'not_found', message: 'Object not found' });
+        return send(res, 200, { signedURL: `/object/sign/${bucket}/${ruta}?token=firma-de-prueba` });
+      }
+      if (firmar && req.method === 'GET' && url.searchParams.get('token') === 'firma-de-prueba') {
+        res.writeHead(200, { 'content-type': 'application/pdf', ...cors });
+        return res.end('%PDF-1.4\n% informe de prueba\n%%EOF\n');
+      }
+      if (!firmar && (req.method === 'POST' || req.method === 'PUT')) {
+        if (role !== 'authenticated') return send(res, 403, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' });
+        return send(res, 200, { Key: `${bucket}/${path}`, Id: path });
+      }
+      return send(res, 404, { message: 'not found' });
+    }
     if (url.pathname.startsWith('/auth/v1/user')) return send(res, 200, { id: ADMIN, aud: 'authenticated', role: 'authenticated' });
 
     const out = await db.transaction(async (tx) => {

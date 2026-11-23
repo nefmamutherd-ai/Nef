@@ -51,7 +51,7 @@
 .n-btn.ancho { width: 100%; }
 
 /* ── Tarjetas y números ──────────────────────────────────────────── */
-.n-tarjeta { background: var(--n-blanco); border-radius: 20px; padding: 24px; }
+.n-tarjeta { background: var(--n-blanco); border-radius: 20px; padding: 24px; position: relative; }
 .n-tarjeta h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
 .n-tarjeta > p { margin: 0 0 16px; color: var(--n-gris); }
 .n-rejilla { display: grid; gap: 16px; }

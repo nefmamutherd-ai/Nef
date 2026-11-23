@@ -109,7 +109,14 @@ export function montarImportador({ sb, toast, negocioActual, negocios, alTermina
         if (error) throw error;
         for (const k in tot) tot[k] += data[k];
       }
-      const socios = new Set(filas.filter((f) => f.codigo && f.fecha_hora).map((f) => f.codigo)).size;
+      const validas = filas.filter((f) => f.codigo && f.fecha_hora);
+      const socios = new Set(validas.map((f) => f.codigo)).size;
+      // Recalcular las estadísticas guardadas desde el día más antiguo del archivo
+      if (tot.nuevas > 0 && validas.length) {
+        aviso('', 'Actualizando las estadísticas…');
+        const desde = validas.reduce((m, f) => (f.fecha_hora < m ? f.fecha_hora : m), validas[0].fecha_hora).slice(0, 10);
+        await sb.rpc('admin_recalcular', { p_negocio: negocioActual(), p_desde: desde });
+      }
       aviso('ok', `Importamos ${fmt.format(tot.nuevas)} entradas nuevas de ${fmt.format(socios)} socios. ${fmt.format(tot.repetidas)} repetidas.`);
       if (tot.invalidas) {
         $('#i-resultado').append(el('div', 'n-aviso aviso', `Hay ${fmt.format(tot.invalidas)} filas sin código o con una fecha que no entendimos. Las saltamos.`));

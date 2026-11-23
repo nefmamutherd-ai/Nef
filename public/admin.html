@@ -94,6 +94,28 @@
       </div>
       <div id="s-contenido"></div>
       <div id="s-gimnasio"></div>
+      <div class="n-rejilla dos">
+        <div class="n-tarjeta n-form" id="estudio">
+          <h2>Estudio</h2>
+          <p>CSV limpios y anónimos (sin nombres ni teléfonos) para el análisis en R.</p>
+          <div class="n-fila">
+            <div class="n-campo"><label for="e-desde">Desde</label><input type="date" id="e-desde"></div>
+            <div class="n-campo"><label for="e-hasta">Hasta</label><input type="date" id="e-hasta"></div>
+          </div>
+          <div class="n-herramientas">
+            <button class="n-btn" id="e-exportar">Exportar para el estudio</button>
+            <button class="n-btn secundario" id="e-recalcular">Recalcular estadísticas</button>
+          </div>
+          <div id="e-resultado"></div>
+        </div>
+        <div class="n-tarjeta n-form" id="informes-admin">
+          <h2>Informes</h2>
+          <p>El PDF del trimestre. El dueño lo ve en su link de estadísticas.</p>
+          <div class="n-campo"><label for="inf-periodo">Periodo</label><input id="inf-periodo" placeholder="2026 · 4.º trimestre" maxlength="40"></div>
+          <label class="n-subir"><input type="file" id="inf-archivo" accept="application/pdf" hidden><b>Subir el PDF</b><span>Máximo 10 MB.</span></label>
+          <ul class="n-lista" id="lista-informes-admin"></ul>
+        </div>
+      </div>
     </section>
 
     <!-- ENTRADAS (importar el CSV del torniquete) -->
@@ -266,6 +288,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { renderStats } from '/assets/stats.js';
 import { montarImportador } from '/assets/importar.js';
 import { montarCatalogo } from '/assets/admin-catalogo.js';
+import { exportarEstudio } from '/assets/exportar.js';
 
 const cfg = window.TOQUE;
 const sb = createClient(cfg.url, cfg.anon);
@@ -649,33 +672,18 @@ async function cargarStats() {
   cont.innerHTML = '<div class="n-tarjeta"><div class="n-cargando"></div></div>';
   const { data, error: err } = await sb.rpc('stats_admin', { p_negocio: id, p_dias: +$('#s-dias').value });
   if (err) { cont.innerHTML = '<div class="n-aviso alerta"></div>'; cont.firstChild.textContent = 'No se pudieron cargar: ' + err.message; return; }
-  renderStats(cont, data);
+  await renderStats(cont, data);
+  cargarInformes(id);
   pintarGimnasio(data.gimnasio, negocios.find((x) => x.id === id));
 }
 
-// Bloque de gimnasio: activos, abandono y "En riesgo" con WhatsApp solo en horario legal (Ley 2300)
+// "En riesgo" con teléfono y WhatsApp (solo admin); el botón solo aparece en horario legal (Ley 2300)
 const fmtN = new Intl.NumberFormat('es-CO');
 function pintarGimnasio(g, neg) {
   const cont = $('#s-gimnasio');
   cont.textContent = '';
-  if (!g || !neg || (neg.sector !== 'gimnasio' && !g.activos && !g.en_riesgo_total)) return;
+  if (!g || !neg) return;
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
-  const kpis = el('div', 'n-kpis');
-  const kpi = (titulo, valor, def, destacado) => {
-    const k = el('div', 'n-kpi' + (destacado ? ' destacado' : ''));
-    const sm = el('small', '', titulo + ' ');
-    const d = el('button', 'n-def', '?'); d.type = 'button'; d.dataset.def = def; d.setAttribute('aria-label', def);
-    sm.append(d);
-    k.append(sm, el('div', 'n-num', valor));
-    return k;
-  };
-  const ab = g.abandono || {};
-  kpis.append(
-    kpi('Activos', fmtN.format(g.activos), 'Socios con al menos 1 entrada en los últimos 14 días.'),
-    kpi('Abandono del mes', ab.tasa === null || ab.tasa === undefined ? '—' : Math.round(ab.tasa * 100) + ' %',
-      `Activos al inicio del mes que no han vuelto en el mes ÷ activos al inicio (${fmtN.format(ab.abandonaron || 0)} de ${fmtN.format(ab.activos_inicio || 0)}).`),
-    kpi('En riesgo', fmtN.format(g.en_riesgo_total), `Con 4 o más visitas y sin venir hace ${g.en_riesgo_dias} días o más.`, g.en_riesgo_total > 0),
-  );
   const t = el('div', 'n-tarjeta');
   t.append(el('h2', '', 'En riesgo'), el('p', '', g.puede_escribir ? 'Escríbeles hoy. El botón solo aparece en horario permitido.' : 'Ahora no se puede escribir: fuera del horario permitido (Ley 2300).'));
   const proxima = g.proxima ? new Date(g.proxima) : null;
@@ -700,13 +708,77 @@ function pintarGimnasio(g, neg) {
   }
   if (!(g.en_riesgo || []).length) t.append(el('div', 'n-vacio', 'Nadie en riesgo por ahora.'));
   else t.append(ul);
-  cont.append(kpis, t);
+  cont.append(t);
 }
 $('#s-negocio').addEventListener('change', cargarStats);
 $('#s-dias').addEventListener('change', cargarStats);
 $('#s-compartir').addEventListener('click', () => {
   const n = negocios.find((x) => x.id === $('#s-negocio').value);
   if (n) copiar(`${ORIGEN}/stats?k=${n.token_stats}`, 'Link de estadísticas copiado — envíaselo al dueño');
+});
+
+// ---------------- Estudio: exportar y recalcular ----------------
+{
+  const hoy = new Date();
+  const hace90 = new Date(hoy.getTime() - 89 * 86400000);
+  const iso = (d) => d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+  $('#e-desde').value = iso(hace90);
+  $('#e-hasta').value = iso(hoy);
+}
+const resultadoEstudio = (clase, texto) => { const r = $('#e-resultado'); r.textContent = ''; const d = document.createElement('div'); d.className = 'n-aviso ' + clase; d.textContent = texto; r.append(d); };
+$('#e-exportar').addEventListener('click', async () => {
+  const n = negocios.find((x) => x.id === $('#s-negocio').value);
+  if (!n) return;
+  $('#e-exportar').disabled = true;
+  try {
+    const { data, error: err } = await sb.rpc('exportar_estudio', { p_negocio: n.id, p_desde: $('#e-desde').value, p_hasta: $('#e-hasta').value });
+    if (err) throw err;
+    const archivos = exportarEstudio(data, n.slug);
+    resultadoEstudio('ok', `Listo: ${archivos.join(', ')}.`);
+  } catch (e) { resultadoEstudio('alerta', 'No se pudo exportar: ' + (e.message || e)); }
+  finally { $('#e-exportar').disabled = false; }
+});
+$('#e-recalcular').addEventListener('click', async () => {
+  const id = $('#s-negocio').value;
+  if (!id) return;
+  $('#e-recalcular').disabled = true;
+  const { data, error: err } = await sb.rpc('admin_recalcular', { p_negocio: id, p_desde: $('#e-desde').value });
+  $('#e-recalcular').disabled = false;
+  if (err) return resultadoEstudio('alerta', 'No se pudo recalcular: ' + err.message);
+  resultadoEstudio('ok', `Recalculados ${data} días.`);
+  cargarStats();
+});
+
+// ---------------- Informes en PDF ----------------
+async function cargarInformes(negocioId) {
+  const ul = $('#lista-informes-admin');
+  const { data, error: err } = await sb.from('informes').select('*').eq('negocio_id', negocioId).order('creado', { ascending: false });
+  ul.textContent = '';
+  if (err) return;
+  for (const i of data) {
+    const li = document.createElement('li');
+    const p = document.createElement('div'); p.className = 'n-principal';
+    const b = document.createElement('b'); b.textContent = i.periodo;
+    const s = document.createElement('span'); s.textContent = new Date(i.creado).toLocaleDateString('es-CO');
+    p.append(b, s); li.append(p); ul.append(li);
+  }
+}
+$('#inf-archivo').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const negocioId = $('#s-negocio').value;
+  const periodo = $('#inf-periodo').value.trim();
+  e.target.value = '';
+  if (!file || !negocioId) return;
+  if (periodo.length < 2) { toast('Escribe el periodo, ej. "2026 · 4.º trimestre"'); return; }
+  if (file.type !== 'application/pdf' || file.size > 10 * 1024 * 1024) { toast('Solo PDF de máximo 10 MB'); return; }
+  const ruta = `${negocioId}/${crypto.randomUUID()}.pdf`;
+  const { error: errSubir } = await sb.storage.from('informes').upload(ruta, file, { contentType: 'application/pdf' });
+  if (errSubir) { toast('No se subió: ' + errSubir.message); return; }
+  const { error: err } = await sb.from('informes').insert({ negocio_id: negocioId, periodo, ruta });
+  if (err) { toast('Se subió el PDF pero no se registró: ' + err.message); return; }
+  $('#inf-periodo').value = '';
+  toast('Informe publicado');
+  cargarInformes(negocioId);
 });
 
 const importador = montarImportador({ sb, toast, negocioActual: () => $('#i-negocio').value, negocios: () => negocios, alTerminar: recargar });

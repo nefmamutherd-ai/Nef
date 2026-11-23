@@ -94,8 +94,8 @@
 - `docs/ESTUDIO.md`: plantilla del informe (secciones, pruebas por pregunta, advertencias de muestra)
   y un script base en R (`estudio/plantilla.R`) que lee los CSV exportados.
 **Listo cuando**
-- [ ] Cada métrica tiene prueba SQL con datos conocidos.
-- [ ] El CSV exportado no contiene teléfonos ni nombres.
+- [x] Cada métrica tiene prueba SQL con datos conocidos.
+- [x] El CSV exportado no contiene teléfonos ni nombres.
 
 ## Fase 5 — Catálogo del café + "Elige por mí"
 Carta (categorías, productos, foto subida y convertida a WebP 1000×1000, agotado a un toque) y la ruleta
