@@ -64,7 +64,7 @@ nav .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
 .hero .tel { position: absolute; right: 8%; top: 32px; width: 210px; border-radius: 30px; border: 7px solid var(--tinta); background: var(--tinta); transform: rotate(4deg); box-shadow: 0 30px 40px -20px rgba(29,27,24,.45); }
 .hero .tel img { border-radius: 23px; width: 100%; height: auto; }
 .hero .punto { position: absolute; left: 8%; bottom: 36px; width: 128px; height: 128px; border-radius: 50%; background: var(--tinta); display: grid; place-items: center; transform: rotate(-8deg); }
-.hero .punto img { width: 56px; height: 56px; animation: late 1.2s ease .4s 1 both; }
+.hero .punto .ojo { width: 56px; height: 56px; overflow: visible; animation: late 1.2s ease .4s 1 both; }
 @keyframes late { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 70% { transform: scale(.98); } 100% { transform: scale(1); } }
 
 /* 2. Cómo funciona */
@@ -157,7 +157,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
   .hero .vis { grid-column: 8 / span 5; height: 560px; margin-right: -60px; }
   .hero .tel { width: 250px; top: 48px; right: 56px; }
   .hero .punto { width: 150px; height: 150px; left: 40px; bottom: 64px; }
-  .hero .punto img { width: 60px; height: 60px; }
+  .hero .punto .ojo { width: 60px; height: 60px; }
   .pasos { grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px; }
   .paso .n { font-size: 64px; }
   .paso h3 { font-size: 24px; margin-top: 12px; }
@@ -204,6 +204,13 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 .hero .punto { animation: acerca 5s cubic-bezier(.2, .8, .2, 1) 2s infinite; overflow: visible; }
 .hero .punto .ondas i { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--mandarina); animation: onda 2.8s cubic-bezier(.2, .8, .2, 1) infinite; pointer-events: none; }
 .hero .punto .ondas i:nth-child(2) { animation-delay: .9s; } .hero .punto .ondas i:nth-child(3) { animation-delay: 1.8s; }
+/* El punto naranja es un ojo: mira alrededor y parpadea; con mouse, sigue el puntero (idea de Jacobo) */
+@keyframes mira { 0%, 14% { transform: translate(0, 0); } 20%, 34% { transform: translate(13px, -6px); } 40%, 52% { transform: translate(-12px, -8px); }
+  58%, 70% { transform: translate(-8px, 11px); } 76%, 88% { transform: translate(11px, 9px); } 94%, 100% { transform: translate(0, 0); } }
+@keyframes parpadea { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+.hero .punto .mira { animation: mira 7s cubic-bezier(.6, 0, .2, 1) 1.6s infinite; }
+.hero .punto .pupila { transform-box: fill-box; transform-origin: center; animation: parpadea 4.2s ease-in-out 2.4s infinite; }
+.hero .punto.sigue .mira { animation: none; transform: translate(var(--ox, 0px), var(--oy, 0px)); transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
 .btn { transition: transform .18s cubic-bezier(.2, .8, .2, 1), background-color .15s ease, box-shadow .2s ease; }
 .btn:hover { transform: translateY(-2px); }
 .btn.p:hover { box-shadow: 0 10px 22px -12px var(--mandarina); }
@@ -243,7 +250,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     <!-- TODO(Jacobo): reemplazar por la foto real del sticker en una mesa (WebP, 1200×1400). Mientras tanto: la captura del portal. -->
     <div class="vis" aria-hidden="true">
       <div class="tel"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"></div>
-      <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><img src="/assets/marca/simbolo-nef.svg" alt="" width="60" height="60"></div>
+      <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><svg class="ojo" viewBox="0 0 100 100" width="60" height="60" aria-hidden="true"><circle cx="50" cy="50" r="42.32" fill="none" stroke="#FF6B35" stroke-width="7.36"/><g class="mira"><circle class="pupila" cx="50" cy="50" r="18.86" fill="#FF6B35"/></g></svg></div>
     </div>
   </header>
   <div class="cinta" aria-hidden="true"><div><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span></div></div>
@@ -420,6 +427,22 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
       })(t0);
     }
   })();
+
+  // ── El ojo del punto sigue el puntero (solo con mouse; en el celular mira solo) ──
+  var punto = document.querySelector('.hero .punto');
+  if (punto && window.matchMedia('(pointer: fine)').matches) {
+    var quieto;
+    window.addEventListener('pointermove', function (e) {
+      var r = punto.getBoundingClientRect();
+      var dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      var d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260) * 13;   // máx. 13 unidades: la pupila no se sale del aro
+      punto.classList.add('sigue');
+      punto.style.setProperty('--ox', (dx / d * k).toFixed(1) + 'px');
+      punto.style.setProperty('--oy', (dy / d * k).toFixed(1) + 'px');
+      clearTimeout(quieto);
+      quieto = setTimeout(function () { punto.classList.remove('sigue'); }, 3000);   // si deja el mouse quieto, vuelve a mirar solo
+    }, { passive: true });
+  }
 
   // ── "Tócalo tú": solo se muestra si el negocio de demostración existe (Fase 7). ──
   var demo = document.getElementById('demo');
