@@ -151,9 +151,17 @@ function girar() {
   evento('girar', elegido.id);
 
   // Rollo: muchos platos al azar del antojo y, al final, el elegido (queda en la ventana del centro)
+  // Nunca el mismo plato en filas vecinas: si el antojo tiene pocas opciones, el rollo se rellena con el resto de la carta.
   const c = candidatos(productos, antojo);
-  const lista = Array.from({ length: 26 }, () => c[Math.floor(Math.random() * c.length)]);
-  lista.push(elegido, c[Math.floor(Math.random() * c.length)]);
+  const pool = c.length >= 4 ? c : [...new Map([...c, ...candidatos(productos, 'sorpresa')].map((p) => [p.id, p])).values()];
+  const sacar = (evitar) => {
+    const ops = pool.filter((p) => !evitar.includes(p.id));
+    const de = ops.length ? ops : pool;
+    return de[Math.floor(Math.random() * de.length)];
+  };
+  const lista = [];
+  for (let k = 0; k < 26; k++) lista.push(sacar([lista[k - 1]?.id, lista[k - 2]?.id, k >= 24 ? elegido.id : null]));
+  lista.push(elegido, sacar([elegido.id, lista[25].id]));
   const rollo = $('rollo');
   rollo.textContent = '';
   lista.forEach((p, k) => { const f = fila(p); if (k === lista.length - 2) f.dataset.elegido = ''; rollo.append(f); });
