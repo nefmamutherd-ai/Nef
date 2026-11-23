@@ -38,8 +38,8 @@ export async function onRequestGet({ params, request, env }) {
 
   // Enlaces de texto (lo secundario). Todos pasan por /c/<slug>/<boton> para contar el clic.
   const enlaces = [];
-  const enBotones = new Set(botonesPortal(n).map((b) => b.requiere));
-  if (urlDeBoton(n, 'menu') && !enBotones.has('menu_url')) enlaces.push(`<a href="${href('menu')}">${esc(mayuscula(pq.palabras.catalogo))}</a>`);
+  const hayCatalogo = botonesPortal(n).some((b) => b.servicio === 'catalogo');
+  if (urlDeBoton(n, 'menu') && !hayCatalogo) enlaces.push(`<a href="${href('menu')}">${esc(mayuscula(pq.palabras.catalogo))}</a>`);
   if (n.wifi_nombre) {
     enlaces.push(`<details id="wifi"><summary>WiFi</summary>
       <div class="pt-fondo" data-cerrar></div>

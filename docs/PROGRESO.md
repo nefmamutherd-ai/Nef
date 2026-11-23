@@ -66,4 +66,23 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
   `caja-sin-conexion.png`, `admin-club-premios.png`.
 - Seguridad: tablas con RLS y prueba de anon; PIN con bcrypt y nunca expuesto; teléfono nunca en tarjeta ni caja; internas con
   `revoke`; prueba de que ninguna RPC pública crea monedas salvo la caja con sesión.
-- Pendiente: push (sin remoto). "¿Cambiaste de celular?" (recuperar la tarjeta) no está; hoy se recupera inscribiéndose otra vez con el mismo nombre.
+- Pendiente: "¿Cambiaste de celular?" (recuperar la tarjeta) no está; hoy se recupera inscribiéndose otra vez con el mismo nombre.
+
+### 2026-11-22 · Repositorio
+- Jacobo creó el repo: `https://github.com/nefmamutherd-ai/Nef.git`. Rama `desarrollo` subida (base + fases 1 y 2). No hay `main` todavía: Jacobo hace el merge.
+- Entorno local: todo lo temporal en D (`d:\Nef provisional\_local`); demo para mirar en `http://localhost:4000` (admin con cualquier correo y `clave123`, PIN de caja `1234`).
+
+### Fase 3 · Paquete gimnasio — hecha
+- **BD**: `socios`, `entradas`, `importaciones`, `festivos` (2026–2027, revisar), `categorias`, `productos` (máquina/clase/plato/servicio),
+  `negocios.mapeo_csv/en_riesgo_dias`, tags con destinos `producto` y `entrada` (+ `producto_id`).
+- **RPC**: `importar_entradas` (no duplica, cuenta inválidas), métricas `metrica_activos`, `metrica_abandono_mensual`, `metrica_en_riesgo`,
+  `metrica_horas_pico`, `metrica_racha` (internas), `puede_escribir` y `proxima_hora_permitida` (Ley 2300), `producto_publico`, `clases_hoy`,
+  `maquinas_publicas`, `registrar_entrada_nfc`. `stats_admin`/`stats_token` con bloque `gimnasio`.
+- **Datos de prueba**: `tests/fixtures/generar_entradas.mjs` (LCG semilla 42) → `entradas.csv`, 200 socios, 5.780 entradas; los valores
+  esperados están en el encabezado y las pruebas SQL los verifican exactos (160 activos, 40 en riesgo, abandono oct 60/180, rachas, horas pico).
+- **Pantallas**: `/n/<slug>/p/<id>` (ficha de máquina: video sin autoplay, YouTube con nocookie, 3 pasos), `/n/<slug>/clases` (clases de hoy),
+  `/n/<slug>/entrada` (check + racha de 8 semanas), admin: pestañas **Entradas** (importador CSV) y **Catálogo**, "En riesgo" en Estadísticas.
+- Pruebas: test:sql **48 OK** (11 nuevas) · test:e2e **24 OK** (5 nuevas) · verificar ✓.
+- Capturas revisadas: `admin-importar.png`, `admin-importar-ok.png`, `admin-en-riesgo.png`, `admin-catalogo.png`, `maquina-ficha.png`,
+  `clases-hoy.png`, `entrada-movil.png`. Bug encontrado y arreglado: los enlaces `a.pt-accion` heredaban el color del texto (botón vacío en tema oscuro); hay prueba.
+- Seguridad: tablas nuevas con RLS (prueba de anon), métricas internas con `revoke`, teléfonos solo en `stats_admin`, importar solo admin.

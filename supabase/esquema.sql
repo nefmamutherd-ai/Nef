@@ -305,7 +305,7 @@ begin
   end if;
 
   return json_build_object(
-    'estado', 'ok', 'destino', t.destino, 'slug', n.slug, 'url', t.url_personalizada,
+    'estado', 'ok', 'destino', t.destino, 'slug', n.slug, 'url', t.url_personalizada, 'producto_id', t.producto_id,
     'menu_url', n.menu_url, 'resena_url', n.resena_url, 'whatsapp', n.whatsapp, 'instagram', n.instagram
   );
 end $$;
@@ -807,3 +807,473 @@ grant  execute on function public.caja_entrar(text, text)        to anon, authen
 grant  execute on function public.caja_buscar(text, text)        to anon, authenticated;
 grant  execute on function public.caja_visita(text, text, uuid, int)  to anon, authenticated;
 grant  execute on function public.caja_canje(text, text, uuid, uuid)  to anon, authenticated;
+
+-- =====================================================================
+-- ===== Fase 3 =====  paquete gimnasio: socios, entradas importadas, festivos,
+-- métricas, horario legal (Ley 2300), máquinas y clases, entrada por NFC.
+-- =====================================================================
+
+-- ---------- Socios y entradas (importadas del torniquete o por NFC) ----
+create table if not exists public.socios (
+  id             uuid primary key default gen_random_uuid(),
+  negocio_id     uuid not null references public.negocios(id) on delete cascade,
+  codigo_externo text not null,
+  nombre         text,
+  telefono       text,
+  plan           text,
+  creado         timestamptz not null default now(),
+  unique (negocio_id, codigo_externo)
+);
+alter table public.socios enable row level security;
+drop policy if exists admin_todo on public.socios;
+create policy admin_todo on public.socios for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+create table if not exists public.entradas (
+  id         bigint generated always as identity primary key,
+  negocio_id uuid not null references public.negocios(id) on delete cascade,
+  socio_id   uuid not null references public.socios(id) on delete cascade,
+  fecha_hora timestamptz not null,
+  origen     text not null default 'importado' check (origen in ('importado', 'nfc')),
+  creado     timestamptz not null default now(),
+  unique (negocio_id, socio_id, fecha_hora)
+);
+create index if not exists entradas_negocio_fecha_idx on public.entradas(negocio_id, fecha_hora);
+alter table public.entradas enable row level security;
+drop policy if exists admin_todo on public.entradas;
+create policy admin_todo on public.entradas for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+create table if not exists public.importaciones (
+  id         uuid primary key default gen_random_uuid(),
+  negocio_id uuid not null references public.negocios(id) on delete cascade,
+  archivo    text,
+  filas      int not null default 0,
+  nuevas     int not null default 0,
+  repetidas  int not null default 0,
+  invalidas  int not null default 0,
+  mapeo      jsonb,
+  creado     timestamptz not null default now()
+);
+create index if not exists importaciones_negocio_idx on public.importaciones(negocio_id, creado);
+alter table public.importaciones enable row level security;
+drop policy if exists admin_todo on public.importaciones;
+create policy admin_todo on public.importaciones for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+alter table public.negocios add column if not exists mapeo_csv jsonb;
+alter table public.negocios add column if not exists en_riesgo_dias int check (en_riesgo_dias between 1 and 365);  -- null = el del sector
+
+-- ---------- Festivos de Colombia (Ley 2300: nunca se escribe en festivo) ----
+create table if not exists public.festivos (
+  fecha  date primary key,
+  nombre text not null
+);
+alter table public.festivos enable row level security;
+drop policy if exists admin_todo on public.festivos;
+create policy admin_todo on public.festivos for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+-- Calculados con la Ley 51 de 1983 (Emiliani). Revisar contra el calendario oficial (ver DECISIONES.md).
+insert into public.festivos (fecha, nombre) values
+  ('2026-01-01', 'Año Nuevo'), ('2026-01-12', 'Reyes Magos'), ('2026-03-23', 'San José'),
+  ('2026-04-02', 'Jueves Santo'), ('2026-04-03', 'Viernes Santo'), ('2026-05-01', 'Día del Trabajo'),
+  ('2026-05-18', 'Ascensión del Señor'), ('2026-06-08', 'Corpus Christi'), ('2026-06-15', 'Sagrado Corazón'),
+  ('2026-06-29', 'San Pedro y San Pablo'), ('2026-07-20', 'Independencia'), ('2026-08-07', 'Batalla de Boyacá'),
+  ('2026-08-17', 'Asunción de la Virgen'), ('2026-10-12', 'Día de la Raza'), ('2026-11-02', 'Todos los Santos'),
+  ('2026-11-16', 'Independencia de Cartagena'), ('2026-12-08', 'Inmaculada Concepción'), ('2026-12-25', 'Navidad'),
+  ('2027-01-01', 'Año Nuevo'), ('2027-01-11', 'Reyes Magos'), ('2027-03-22', 'San José'),
+  ('2027-03-25', 'Jueves Santo'), ('2027-03-26', 'Viernes Santo'), ('2027-05-01', 'Día del Trabajo'),
+  ('2027-05-10', 'Ascensión del Señor'), ('2027-05-31', 'Corpus Christi'), ('2027-06-07', 'Sagrado Corazón'),
+  ('2027-07-05', 'San Pedro y San Pablo'), ('2027-07-20', 'Independencia'), ('2027-08-07', 'Batalla de Boyacá'),
+  ('2027-08-16', 'Asunción de la Virgen'), ('2027-10-18', 'Día de la Raza'), ('2027-11-01', 'Todos los Santos'),
+  ('2027-11-15', 'Independencia de Cartagena'), ('2027-12-08', 'Inmaculada Concepción'), ('2027-12-25', 'Navidad')
+on conflict (fecha) do nothing;
+
+-- ---------- Catálogo: categorías y productos (plato | clase | máquina | servicio) ----
+create table if not exists public.categorias (
+  id         uuid primary key default gen_random_uuid(),
+  negocio_id uuid not null references public.negocios(id) on delete cascade,
+  nombre     text not null check (char_length(nombre) between 1 and 60),
+  orden      int not null default 0,
+  activo     boolean not null default true,
+  creado     timestamptz not null default now()
+);
+create index if not exists categorias_negocio_idx on public.categorias(negocio_id);
+alter table public.categorias enable row level security;
+drop policy if exists admin_todo on public.categorias;
+create policy admin_todo on public.categorias for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+create table if not exists public.productos (
+  id           uuid primary key default gen_random_uuid(),
+  negocio_id   uuid not null references public.negocios(id) on delete cascade,
+  categoria_id uuid references public.categorias(id) on delete set null,
+  tipo         text not null default 'plato' check (tipo in ('plato', 'clase', 'maquina', 'servicio')),
+  nombre       text not null check (char_length(nombre) between 1 and 80),
+  descripcion  text check (descripcion is null or char_length(descripcion) <= 140),
+  precio       int not null default 0 check (precio >= 0),
+  foto_url     text,
+  etiquetas    text[] not null default '{}',
+  destacado    boolean not null default false,
+  agotado      boolean not null default false,
+  activo       boolean not null default true,
+  orden        int not null default 0,
+  video_url    text,
+  pasos        jsonb not null default '[]'::jsonb check (jsonb_typeof(pasos) = 'array' and jsonb_array_length(pasos) <= 3),
+  horario      jsonb not null default '[]'::jsonb check (jsonb_typeof(horario) = 'array'),  -- clases: [{dia:0-6 (0=domingo), hora:"18:00", duracion:60, cupo:20}]
+  creado       timestamptz not null default now()
+);
+create index if not exists productos_negocio_idx on public.productos(negocio_id, tipo);
+alter table public.productos enable row level security;
+drop policy if exists admin_todo on public.productos;
+create policy admin_todo on public.productos for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- Tags: destinos "producto" (ficha de máquina) y "entrada" (gimnasio sin torniquete)
+alter table public.tags add column if not exists producto_id uuid references public.productos(id) on delete set null;
+alter table public.tags drop constraint if exists tags_destino_check;
+alter table public.tags add constraint tags_destino_check
+  check (destino in ('hub', 'menu', 'resena', 'whatsapp', 'instagram', 'wifi', 'url', 'club', 'producto', 'entrada'));
+
+-- =====================================================================
+--  Importación de entradas (CSV del torniquete, mapeado en el navegador)
+-- =====================================================================
+create or replace function public.importar_entradas(p_negocio uuid, p_filas jsonb, p_mapeo jsonb default null, p_archivo text default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  r jsonb;
+  v_codigo text;
+  v_ts timestamptz;
+  v_socio uuid;
+  v_n int;
+  v_filas int := 0; v_nuevas int := 0; v_repetidas int := 0; v_invalidas int := 0;
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if jsonb_typeof(p_filas) <> 'array' then raise exception 'p_filas debe ser un arreglo'; end if;
+  if jsonb_array_length(p_filas) > 5000 then raise exception 'Máximo 5.000 filas por llamada'; end if;
+  if not exists (select 1 from public.negocios where id = p_negocio) then raise exception 'negocio no existe'; end if;
+
+  for r in select * from jsonb_array_elements(p_filas) loop
+    v_filas := v_filas + 1;
+    v_codigo := nullif(btrim(r->>'codigo'), '');
+    v_ts := null;
+    begin
+      -- La fecha llega como hora local de Bogotá (AAAA-MM-DD HH:MM[:SS]); nunca se adivina
+      if coalesce(r->>'fecha_hora', '') ~ '^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$' then
+        v_ts := (r->>'fecha_hora')::timestamp at time zone 'America/Bogota';
+      end if;
+    exception when others then v_ts := null;
+    end;
+    if v_codigo is null or v_ts is null or char_length(v_codigo) > 60 then
+      v_invalidas := v_invalidas + 1;
+      continue;
+    end if;
+
+    insert into public.socios (negocio_id, codigo_externo, nombre, telefono, plan)
+    values (p_negocio, v_codigo, nullif(btrim(left(r->>'nombre', 80)), ''), nullif(btrim(left(r->>'telefono', 20)), ''), nullif(btrim(left(r->>'plan', 40)), ''))
+    on conflict (negocio_id, codigo_externo) do update set
+      nombre   = coalesce(excluded.nombre, public.socios.nombre),
+      telefono = coalesce(excluded.telefono, public.socios.telefono),
+      plan     = coalesce(excluded.plan, public.socios.plan)
+    returning id into v_socio;
+
+    insert into public.entradas (negocio_id, socio_id, fecha_hora, origen)
+    values (p_negocio, v_socio, v_ts, 'importado')
+    on conflict (negocio_id, socio_id, fecha_hora) do nothing;
+    get diagnostics v_n = row_count;
+    if v_n > 0 then v_nuevas := v_nuevas + 1; else v_repetidas := v_repetidas + 1; end if;
+  end loop;
+
+  insert into public.importaciones (negocio_id, archivo, filas, nuevas, repetidas, invalidas, mapeo)
+  values (p_negocio, left(p_archivo, 120), v_filas, v_nuevas, v_repetidas, v_invalidas, p_mapeo);
+  if p_mapeo is not null then update public.negocios set mapeo_csv = p_mapeo where id = p_negocio; end if;
+
+  return json_build_object('filas', v_filas, 'nuevas', v_nuevas, 'repetidas', v_repetidas, 'invalidas', v_invalidas);
+end $$;
+revoke execute on function public.importar_entradas(uuid, jsonb, jsonb, text) from public, anon;
+grant  execute on function public.importar_entradas(uuid, jsonb, jsonb, text) to authenticated;
+
+-- =====================================================================
+--  Métricas (definiciones exactas: PRODUCTO.md §8). Internas: no las llama el público.
+-- =====================================================================
+
+-- Umbral de "en riesgo" por sector. ESPEJO de lib/sectores/*.json → en_riesgo_dias (hay prueba que lo compara).
+create or replace function public._sector_en_riesgo_dias(p_sector text)
+returns int language sql immutable as $$
+  select case p_sector when 'gimnasio' then 10 else 21 end
+$$;
+
+-- Todas las visitas de un negocio: entradas (si el negocio importa o registra entradas) o visitas de caja.
+-- persona = 's:<socio>' o 'c:<membresía>'. dia/dow/hora en hora de Bogotá.
+create or replace function public._visitas(p_negocio uuid)
+returns table (persona text, nombre text, telefono text, momento timestamptz, dia date, dow int, hora int)
+language sql stable as $$
+  with v as (
+    select 's:' || s.id::text as persona, s.nombre, s.telefono, e.fecha_hora as momento
+    from public.entradas e join public.socios s on s.id = e.socio_id
+    where e.negocio_id = p_negocio
+    union all
+    select 'c:' || m.id::text, c.nombre, c.telefono, mv.creado
+    from public.movimientos mv
+    join public.membresias m on m.id = mv.membresia_id
+    join public.clientes c on c.id = m.cliente_id
+    where mv.negocio_id = p_negocio and mv.tipo = 'visita'
+      and not exists (select 1 from public.entradas e2 where e2.negocio_id = p_negocio)
+  )
+  select v.persona, v.nombre, v.telefono, v.momento,
+         (v.momento at time zone 'America/Bogota')::date,
+         extract(dow from v.momento at time zone 'America/Bogota')::int,
+         extract(hour from v.momento at time zone 'America/Bogota')::int
+  from v
+$$;
+
+-- Activos: personas con ≥ 1 visita en los 14 días hasta p_fecha (incluida)
+create or replace function public.metrica_activos(p_negocio uuid, p_fecha date)
+returns int language sql stable as $$
+  select count(distinct persona)::int from public._visitas(p_negocio)
+  where dia between p_fecha - 13 and p_fecha
+$$;
+
+-- Abandono mensual (mes de p_fecha): activos al inicio del mes (≥ 1 visita en los 14 días anteriores al día 1)
+-- que no registran visitas en todo el mes (hasta p_fecha) ÷ activos al inicio.
+create or replace function public.metrica_abandono_mensual(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with lim as (select date_trunc('month', p_fecha)::date as ini),
+  v as (select * from public._visitas(p_negocio)),
+  activos as (select distinct v.persona from v, lim where v.dia between lim.ini - 14 and lim.ini - 1),
+  abandonaron as (
+    select a.persona from activos a, lim
+    where not exists (select 1 from v where v.persona = a.persona and v.dia between lim.ini and p_fecha)
+  )
+  select json_build_object(
+    'mes', to_char((select ini from lim), 'YYYY-MM'),
+    'activos_inicio', (select count(*) from activos),
+    'abandonaron', (select count(*) from abandonaron),
+    'tasa', case when (select count(*) from activos) = 0 then null
+                 else round((select count(*) from abandonaron)::numeric / (select count(*) from activos), 4) end
+  )
+$$;
+
+-- Días de "en riesgo" del negocio (el suyo o el de su sector)
+create or replace function public._en_riesgo_dias(p_negocio uuid)
+returns int language sql stable as $$
+  select coalesce(n.en_riesgo_dias, public._sector_en_riesgo_dias(n.sector)) from public.negocios n where n.id = p_negocio
+$$;
+
+-- En riesgo: ≥ 4 visitas históricas y sin venir hace ≥ umbral días (a p_fecha). Incluye teléfono: SOLO para el admin.
+create or replace function public.metrica_en_riesgo(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with v as (select * from public._visitas(p_negocio) where dia <= p_fecha),
+  p as (
+    select persona, max(nombre) as nombre, max(telefono) as telefono, count(*) as visitas, max(dia) as ultima
+    from v group by persona
+  )
+  select coalesce(json_agg(json_build_object('persona', persona, 'nombre', nombre, 'telefono', telefono,
+           'visitas', visitas, 'dias', p_fecha - ultima) order by p_fecha - ultima, nombre), '[]'::json)
+  from p
+  where visitas >= 4 and p_fecha - ultima >= public._en_riesgo_dias(p_negocio)
+$$;
+
+-- Horas pico: matriz 7 × 24 (fila 0 = domingo) con las visitas de los 90 días hasta p_fecha
+create or replace function public.metrica_horas_pico(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  with c as (
+    select dow, hora, count(*)::int as n from public._visitas(p_negocio)
+    where dia between p_fecha - 89 and p_fecha group by dow, hora
+  )
+  select json_agg(fila order by d) from (
+    select d.d, (select json_agg(coalesce((select c.n from c where c.dow = d.d and c.hora = h.h), 0) order by h.h)
+                 from generate_series(0, 23) h(h)) as fila
+    from generate_series(0, 6) d(d)
+  ) x
+$$;
+
+-- Racha: semanas seguidas (lunes a domingo, Bogotá) con ≥ 1 visita, contando hacia atrás desde la semana de p_fecha.
+-- Si esta semana aún no ha venido, se cuenta desde la anterior (la racha sigue viva hasta el domingo).
+create or replace function public._racha(p_negocio uuid, p_persona text, p_fecha date)
+returns int language sql stable as $$
+  with sem as (
+    select distinct date_trunc('week', dia)::date as w from public._visitas(p_negocio)
+    where persona = p_persona and dia <= p_fecha
+  ),
+  ini as (
+    select case when exists (select 1 from sem where w = date_trunc('week', p_fecha)::date)
+                then date_trunc('week', p_fecha)::date else date_trunc('week', p_fecha)::date - 7 end as w0
+  ),
+  ord as (select sem.w, row_number() over (order by sem.w desc) as rn from sem, ini where sem.w <= ini.w0)
+  select count(*)::int from ord, ini where ini.w0 - ord.w = (ord.rn - 1) * 7
+$$;
+
+create or replace function public.metrica_racha(p_negocio uuid, p_fecha date)
+returns json language sql stable as $$
+  select coalesce(json_agg(json_build_object('persona', persona, 'racha', public._racha(p_negocio, persona, p_fecha))), '[]'::json)
+  from (select distinct persona from public._visitas(p_negocio) where dia <= p_fecha) x
+$$;
+
+-- =====================================================================
+--  Horario legal para escribir (Ley 2300): L–V 7–19, S 8–15, nunca domingo ni festivo (hora Bogotá)
+-- =====================================================================
+create or replace function public.puede_escribir(p_momento timestamptz default null)
+returns boolean language sql stable security definer set search_path = public as $$
+  with l as (select (coalesce(p_momento, public._ahora()) at time zone 'America/Bogota') as t)
+  select case
+    when exists (select 1 from public.festivos f, l where f.fecha = l.t::date) then false
+    when extract(isodow from l.t) between 1 and 5 then l.t::time >= '07:00' and l.t::time < '19:00'
+    when extract(isodow from l.t) = 6 then l.t::time >= '08:00' and l.t::time < '15:00'
+    else false end
+  from l
+$$;
+
+create or replace function public.proxima_hora_permitida(p_momento timestamptz default null)
+returns timestamptz language plpgsql stable security definer set search_path = public as $$
+declare
+  v_ahora timestamptz := coalesce(p_momento, public._ahora());
+  v_local timestamp := v_ahora at time zone 'America/Bogota';
+  v_dia date := v_local::date;
+  v_abre timestamp;
+begin
+  if public.puede_escribir(v_ahora) then return v_ahora; end if;
+  for i in 0..30 loop
+    if not exists (select 1 from public.festivos where fecha = v_dia + i) and extract(isodow from v_dia + i) <> 7 then
+      v_abre := (v_dia + i) + case when extract(isodow from v_dia + i) = 6 then time '08:00' else time '07:00' end;
+      if v_abre > v_local then return v_abre at time zone 'America/Bogota'; end if;
+    end if;
+  end loop;
+  return null;
+end $$;
+grant execute on function public.puede_escribir(timestamptz)          to anon, authenticated;
+grant execute on function public.proxima_hora_permitida(timestamptz)  to anon, authenticated;
+
+-- =====================================================================
+--  Bloque "gimnasio" de las estadísticas. Teléfonos SOLO para el admin; el link del dueño ve conteos.
+-- =====================================================================
+create or replace function public._stats_gimnasio(p_negocio uuid, p_con_contacto boolean)
+returns json language sql stable as $$
+  with hoy as (select (public._ahora() at time zone 'America/Bogota')::date as d),
+  r as (select public.metrica_en_riesgo(p_negocio, (select d from hoy)) as lista)
+  select json_build_object(
+    'activos', public.metrica_activos(p_negocio, (select d from hoy)),
+    'abandono', public.metrica_abandono_mensual(p_negocio, (select d from hoy)),
+    'en_riesgo_dias', public._en_riesgo_dias(p_negocio),
+    'en_riesgo_total', json_array_length((select lista from r)),
+    'en_riesgo', case when p_con_contacto then (select lista from r) else null end,
+    'puede_escribir', public.puede_escribir(),
+    'proxima', public.proxima_hora_permitida()
+  )
+$$;
+
+create or replace function public.stats_admin(p_negocio uuid, p_dias int default 30)
+returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then
+    raise exception 'no autorizado';
+  end if;
+  return (public._stats_negocio(p_negocio, p_dias)::jsonb
+          || jsonb_build_object('gimnasio', public._stats_gimnasio(p_negocio, true)))::json;
+end $$;
+
+create or replace function public.stats_token(p_token text, p_dias int default 30)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('negocio', n.nombre, 'color', n.color,
+    'stats', (public._stats_negocio(n.id, p_dias)::jsonb
+              || jsonb_build_object('gimnasio', public._stats_gimnasio(n.id, false)))::json)
+  from public.negocios n where n.token_stats = p_token;
+$$;
+
+-- =====================================================================
+--  Catálogo público: ficha de producto (máquina) y clases de hoy
+-- =====================================================================
+create or replace function public.producto_publico(p_slug text, p_id uuid)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('id', p.id, 'tipo', p.tipo, 'nombre', p.nombre, 'descripcion', p.descripcion,
+    'precio', p.precio, 'foto_url', p.foto_url, 'video_url', p.video_url, 'pasos', p.pasos, 'horario', p.horario,
+    'agotado', p.agotado)
+  from public.productos p join public.negocios n on n.id = p.negocio_id
+  where n.slug = lower(trim(p_slug)) and n.activo and p.id = p_id and p.activo
+$$;
+
+create or replace function public.clases_hoy(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  with hoy as (select extract(dow from public._ahora() at time zone 'America/Bogota')::int as d)
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion,
+           'hora', h->>'hora', 'duracion', (h->>'duracion')::int, 'cupo', (h->>'cupo')::int)
+         order by h->>'hora', p.nombre), '[]'::json)
+  from public.productos p
+  join public.negocios n on n.id = p.negocio_id
+  cross join lateral jsonb_array_elements(p.horario) h
+  where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'clase'
+    and (h->>'dia')::int = (select d from hoy)
+$$;
+
+-- Máquinas activas del negocio (para "Ver otras máquinas")
+create or replace function public.maquinas_publicas(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre) order by p.orden, p.nombre), '[]'::json)
+  from public.productos p join public.negocios n on n.id = p.negocio_id
+  where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'maquina'
+$$;
+
+grant execute on function public.producto_publico(text, uuid) to anon, authenticated;
+grant execute on function public.clases_hoy(text)             to anon, authenticated;
+grant execute on function public.maquinas_publicas(text)      to anon, authenticated;
+
+-- =====================================================================
+--  Entrada por NFC (solo gimnasios SIN torniquete: servicios.entrada_nfc). Suma asistencia, NUNCA monedas.
+-- =====================================================================
+create or replace function public.registrar_entrada_nfc(p_slug text, p_token text)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  n public.negocios;
+  m public.membresias;
+  c public.clientes;
+  v_socio uuid;
+  v_hoy date := (public._ahora() at time zone 'America/Bogota')::date;
+  v_repetida boolean := false;
+  v_racha int;
+begin
+  select * into n from public.negocios where slug = lower(trim(p_slug)) and activo;
+  if not found or not coalesce((n.servicios->>'entrada_nfc')::boolean, false) then
+    return json_build_object('error', 'sin_entrada');
+  end if;
+  select * into m from public.membresias where token = p_token and negocio_id = n.id;
+  if not found then return json_build_object('error', 'token'); end if;
+  select * into c from public.clientes where id = m.cliente_id;
+
+  insert into public.socios (negocio_id, codigo_externo, nombre, telefono)
+  values (n.id, 'club:' || m.id::text, c.nombre, c.telefono)
+  on conflict (negocio_id, codigo_externo) do update set nombre = excluded.nombre
+  returning id into v_socio;
+
+  if exists (select 1 from public.entradas e where e.socio_id = v_socio
+             and (e.fecha_hora at time zone 'America/Bogota')::date = v_hoy) then
+    v_repetida := true;
+  else
+    insert into public.entradas (negocio_id, socio_id, fecha_hora, origen) values (n.id, v_socio, public._ahora(), 'nfc');
+  end if;
+
+  v_racha := public._racha(n.id, 's:' || v_socio::text, v_hoy);
+  return json_build_object(
+    'ok', true, 'repetida', v_repetida, 'hora', public._ahora(), 'sede', n.ubicacion_etiqueta, 'negocio', n.nombre,
+    'racha', v_racha,
+    'semanas', (
+      select json_agg(exists (
+        select 1 from public.entradas e where e.socio_id = v_socio
+          and date_trunc('week', (e.fecha_hora at time zone 'America/Bogota')::date)::date = date_trunc('week', v_hoy)::date - 7 * k
+      ) order by k desc)
+      from generate_series(0, 7) k
+    )
+  );
+end $$;
+grant execute on function public.registrar_entrada_nfc(text, text) to anon, authenticated;
+
+-- Permisos: métricas y ayudas internas cerradas al público
+revoke execute on function public._sector_en_riesgo_dias(text)             from public, anon, authenticated;
+revoke execute on function public._visitas(uuid)                           from public, anon, authenticated;
+revoke execute on function public.metrica_activos(uuid, date)              from public, anon, authenticated;
+revoke execute on function public.metrica_abandono_mensual(uuid, date)     from public, anon, authenticated;
+revoke execute on function public._en_riesgo_dias(uuid)                    from public, anon, authenticated;
+revoke execute on function public.metrica_en_riesgo(uuid, date)            from public, anon, authenticated;
+revoke execute on function public.metrica_horas_pico(uuid, date)           from public, anon, authenticated;
+revoke execute on function public._racha(uuid, text, date)                 from public, anon, authenticated;
+revoke execute on function public.metrica_racha(uuid, date)                from public, anon, authenticated;
+revoke execute on function public._stats_gimnasio(uuid, boolean)           from public, anon, authenticated;

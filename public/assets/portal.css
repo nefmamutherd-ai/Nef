@@ -55,6 +55,8 @@ body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 va
 .pt-accion { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 62px; border: 0; border-radius: 18px; background: var(--tinta); color: var(--papel); font: 600 var(--t-18) var(--sans); text-decoration: none; cursor: pointer; transition: transform var(--dur-1) var(--ease); }
 .pt-accion:active { transform: scale(.98); }
 .pt-accion.marca { background: var(--marca); color: var(--sobre-marca); }
+.pt a.pt-accion { color: var(--papel); }          /* un enlace con forma de botón no hereda el color del texto */
+.pt a.pt-accion.marca { color: var(--sobre-marca); }
 .pt-accion:disabled { opacity: .45; cursor: not-allowed; }
 .pt-link { display: block; margin-top: var(--e-16); text-align: center; font-size: var(--t-16); font-weight: 600; color: var(--tinta-2); background: none; border: 0; width: 100%; cursor: pointer; }
 
@@ -149,6 +151,13 @@ body.pt { margin: 0; background: var(--papel); color: var(--tinta); font: 400 va
 .pt-sumar { background: var(--ok); color: #fff; }
 .pt-canjear { background: var(--oro-suave); color: var(--oro-tinta); }
 [data-tema="energia"] .pt-sumar { color: #121314; }
+
+/* ── Ficha de máquina: video 16:9 + 3 pasos ───────────────────────── */
+.pt-video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--r-medio); background: var(--papel-hondo); margin-bottom: var(--e-24); }
+.pt-pasos { list-style: none; counter-reset: paso; padding: 0; margin: 0 0 var(--e-32); display: grid; gap: var(--e-16); }
+.pt-pasos li { counter-increment: paso; display: flex; gap: 14px; align-items: flex-start; font-size: var(--t-18); line-height: 1.4; }
+.pt-pasos li::before { content: counter(paso); flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--marca); color: var(--sobre-marca); font: 700 var(--t-16) var(--sans); }
+a.pt-prod { text-decoration: none; }
 
 /* ── Entrada registrada (gimnasio sin torniquete) ────────────────── */
 .pt-hecho { text-align: center; padding-top: var(--e-32); }

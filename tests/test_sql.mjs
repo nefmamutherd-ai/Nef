@@ -331,4 +331,153 @@ await caso('ninguna RPC pública crea monedas salvo la caja (con sesión); rese�
   assert.equal((await q(`select count(*)::int n from movimientos`))[0].n, antes);
 });
 
+console.log('Fase 3 · gimnasio');
+const { leerCSV, mapeoSugerido, mapearFilas, fechaHora } = await import('../public/assets/csv.js');
+await db.exec('reset role;');
+const [gym] = await q(`select id from negocios where slug = 'gym-forja'`);
+await db.exec(`update negocios set sector = 'gimnasio' where slug = 'gym-forja'`);
+const csv = leerCSV(fs.readFileSync(new URL('./fixtures/entradas.csv', import.meta.url), 'utf8'));
+const mapeo = mapeoSugerido(csv.cabecera);
+const filasGym = mapearFilas(csv.filas, mapeo);
+const importar = async (filas) => {
+  const tot = { filas: 0, nuevas: 0, repetidas: 0, invalidas: 0 };
+  for (let i = 0; i < filas.length; i += 5000) {
+    const [{ r }] = await q(`select importar_entradas($1, $2::jsonb, $3::jsonb, 'entradas.csv') r`, [gym.id, JSON.stringify(filas.slice(i, i + 5000)), JSON.stringify(mapeo)]);
+    for (const k in tot) tot[k] += r[k];
+  }
+  return tot;
+};
+
+await caso('el CSV se lee con ";" y se mapea solo (documento, fecha y hora aparte)', async () => {
+  assert.equal(csv.separador, ';'); assert.equal(csv.filas.length, 5780);
+  assert.equal(mapeo.codigo, 0); assert.equal(mapeo.fecha, 4); assert.equal(mapeo.hora, 5); assert.equal(mapeo.telefono, 2);
+  assert.ok(filasGym.every((f) => f.fecha_hora));
+  assert.equal(fechaHora('02/09/2026 6:05 p. m.'), '2026-09-02 18:05');
+  assert.equal(fechaHora('2026-09-02 07:30'), '2026-09-02 07:30');
+  assert.equal(fechaHora('12/01/2026 12:10 am'), '2026-01-12 00:10');
+  assert.equal(fechaHora('31/02/2026 10:00'), null); // nunca adivinar
+  assert.equal(fechaHora('ayer'), null);
+});
+await caso('anónimo no lee socios, entradas, importaciones ni el catálogo', async () => {
+  await como('anon');
+  for (const t of ['socios', 'entradas', 'importaciones', 'productos', 'categorias', 'festivos'])
+    assert.equal((await q(`select count(*)::int n from ${t}`))[0].n, 0, t);
+  await assert.rejects(q(`select importar_entradas($1, '[]'::jsonb)`, [gym.id]), /permission denied/);
+  await assert.rejects(q(`select metrica_activos($1, '2026-11-30')`, [gym.id]), /permission denied/);
+});
+await caso('importar entradas: 5.780 nuevas; el mismo archivo otra vez → 0 nuevas', async () => {
+  await como('authenticated', ADMIN);
+  const a = await importar(filasGym);
+  assert.deepEqual(a, { filas: 5780, nuevas: 5780, repetidas: 0, invalidas: 0 });
+  const b = await importar(filasGym);
+  assert.deepEqual(b, { filas: 5780, nuevas: 0, repetidas: 5780, invalidas: 0 });
+  await db.exec('reset role;');
+  assert.equal((await q(`select count(*)::int n from socios where negocio_id = $1`, [gym.id]))[0].n, 200);
+  assert.ok((await q(`select mapeo_csv from negocios where id = $1`, [gym.id]))[0].mapeo_csv);
+});
+await caso('fecha inválida cuenta como inválida y no rompe el lote', async () => {
+  await como('authenticated', ADMIN);
+  const [{ r }] = await q(`select importar_entradas($1, $2::jsonb) r`, [gym.id, JSON.stringify([
+    { codigo: '9001', fecha_hora: '2026-11-29 08:00' }, { codigo: '9001', fecha_hora: null },
+    { codigo: '', fecha_hora: '2026-11-29 08:00' }, { codigo: '9002', fecha_hora: '2026-13-40 99:99' }])]);
+  assert.deepEqual(r, { filas: 4, nuevas: 1, repetidas: 0, invalidas: 3 });
+  await db.exec('reset role;');
+  await db.exec(`delete from entradas where socio_id in (select id from socios where codigo_externo = '9001'); delete from socios where codigo_externo in ('9001','9002')`);
+});
+await caso('métricas al 30 nov 2026 = lo escrito en el generador', async () => {
+  await db.exec('reset role;');
+  assert.equal((await q(`select metrica_activos($1, '2026-11-30') r`, [gym.id]))[0].r, 160);
+  const riesgo = (await q(`select metrica_en_riesgo($1, '2026-11-30') r`, [gym.id]))[0].r;
+  assert.equal(riesgo.length, 40);
+  assert.ok(riesgo.every((x) => x.dias === 61 && x.visitas === 13 && x.telefono));
+  assert.deepEqual((await q(`select metrica_abandono_mensual($1, '2026-11-30') r`, [gym.id]))[0].r,
+    { mes: '2026-11', activos_inicio: 120, abandonaron: 0, tasa: 0 });
+  const rachas = (await q(`select metrica_racha($1, '2026-11-30') r`, [gym.id]))[0].r;
+  const cuenta = {};
+  for (const x of rachas) cuenta[x.racha] = (cuenta[x.racha] || 0) + 1;
+  assert.deepEqual(cuenta, { 0: 40, 1: 20, 5: 20, 14: 120 });
+  const pico = (await q(`select metrica_horas_pico($1, '2026-11-30') r`, [gym.id]))[0].r;
+  assert.equal(pico.length, 7); assert.equal(pico[0].length, 24);
+  assert.equal(pico[1][6], 1900); assert.equal(pico[3][18], 1940); assert.equal(pico[5][7], 1880); assert.equal(pico[4][12], 60);
+  assert.equal(pico.flat().reduce((a, b) => a + b, 0), 5780);
+});
+await caso('abandono de octubre = 60 de 180 (0,3333)', async () => {
+  assert.deepEqual((await q(`select metrica_abandono_mensual($1, '2026-10-31') r`, [gym.id]))[0].r,
+    { mes: '2026-10', activos_inicio: 180, abandonaron: 60, tasa: 0.3333 });
+});
+await caso('umbral de "en riesgo" en SQL = el de lib/sectores/*.json', async () => {
+  for (const s of ['cafe', 'gimnasio']) {
+    const pq = JSON.parse(fs.readFileSync(new URL(`../lib/sectores/${s}.json`, import.meta.url), 'utf8'));
+    assert.equal((await q(`select _sector_en_riesgo_dias($1) r`, [s]))[0].r, pq.en_riesgo_dias, s);
+  }
+});
+await caso('horario legal (Ley 2300)', async () => {
+  await como('anon');
+  const pe = async (t) => (await q(`select puede_escribir($1::timestamptz) r`, [t]))[0].r;
+  assert.equal(await pe('2026-11-22 10:00-05'), false);  // domingo
+  assert.equal(await pe('2026-11-21 15:30-05'), false);  // sábado 3:30 p. m.
+  assert.equal(await pe('2026-11-21 14:59-05'), true);   // sábado 2:59 p. m.
+  assert.equal(await pe('2026-11-24 08:00-05'), true);   // martes no festivo
+  assert.equal(await pe('2026-11-24 19:00-05'), false);  // martes 7 p. m.
+  assert.equal(await pe('2026-12-08 10:00-05'), false);  // Inmaculada Concepción
+  assert.equal(await pe('2026-11-16 10:00-05'), false);  // lunes festivo
+  const prox = async (t) => (await q(`select to_char(proxima_hora_permitida($1::timestamptz) at time zone 'America/Bogota', 'YYYY-MM-DD HH24:MI') r`, [t]))[0].r;
+  assert.equal(await prox('2026-11-22 10:00-05'), '2026-11-23 07:00');  // domingo → lunes 7
+  assert.equal(await prox('2026-11-21 16:00-05'), '2026-11-23 07:00');  // sábado tarde → lunes 7
+  assert.equal(await prox('2026-11-15 10:00-05'), '2026-11-17 07:00');  // domingo antes de lunes festivo → martes
+  assert.equal(await prox('2026-11-24 06:00-05'), '2026-11-24 07:00');
+});
+await caso('estadísticas: el admin ve la lista con teléfonos; el link del dueño solo el conteo', async () => {
+  await db.exec(`set nef.ahora = '2026-11-30 10:00-05'`);
+  await como('authenticated', ADMIN);
+  const [{ r: a }] = await q(`select stats_admin($1, 30) r`, [gym.id]);
+  assert.equal(a.gimnasio.activos, 160); assert.equal(a.gimnasio.en_riesgo_total, 40);
+  assert.ok(a.gimnasio.en_riesgo[0].telefono); assert.equal(a.gimnasio.puede_escribir, true);
+  await db.exec('reset role;');
+  const [g] = await q(`select token_stats from negocios where id = $1`, [gym.id]);
+  await como('anon');
+  const [{ r: t }] = await q(`select stats_token($1, 30) r`, [g.token_stats]);
+  assert.equal(t.stats.gimnasio.en_riesgo_total, 40); assert.equal(t.stats.gimnasio.en_riesgo, null);
+  assert.ok(!JSON.stringify(t).includes('telefono')); assert.ok(!JSON.stringify(t).includes('300100'));
+  await db.exec(`set nef.ahora = '2026-11-29 10:00-05'`);  // domingo
+  await como('authenticated', ADMIN);
+  const [{ r: d }] = await q(`select stats_admin($1, 30) r`, [gym.id]);
+  assert.equal(d.gimnasio.puede_escribir, false); assert.ok(d.gimnasio.proxima);
+  await db.exec(`reset nef.ahora`);
+});
+await caso('máquinas y clases: ficha pública y solo las clases de hoy', async () => {
+  await db.exec('reset role;');
+  const [maq] = await q(`insert into productos (negocio_id, tipo, nombre, video_url, pasos) values ($1, 'maquina', 'Prensa', 'https://www.youtube.com/watch?v=abc123', '["Ajusta el asiento","Empuja sin bloquear","Baja despacio"]') returning id`, [gym.id]);
+  await q(`insert into productos (negocio_id, tipo, nombre, horario) values
+    ($1, 'clase', 'Spinning', '[{"dia":1,"hora":"18:00","duracion":45,"cupo":20},{"dia":3,"hora":"07:00","duracion":45,"cupo":20}]'),
+    ($1, 'clase', 'Yoga', '[{"dia":2,"hora":"09:00","duracion":60,"cupo":15}]')`, [gym.id]);
+  await db.exec(`set nef.ahora = '2026-11-23 08:00-05'`); // lunes
+  await como('anon');
+  const [{ r: f }] = await q(`select producto_publico('gym-forja', $1) r`, [maq.id]);
+  assert.equal(f.nombre, 'Prensa'); assert.equal(f.pasos.length, 3);
+  const [{ r: c }] = await q(`select clases_hoy('gym-forja') r`);
+  assert.deepEqual(c.map((x) => x.nombre), ['Spinning']); assert.equal(c[0].hora, '18:00');
+  assert.equal((await q(`select producto_publico('cafe-luna', $1) r`, [maq.id]))[0].r, null);
+  await db.exec(`reset nef.ahora`);
+});
+await caso('entrada por NFC: una por día, sin monedas; sin entrada_nfc no registra', async () => {
+  await como('anon');
+  const [{ r: reg }] = await q(`select club_registrar('gym-forja','Camilo','3157778899', true) r`);
+  assert.equal((await q(`select registrar_entrada_nfc('gym-forja', $1) r`, [reg.token]))[0].r.error, 'sin_entrada');
+  await db.exec('reset role;');
+  await db.exec(`update negocios set servicios = servicios || '{"entrada_nfc":true}' where slug = 'gym-forja'`);
+  const movAntes = (await q(`select count(*)::int n from movimientos`))[0].n;
+  await como('anon');
+  await db.exec(`set nef.ahora = '2026-11-23 06:30-05'`);
+  const [{ r: a }] = await q(`select registrar_entrada_nfc('gym-forja', $1) r`, [reg.token]);
+  assert.equal(a.ok, true); assert.equal(a.repetida, false); assert.equal(a.racha, 1); assert.equal(a.semanas.length, 8);
+  await db.exec(`set nef.ahora = '2026-11-23 18:00-05'`);
+  const [{ r: b }] = await q(`select registrar_entrada_nfc('gym-forja', $1) r`, [reg.token]);
+  assert.equal(b.repetida, true);
+  await db.exec('reset role;');
+  assert.equal((await q(`select count(*)::int n from entradas where origen = 'nfc'`))[0].n, 1);
+  assert.equal((await q(`select count(*)::int n from movimientos`))[0].n, movAntes);
+  await db.exec(`reset nef.ahora`);
+});
+
 console.log(`\n${ok} pruebas OK`);

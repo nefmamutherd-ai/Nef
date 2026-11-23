@@ -332,6 +332,114 @@ await caso('caja sin conexión: guarda, reconecta y suma una sola vez', async ()
   await caja.close();
 });
 
+console.log('Fase 3');
+const CSV = fileURLToPath(new URL('./fixtures/entradas.csv', import.meta.url));
+const servicios = async (extra) => {
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { servicios: { ...n.servicios, ...extra } });
+};
+await caso('importar entradas: 5.780 nuevas de 200 socios; otra vez → 0 nuevas', async () => {
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { sector: 'gimnasio' });
+  await panel.click('.tab[data-tab=entradas]');
+  await panel.selectOption('#i-negocio', { label: 'Café Prueba' });
+  await panel.setInputFiles('#i-archivo', CSV);
+  await panel.waitForSelector('#i-paso2:not([hidden])');
+  assert.equal(await panel.$eval('#map-codigo', (s) => s.value), '0');
+  assert.equal(await panel.$eval('#map-fecha', (s) => s.value), '4');
+  await panel.screenshot({ path: DIR + 'admin-importar.png', fullPage: true });
+  await panel.click('#i-importar');
+  await panel.waitForSelector('#i-resultado .n-aviso.ok', { timeout: 120000 });
+  assert.equal(await panel.textContent('#i-resultado .n-aviso.ok'), 'Importamos 5.780 entradas nuevas de 200 socios. 0 repetidas.');
+  await panel.screenshot({ path: DIR + 'admin-importar-ok.png' });
+  await panel.setInputFiles('#i-archivo', CSV);
+  await panel.waitForSelector('#i-paso2:not([hidden])');
+  await panel.click('#i-importar');
+  await panel.waitForSelector('#i-resultado .n-aviso.ok[data-nuevas="0"]', { timeout: 120000 });
+  assert.match(await panel.textContent('#i-resultado .n-aviso.ok'), /Importamos 0 entradas nuevas de 200 socios\. 5\.780 repetidas\./);
+});
+await caso('estadísticas del gimnasio: activos, abandono y "En riesgo" (WhatsApp solo en horario legal)', async () => {
+  await panel.click('.tab[data-tab=stats]');
+  await panel.selectOption('#s-negocio', { label: 'Café Prueba' });
+  await panel.waitForSelector('#s-gimnasio .n-lista li');
+  assert.ok((await panel.locator('#s-gimnasio .n-lista li').count()) > 0);
+  const botones = await panel.locator('#s-gimnasio .n-lista a.n-btn').count();
+  const disponibles = await panel.locator('#s-gimnasio .n-lista .n-estado').count();
+  assert.ok(botones > 0 !== disponibles > 0, 'o hay botones de WhatsApp o el texto "Disponible…", nunca los dos');
+  await panel.locator('#s-gimnasio').scrollIntoViewIfNeeded();
+  await panel.screenshot({ path: DIR + 'admin-en-riesgo.png', fullPage: true });
+});
+await caso('máquina: creada en el admin; el tag abre la ficha con video y 3 pasos', async () => {
+  await panel.click('.tab[data-tab=catalogo]');
+  await panel.selectOption('#k-negocio', { label: 'Café Prueba' });
+  await panel.click('#k-nuevo');
+  await panel.click('#form-producto label:has(input[value=maquina])');
+  await panel.fill('#k-nombre', 'Prensa de piernas');
+  await panel.fill('#k-video', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  await panel.fill('#k-paso1', 'Ajusta el asiento a la altura de tu cadera');
+  await panel.fill('#k-paso2', 'Empuja sin bloquear las rodillas');
+  await panel.fill('#k-paso3', 'Baja despacio, en 3 segundos');
+  await panel.click('#k-guardar');
+  await panel.waitForSelector('#lista-productos td:has-text("Prensa de piernas")');
+  await panel.screenshot({ path: DIR + 'admin-catalogo.png' });
+  const [prod] = await api(`productos?nombre=eq.Prensa de piernas`);
+  await api(`tags?codigo=eq.${codigos[1]}`, 'PATCH', { destino: 'producto', producto_id: prod.id });
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('máquina: ' + e.message));
+  await p.route(/youtube-nocookie\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<body style="margin:0;background:#000"></body>' }));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/t/${codigos[1]}`, { waitUntil: 'domcontentloaded' });
+  assert.match(p.url(), new RegExp(`/n/${slug}/p/${prod.id}`));
+  assert.match(await p.getAttribute('iframe.pt-video', 'src'), /^https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/);
+  assert.equal(await p.locator('.pt-pasos li').count(), 3);
+  const [color, fondo] = await p.$eval('.pt-accion', (e) => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]);
+  assert.notEqual(color, fondo, 'el texto del botón se pierde en su fondo');
+  await sinScrollHorizontal(p);
+  await p.screenshot({ path: DIR + 'maquina-ficha.png', fullPage: true });
+  await p.close();
+  await api(`tags?codigo=eq.${codigos[1]}`, 'PATCH', { destino: 'hub', producto_id: null });
+});
+await caso('clases de hoy: solo las del día (hora Bogotá)', async () => {
+  const dias = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const hoy = dias.indexOf(new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/Bogota' }));
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  await api('productos', 'POST', [
+    { negocio_id: n.id, tipo: 'clase', nombre: 'Spinning', horario: [{ dia: hoy, hora: '18:00', duracion: 45, cupo: 20 }] },
+    { negocio_id: n.id, tipo: 'clase', nombre: 'Yoga', horario: [{ dia: (hoy + 1) % 7, hora: '07:00', duracion: 60, cupo: 15 }] },
+  ]);
+  await servicios({ catalogo: true });
+  const p = await ctx.newPage();
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}`);
+  await p.click('.pt-boton:has-text("Clases de hoy")');
+  await p.waitForURL(new RegExp(`/n/${slug}/clases`));
+  const nombres = await p.$$eval('.pt-prod b', (b) => b.map((x) => x.textContent));
+  assert.deepEqual(nombres, ['Spinning']);
+  await p.screenshot({ path: DIR + 'clases-hoy.png', fullPage: true });
+  await p.close();
+});
+await caso('entrada por NFC: registra una vez al día y muestra la racha; sin entrada_nfc va al portal', async () => {
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('entrada: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}/entrada`);
+  assert.match(p.url(), new RegExp(`/n/${slug}$`), 'sin entrada_nfc redirige al portal');
+  await servicios({ entrada_nfc: true });
+  await p.goto(`${BASE}/n/${slug}/entrada`);
+  await p.waitForSelector('#hecho:not([hidden])');
+  assert.equal(await p.textContent('#e-titulo'), '¡Entrada registrada!');
+  assert.equal(await p.locator('#e-semanas i').count(), 8);
+  await p.waitForTimeout(350);
+  await p.screenshot({ path: DIR + 'entrada-movil.png', fullPage: true });
+  await p.reload();
+  await p.waitForSelector('#hecho:not([hidden])');
+  assert.equal(await p.textContent('#e-titulo'), 'Ya registraste tu entrada hoy');
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  const nfc = (await api(`entradas?negocio_id=eq.${n.id}`)).filter((e) => e.origen === 'nfc');
+  assert.equal(nfc.length, 1);
+  await p.close();
+  await servicios({ entrada_nfc: false });
+});
+
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));
 console.log(`\n${ok} pruebas OK · capturas en tests/capturas/`);

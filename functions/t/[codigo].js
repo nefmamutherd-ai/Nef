@@ -40,9 +40,13 @@ export async function onRequestGet({ params, request, env }) {
     const hub = new URL(`/n/${encodeURIComponent(r.slug)}`, url);
     hub.searchParams.set('t', codigo);
 
+    const base = `/n/${encodeURIComponent(r.slug)}`;
     let destino = null;
     if (r.destino === 'url') destino = urlSegura(r.url);
     else if (r.destino === 'wifi') hub.hash = 'wifi';
+    else if (r.destino === 'club') destino = new URL(`${base}/club`, url).href;
+    else if (r.destino === 'entrada') destino = new URL(`${base}/entrada`, url).href;
+    else if (r.destino === 'producto') destino = r.producto_id ? new URL(`${base}/p/${encodeURIComponent(r.producto_id)}`, url).href : null;
     else if (r.destino !== 'hub') destino = urlDeBoton(r, r.destino);
 
     // Si el destino directo no está configurado, cae a la página del negocio

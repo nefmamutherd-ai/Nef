@@ -43,6 +43,8 @@
       <button class="tab" role="tab" data-tab="negocios" aria-selected="true">Negocios</button>
       <button class="tab" role="tab" data-tab="tags" aria-selected="false">Tags</button>
       <button class="tab" role="tab" data-tab="stats" aria-selected="false">Estadísticas</button>
+      <button class="tab" role="tab" data-tab="entradas" aria-selected="false">Entradas</button>
+      <button class="tab" role="tab" data-tab="catalogo" aria-selected="false">Catálogo</button>
     </nav>
 
     <!-- NEGOCIOS -->
@@ -91,6 +93,38 @@
         <button class="n-btn secundario" id="s-compartir">Copiar link para el dueño</button>
       </div>
       <div id="s-contenido"></div>
+      <div id="s-gimnasio"></div>
+    </section>
+
+    <!-- ENTRADAS (importar el CSV del torniquete) -->
+    <section id="tab-entradas" hidden>
+      <div class="n-herramientas">
+        <div class="n-campo"><label for="i-negocio">Negocio</label><select id="i-negocio"></select></div>
+      </div>
+      <label class="n-subir" id="i-subir"><input type="file" id="i-archivo" accept=".csv,text/csv,text/plain" hidden>
+        <b>Sube el CSV de entradas</b><span>Lo exportas desde el torniquete o el huellero. Separado por comas o punto y coma.</span></label>
+      <div id="i-paso2" hidden>
+        <div class="n-tarjeta">
+          <h2>Vista previa</h2><p id="i-resumen"></p>
+          <div class="n-tabla-caja"><table class="n-tabla" id="i-previa"></table></div>
+        </div>
+        <div class="n-tarjeta n-form" id="i-mapeo"><h2>¿Qué es cada columna?</h2></div>
+        <div class="n-herramientas"><button class="n-btn principal" id="i-importar">Importar</button></div>
+      </div>
+      <div id="i-resultado"></div>
+    </section>
+
+    <!-- CATÁLOGO (máquinas, clases y, en la Fase 5, la carta) -->
+    <section id="tab-catalogo" hidden>
+      <div class="n-herramientas">
+        <div class="n-campo"><label for="k-negocio">Negocio</label><select id="k-negocio"></select></div>
+        <span class="n-espacio"></span>
+        <button class="n-btn" id="k-nuevo">Agregar</button>
+      </div>
+      <div class="n-tabla-caja"><table class="n-tabla">
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Activo</th><th></th></tr></thead>
+        <tbody id="lista-productos"></tbody>
+      </table></div>
     </section>
   </main>
 </div>
@@ -113,6 +147,7 @@
       <label class="n-interruptor"><div><b>Catálogo</b><span>Carta o clases y máquinas</span></div><input type="checkbox" name="srv_catalogo"></label>
       <label class="n-interruptor"><div><b>Club</b><span>Monedas desde la caja</span></div><input type="checkbox" name="srv_club"></label>
       <label class="n-interruptor"><div><b>Estudio</b><span>Informe estadístico trimestral</span></div><input type="checkbox" name="srv_estudio"></label>
+      <label class="n-interruptor"><div><b>Entrada por NFC</b><span>Solo gimnasios SIN torniquete: el socio registra su entrada con el chip</span></div><input type="checkbox" name="srv_entrada_nfc"></label>
     </div>
     <div class="n-campo"><label for="f-ubic">Ubicación</label><input id="f-ubic" name="ubicacion_etiqueta" placeholder="Ej. Sede Chapinero"></div>
     <div class="n-campo"><label for="f-desc">Descripción corta</label><input id="f-desc" name="descripcion" placeholder="Café de especialidad · Chapinero"></div>
@@ -188,11 +223,49 @@
   </form>
 </dialog>
 
+<!-- ============ FORMULARIO PRODUCTO (máquina / clase / plato / servicio) ============ -->
+<dialog id="dlg-producto" class="n-dialogo">
+  <form id="form-producto" class="n-form" method="dialog">
+    <h2 id="k-titulo">Agregar</h2>
+    <div class="n-campo"><label>Tipo</label>
+      <div class="n-opciones">
+        <label><input type="radio" name="tipo" value="maquina" checked><span>Máquina</span></label>
+        <label><input type="radio" name="tipo" value="clase"><span>Clase</span></label>
+        <label><input type="radio" name="tipo" value="plato"><span>Plato</span></label>
+        <label><input type="radio" name="tipo" value="servicio"><span>Servicio</span></label>
+      </div>
+    </div>
+    <div class="n-campo"><label for="k-nombre">Nombre *</label><input id="k-nombre" name="nombre" maxlength="80" required></div>
+    <div class="n-campo"><label for="k-desc">Una línea (opcional)</label><input id="k-desc" name="descripcion" maxlength="140"></div>
+    <div class="n-campo" data-para="plato servicio"><label for="k-precio">Precio</label><input id="k-precio" name="precio" type="number" min="0" step="100" value="0"></div>
+    <div data-para="maquina">
+      <div class="n-campo"><label for="k-video">Video (YouTube o link al archivo)</label><input id="k-video" name="video_url" type="url" placeholder="https://www.youtube.com/watch?v=…"></div>
+      <div class="n-campo"><label for="k-paso1">Paso 1</label><input id="k-paso1" name="paso1" maxlength="90"></div>
+      <div class="n-campo"><label for="k-paso2">Paso 2</label><input id="k-paso2" name="paso2" maxlength="90"></div>
+      <div class="n-campo"><label for="k-paso3">Paso 3</label><input id="k-paso3" name="paso3" maxlength="90"></div>
+    </div>
+    <div data-para="clase">
+      <div class="n-campo"><label>Horario</label></div>
+      <div id="k-horario"></div>
+      <button type="button" class="n-btn secundario chico" id="k-mas-horario">Agregar día y hora</button>
+    </div>
+    <label class="n-interruptor"><div><b>Activo</b><span>Si lo apagas, no aparece en el portal</span></div><input type="checkbox" name="activo" checked></label>
+    <div class="n-aviso alerta" id="k-error" hidden></div>
+    <div class="n-acciones">
+      <button type="button" class="n-btn peligro chico" id="k-eliminar">Eliminar</button>
+      <button type="button" class="n-btn secundario" id="k-cancelar">Cancelar</button>
+      <button type="submit" class="n-btn" id="k-guardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="n-toast" id="toast" role="status"></div>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { renderStats } from '/assets/stats.js';
+import { montarImportador } from '/assets/importar.js';
+import { montarCatalogo } from '/assets/admin-catalogo.js';
 
 const cfg = window.TOQUE;
 const sb = createClient(cfg.url, cfg.anon);
@@ -201,13 +274,15 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const ORIGEN = location.origin;
 const linkNFC = (c) => `${ORIGEN}/t/${c}`;
 const linkQR = (c) => `${ORIGEN}/t/${c}?q`;
-const DESTINOS = { hub: 'Página del negocio', menu: 'Carta directo', resena: 'Reseña Google directo', whatsapp: 'WhatsApp directo', instagram: 'Instagram directo', wifi: 'Página → WiFi', url: 'URL personalizada' };
+const DESTINOS = { hub: 'Página del negocio', menu: 'Carta directo', resena: 'Reseña Google directo', whatsapp: 'WhatsApp directo', instagram: 'Instagram directo', wifi: 'Página → WiFi', club: 'Club (tarjeta del cliente)', producto: 'Ficha de una máquina', entrada: 'Registrar entrada (sin torniquete)', url: 'URL personalizada' };
 const SECTORES = { cafe: 'Café', gimnasio: 'Gimnasio' };
-const SERVICIOS = ['catalogo', 'club', 'estudio'];
+const SERVICIOS = ['catalogo', 'club', 'estudio', 'entrada_nfc'];
 const SECCIONES = {
   negocios: ['Negocios', 'Tus clientes, sus portales y sus tags.'],
   tags: ['Tags', 'Chips y QR: crear, asignar, imprimir.'],
   stats: ['Estadísticas', 'Cómo usan los clientes cada portal.'],
+  entradas: ['Entradas', 'Importa el registro del torniquete o del huellero (CSV).'],
+  catalogo: ['Catálogo', 'Máquinas, clases y productos de cada negocio.'],
 };
 
 document.querySelectorAll('.nom-marca').forEach((e) => (e.textContent = cfg.marca));
@@ -215,6 +290,7 @@ document.title = `Panel · ${cfg.marca}`;
 
 let negocios = [];
 let tags = [];
+let productos = [];
 let editando = null;
 
 function toast(msg) {
@@ -265,15 +341,18 @@ document.querySelectorAll('.tab').forEach((b) =>
     $('#sub-seccion').textContent = SECCIONES[b.dataset.tab][1];
     $('#nuevo-negocio').hidden = b.dataset.tab !== 'negocios';
     if (b.dataset.tab === 'stats') cargarStats();
+    if (b.dataset.tab === 'catalogo') catalogo.cargar();
   })
 );
 
 // ---------------- Datos ----------------
 async function recargar() {
-  const [n, t] = await Promise.all([
+  const [n, t, pr] = await Promise.all([
     sb.from('negocios').select('*').order('nombre'),
     sb.from('tags').select('*').order('creado', { ascending: false }).order('nombre'),
+    sb.from('productos').select('id,negocio_id,nombre,tipo').order('nombre'),
   ]);
+  productos = pr.data || [];
   if (n.error || t.error) { toast('Error cargando datos: ' + (n.error || t.error).message); return; }
   negocios = n.data;
   tags = t.data;
@@ -294,6 +373,8 @@ function llenarSelects() {
   keep($('#f-negocio'), opcionesNegocio({ todos: true }));
   keep($('#b-negocio'), opcionesNegocio());
   keep($('#s-negocio'), opcionesNegocio({ sinAsignar: false }));
+  keep($('#i-negocio'), opcionesNegocio({ sinAsignar: false }));
+  keep($('#k-negocio'), opcionesNegocio({ sinAsignar: false }));
 }
 
 // ---------------- Negocios ----------------
@@ -455,6 +536,12 @@ function tagsFiltrados() {
   const f = $('#f-negocio').value;
   return f === '*' ? tags : tags.filter((t) => (t.negocio_id || '') === f);
 }
+// Destino "producto": elegir la máquina del mismo negocio del tag
+function selectProducto(t) {
+  const ops = productos.filter((p) => p.negocio_id === t.negocio_id)
+    .map((p) => `<option value="${esc(p.id)}" ${p.id === t.producto_id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+  return `<select data-campo="producto_id" aria-label="Máquina"><option value="">— Elige —</option>${ops}</select>`;
+}
 function pintarTags() {
   const lista = tagsFiltrados();
   const tb = $('#lista-tags');
@@ -467,7 +554,7 @@ function pintarTags() {
       <td><div class="n-campo"><input data-campo="nombre" value="${esc(t.nombre || '')}" aria-label="Nombre"></div></td>
       <td><div class="n-campo"><select data-campo="negocio_id" aria-label="Negocio">${opcionesNegocio()}</select></div></td>
       <td><div class="n-campo"><select data-campo="destino" aria-label="Destino">${optsDest(t.destino)}</select></div></td>
-      <td><div class="n-campo"><input data-campo="url_personalizada" type="url" value="${esc(t.url_personalizada || '')}" placeholder="https://…" aria-label="URL" ${t.destino === 'url' ? '' : 'disabled'}></div></td>
+      <td><div class="n-campo">${t.destino === 'producto' ? selectProducto(t) : `<input data-campo="url_personalizada" type="url" value="${esc(t.url_personalizada || '')}" placeholder="https://…" aria-label="URL" ${t.destino === 'url' ? '' : 'disabled'}>`}</div></td>
       <td><input type="checkbox" data-campo="activo" aria-label="Activo" ${t.activo ? 'checked' : ''}></td>
       <td><button class="n-btn secundario chico" data-copiar="${esc(t.codigo)}" title="Copiar el link para grabar en el chip">Link NFC</button></td>
     </tr>`).join('');
@@ -483,12 +570,14 @@ async function guardarTag(tr, el) {
   const id = tr.dataset.id;
   const campo = el.dataset.campo;
   const valor = el.type === 'checkbox' ? el.checked : el.value.trim() || null;
-  if (campo === 'destino') tr.querySelector('[data-campo="url_personalizada"]').disabled = valor !== 'url';
+  const urlInput = tr.querySelector('[data-campo="url_personalizada"]');
+  if (campo === 'destino' && urlInput) urlInput.disabled = valor !== 'url';
   const { error: err } = await sb.from('tags').update({ [campo]: valor }).eq('id', id);
   if (err) { toast('No se guardó: ' + err.message); return; }
   Object.assign(tags.find((x) => x.id === id), { [campo]: valor });
   toast('Guardado');
   if (campo === 'negocio_id') pintarNegocios();
+  if (campo === 'destino' || campo === 'negocio_id') pintarTags();
 }
 
 $('#f-negocio').addEventListener('change', pintarTags);
@@ -561,6 +650,57 @@ async function cargarStats() {
   const { data, error: err } = await sb.rpc('stats_admin', { p_negocio: id, p_dias: +$('#s-dias').value });
   if (err) { cont.innerHTML = '<div class="n-aviso alerta"></div>'; cont.firstChild.textContent = 'No se pudieron cargar: ' + err.message; return; }
   renderStats(cont, data);
+  pintarGimnasio(data.gimnasio, negocios.find((x) => x.id === id));
+}
+
+// Bloque de gimnasio: activos, abandono y "En riesgo" con WhatsApp solo en horario legal (Ley 2300)
+const fmtN = new Intl.NumberFormat('es-CO');
+function pintarGimnasio(g, neg) {
+  const cont = $('#s-gimnasio');
+  cont.textContent = '';
+  if (!g || !neg || (neg.sector !== 'gimnasio' && !g.activos && !g.en_riesgo_total)) return;
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+  const kpis = el('div', 'n-kpis');
+  const kpi = (titulo, valor, def, destacado) => {
+    const k = el('div', 'n-kpi' + (destacado ? ' destacado' : ''));
+    const sm = el('small', '', titulo + ' ');
+    const d = el('button', 'n-def', '?'); d.type = 'button'; d.dataset.def = def; d.setAttribute('aria-label', def);
+    sm.append(d);
+    k.append(sm, el('div', 'n-num', valor));
+    return k;
+  };
+  const ab = g.abandono || {};
+  kpis.append(
+    kpi('Activos', fmtN.format(g.activos), 'Socios con al menos 1 entrada en los últimos 14 días.'),
+    kpi('Abandono del mes', ab.tasa === null || ab.tasa === undefined ? '—' : Math.round(ab.tasa * 100) + ' %',
+      `Activos al inicio del mes que no han vuelto en el mes ÷ activos al inicio (${fmtN.format(ab.abandonaron || 0)} de ${fmtN.format(ab.activos_inicio || 0)}).`),
+    kpi('En riesgo', fmtN.format(g.en_riesgo_total), `Con 4 o más visitas y sin venir hace ${g.en_riesgo_dias} días o más.`, g.en_riesgo_total > 0),
+  );
+  const t = el('div', 'n-tarjeta');
+  t.append(el('h2', '', 'En riesgo'), el('p', '', g.puede_escribir ? 'Escríbeles hoy. El botón solo aparece en horario permitido.' : 'Ahora no se puede escribir: fuera del horario permitido (Ley 2300).'));
+  const proxima = g.proxima ? new Date(g.proxima) : null;
+  const disponible = proxima
+    ? `Disponible el ${proxima.toLocaleDateString('es-CO', { weekday: 'long', timeZone: 'America/Bogota' })} a las ${proxima.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' })}`
+    : '';
+  const ul = el('ul', 'n-lista');
+  for (const p of (g.en_riesgo || []).slice(0, 50)) {
+    const li = el('li');
+    const pr = el('div', 'n-principal');
+    pr.append(el('b', '', p.nombre || 'Sin nombre'), el('span', '', `${p.dias} días sin venir · ${p.visitas} visitas`));
+    li.append(pr);
+    let tel = String(p.telefono || '').replace(/\D/g, '');
+    if (tel.length === 10 && tel[0] === '3') tel = '57' + tel;
+    if (g.puede_escribir && tel.length >= 12) {
+      const a = el('a', 'n-btn chico secundario', 'WhatsApp');
+      const msg = `Hola ${String(p.nombre || '').split(' ')[0]}, te extrañamos en ${neg.nombre}. ¿Todo bien? Aquí te esperamos cuando quieras.`;
+      a.href = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`; a.target = '_blank'; a.rel = 'noopener';
+      li.append(a);
+    } else if (!g.puede_escribir) li.append(el('span', 'n-estado', disponible));
+    ul.append(li);
+  }
+  if (!(g.en_riesgo || []).length) t.append(el('div', 'n-vacio', 'Nadie en riesgo por ahora.'));
+  else t.append(ul);
+  cont.append(kpis, t);
 }
 $('#s-negocio').addEventListener('change', cargarStats);
 $('#s-dias').addEventListener('change', cargarStats);
@@ -568,6 +708,11 @@ $('#s-compartir').addEventListener('click', () => {
   const n = negocios.find((x) => x.id === $('#s-negocio').value);
   if (n) copiar(`${ORIGEN}/stats?k=${n.token_stats}`, 'Link de estadísticas copiado — envíaselo al dueño');
 });
+
+const importador = montarImportador({ sb, toast, negocioActual: () => $('#i-negocio').value, negocios: () => negocios, alTerminar: recargar });
+const catalogo = montarCatalogo({ sb, toast, esc, negocioActual: () => $('#k-negocio').value, alCambiar: recargar });
+$('#k-negocio').addEventListener('change', () => catalogo.cargar());
+$('#i-negocio').addEventListener('change', () => importador.reiniciar());
 
 iniciar();
 </script>

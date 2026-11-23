@@ -76,9 +76,9 @@
 - **Clases**: productos `tipo = clase` con horario; "Clases de hoy" en el portal.
 - Entrada por NFC solo si el negocio activa `entrada_nfc` (gimnasios sin torniquete).
 **Listo cuando**
-- [ ] Con un CSV de prueba (generarlo en `tests/fixtures/entradas.csv`, 200 socios × 3 meses, con
+- [x] Con un CSV de prueba (generarlo en `tests/fixtures/entradas.csv`, 200 socios × 3 meses, con
       patrones de abandono conocidos) las métricas dan exactamente lo esperado (prueba SQL).
-- [ ] Re-importar no duplica. El botón de WhatsApp desaparece en un domingo simulado (`_ahora()`).
+- [x] Re-importar no duplica. El botón de WhatsApp desaparece en un domingo simulado (`_ahora()`).
 
 ## Fase 4 — Estadísticas nivel 1 + soporte del estudio
 **Construir**
