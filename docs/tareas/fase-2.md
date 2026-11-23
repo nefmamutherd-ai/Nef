@@ -130,4 +130,4 @@ monedas por visita, bienvenida; lista de premios (nombre, valor en pesos, activo
 
 ### [x] 2.7 Cierre de la fase 2
 **Comprobar:** [x] Criterios de la Fase 2 de `docs/PLAN.md` cumplidos · [x] el botón de reseña no suma nada (prueba SQL: no existe
-ninguna RPC pública que cree movimientos) · [x] PROGRESO.md · [ ] `git push origin desarrollo` (sin remoto).
+ninguna RPC pública que cree movimientos) · [x] PROGRESO.md · [x] `git push origin desarrollo` (después, cuando hubo remoto).

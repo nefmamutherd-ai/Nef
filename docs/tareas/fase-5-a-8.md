@@ -31,15 +31,15 @@ Comprobar: [x] prueba unitaria de la función de elección con semilla: nunca el
 ## Fase 6 — Club que engancha
 Referencia: `plan-v2-detalle.md` Fase 4 y "Reglas del club" (racha, hora dorada, niveles).
 
-### [ ] 6.1 Horas doradas (tabla `horas_doradas`, cálculo dentro de `caja_visita`, movimiento `bono_hora_dorada` aparte)
-Comprobar: [ ] visita dentro de la franja (fija `nef.ahora`) = base × multiplicador; fuera = base.
-### [ ] 6.2 Racha semanal con comodín mensual y `bono_racha` cada 4 semanas
-Comprobar: [ ] pruebas de los 4 casos: misma semana, semana siguiente, salto de 1 con comodín, salto sin comodín.
-### [ ] 6.3 Niveles por `total_ganado` (se calculan, no se guardan) en `club_tarjeta` y en la caja
-### [ ] 6.4 Aviso único en la tarjeta
+### [x] 6.1 Horas doradas (tabla `horas_doradas`, cálculo dentro de `caja_visita`, movimiento `bono_hora_dorada` aparte)
+Comprobar: [x] visita dentro de la franja (fija `nef.ahora`) = base × multiplicador; fuera = base.
+### [x] 6.2 Racha semanal con comodín mensual y `bono_racha` cada 4 semanas
+Comprobar: [x] pruebas de los 4 casos: misma semana, semana siguiente, salto de 1 con comodín, salto sin comodín.
+### [x] 6.3 Niveles por `total_ganado` (se calculan, no se guardan) en `club_tarjeta` y en la caja
+### [x] 6.4 Aviso único en la tarjeta
 Prioridad fija: (1) bienvenida pendiente → (2) hora dorada activa → (3) premio alcanzable → (4) racha en riesgo → (5) te faltan N.
-Solo se muestra el primero que aplique. Comprobar: [ ] prueba de la función de prioridad con los 5 casos.
-### [ ] 6.5 Cierre de la fase 6.
+Solo se muestra el primero que aplique. Comprobar: [x] prueba de la función de prioridad con los 5 casos.
+### [x] 6.5 Cierre de la fase 6.
 
 ## Fase 7 — Vender y cobrar
 ### [x] 7.1 Negocios de demostración

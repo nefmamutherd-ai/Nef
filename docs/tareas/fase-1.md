@@ -145,4 +145,4 @@ Mantén el código HTTP que devuelve hoy.
 ### [x] 1.7 Cierre de la fase 1
 **Pasos:** revisa los criterios de "Listo cuando" de la Fase 1 en `docs/PLAN.md`; escribe la entrada de cierre en
 `docs/PROGRESO.md` con la lista de capturas; `git push origin desarrollo`.
-**Comprobar:** [x] `npm run verificar -- --e2e` ✓ · [ ] push hecho (no hay repositorio remoto todavía: commits locales en `desarrollo`).
+**Comprobar:** [x] `npm run verificar -- --e2e` ✓ · [x] push hecho (después, cuando hubo remoto).
