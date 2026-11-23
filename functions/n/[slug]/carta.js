@@ -91,8 +91,16 @@ export async function onRequestGet({ params, request, env }) {
     <div class="pt-antojos" id="antojos"></div>
     <div id="giro" hidden>
       <div class="pt-maquina" id="maquina">
-        <div class="pt-luces" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="pt-ruleta"><div class="pt-rollo" id="rollo"></div><div class="pt-ventana" aria-hidden="true"></div></div>
+        <div class="pt-marquesina" aria-hidden="true">La suerte de la casa</div>
+        <div class="pt-luces" aria-hidden="true"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i><i style="--k:7"></i><i style="--k:8"></i><i style="--k:9"></i><i style="--k:10"></i></div>
+        <div class="pt-gabinete">
+          <span class="pt-flecha" aria-hidden="true"></span><span class="pt-flecha der" aria-hidden="true"></span>
+          <div class="pt-ruleta"><div class="pt-rollo" id="rollo"></div><div class="pt-ventana" aria-hidden="true"></div></div>
+          <div class="pt-estampa" aria-hidden="true">Para ti</div>
+        </div>
+        <div class="pt-luces abajo" aria-hidden="true"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i><i style="--k:7"></i><i style="--k:8"></i><i style="--k:9"></i><i style="--k:10"></i></div>
+        <div class="pt-bandeja" aria-hidden="true"><span>1 giro · gratis</span><i></i><span>Solo sugiere</span></div>
+        <div class="pt-palanca" aria-hidden="true"><i></i><b></b></div>
         <div class="pt-confeti" id="confeti" aria-hidden="true"></div>
       </div>
       <div class="pt-resultado" id="g-resultado" hidden>

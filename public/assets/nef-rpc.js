@@ -40,12 +40,15 @@ export const hora = (iso) =>
 // Hoja inferior: abre/cierra con animación, cierra con el fondo, Escape o [data-cerrar]
 export function hoja(el) {
   const fondo = el.previousElementSibling && el.previousElementSibling.classList.contains('pt-fondo') ? el.previousElementSibling : null;
+  let pendiente = null; // cierre programado: abrir lo cancela (si no, un cierre viejo escondía la hoja recién abierta)
   const cerrar = () => {
     el.classList.remove('abierta');
     if (fondo) fondo.classList.remove('abierta');
-    setTimeout(() => { el.hidden = true; if (fondo) fondo.hidden = true; }, 300);
+    clearTimeout(pendiente);
+    pendiente = setTimeout(() => { el.hidden = true; if (fondo) fondo.hidden = true; }, 300);
   };
   const abrir = () => {
+    clearTimeout(pendiente);
     el.hidden = false;
     if (fondo) fondo.hidden = false;
     requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('abierta'); if (fondo) fondo.classList.add('abierta'); }));

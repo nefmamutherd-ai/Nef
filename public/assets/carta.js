@@ -118,6 +118,7 @@ function fila(p) {
   const t = document.createElement('span');
   t.textContent = p.nombre;
   d.append(t);
+  d.dataset.precio = pesos(p.precio); // se pinta con CSS (::after): el texto de la fila sigue siendo solo el nombre
   return d;
 }
 
@@ -166,7 +167,7 @@ function girar() {
   rollo.textContent = '';
   lista.forEach((p, k) => { const f = fila(p); if (k === lista.length - 2) f.dataset.elegido = ''; rollo.append(f); });
   const maquina = $('maquina');
-  maquina.classList.remove('gano');
+  maquina.classList.remove('gano', 'frenando');
   maquina.classList.add('girando');
   rollo.style.transition = 'none';
   rollo.style.transform = 'translateY(0)';
@@ -181,6 +182,7 @@ function girar() {
     const x = Math.min(1, (ahora - inicio) / DURA);
     const fila = Math.floor((facil(x) * destino) / ALTO);
     if (fila !== ultimo) { ultimo = fila; if (x > 0.45 && navigator.vibrate) navigator.vibrate(8); }
+    if (x > 0.62) maquina.classList.add('frenando'); // sin desenfoque al frenar, para leer los platos
     if (x < 1) requestAnimationFrame(tic);
   };
   requestAnimationFrame(() => requestAnimationFrame(() => {
