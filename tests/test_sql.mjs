@@ -707,6 +707,7 @@ await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y d
   const demo = fs.readFileSync(new URL('../supabase/demo.sql', import.meta.url), 'utf8');
   await db.exec(demo);
   await db.exec(demo);
+  await db.exec(sql); // el esquema se vuelve a correr con datos ya cargados (como en producción): no debe chocar
   await como('anon');
   const [{ r: c }] = await q(`select carta_publica('demo-cafe') r`);
   assert.equal(c.categorias.flatMap((x) => x.productos).length, 12);

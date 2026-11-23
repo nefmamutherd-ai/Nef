@@ -352,7 +352,7 @@ alter table public.negocios add column if not exists pin_caja_hash text;   -- pr
 -- Tags: destino nuevo "club" (abre la tarjeta del cliente)
 alter table public.tags drop constraint if exists tags_destino_check;
 alter table public.tags add constraint tags_destino_check
-  check (destino in ('hub', 'menu', 'resena', 'whatsapp', 'instagram', 'wifi', 'url', 'club'));
+  check (destino in ('hub', 'menu', 'resena', 'whatsapp', 'instagram', 'wifi', 'url', 'club', 'producto', 'entrada'));  -- lista completa: el esquema se corre muchas veces
 
 -- 1 moneda = $100 en premios. Costo de un premio = ceil(valor_pesos / 100).
 -- Ganar en modo valor: compra × devolucion_pct / 100 / 100  (ej. $160.000 al 5 % = $8.000 = 80 monedas).
