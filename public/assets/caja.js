@@ -184,7 +184,11 @@ function pintarFicha() {
   if (cliente.desde) { aviso.classList.add('alerta'); aviso.textContent = `Ya sumó. Puede volver a sumar a las ${hora(cliente.desde)}`; }
   else if (cliente.bienvenida_pendiente > 0) { aviso.classList.add('neutro'); aviso.textContent = `Primera visita: se activan sus ${numero(cliente.bienvenida_pendiente)} de bienvenida`; }
   else if (alcanza.length) { aviso.classList.add('ok'); aviso.textContent = `Ya puede canjear ${alcanza[alcanza.length - 1].nombre}`; }
-  else aviso.hidden = true;
+  else if (cliente.nivel && cliente.nivel.nombre) {
+    const r = cliente.racha && cliente.racha.semanas > 0 ? ` · racha de ${numero(cliente.racha.semanas)} ${cliente.racha.semanas === 1 ? 'semana' : 'semanas'}` : '';
+    aviso.classList.add('neutro');
+    aviso.textContent = `Nivel ${cliente.nivel.nombre}${r}`;
+  } else aviso.hidden = true;
   $('f-valor-campo').hidden = caja.modo !== 'valor';
   $('canjear').disabled = !(cliente.premios || []).length;
   $('ficha').hidden = false;
@@ -212,11 +216,19 @@ $('sumar').addEventListener('click', async () => {
       cliente.saldo = r.saldo;
       cliente.bienvenida_pendiente = 0;
       cliente.desde = null;
+      if (r.nivel) cliente.nivel = r.nivel;
+      if (r.racha) cliente.racha = { semanas: r.racha };
       $('f-valor').value = '';
       pintarFicha();
       const mon = $('f-mon');
       mon.classList.remove('pt-celebra'); void mon.offsetWidth; mon.classList.add('pt-celebra');
-      toast(`+${numero(r.monedas + r.bienvenida)} ${caja.moneda_plural}${r.bienvenida ? ` (${numero(r.monedas)} + ${numero(r.bienvenida)} de bienvenida)` : ''}`);
+      // Desglose: "+40 monedas (10 visita + 10 hora dorada + 20 de bienvenida)"; la racha se celebra aparte
+      const partes = [`${numero(r.monedas)} visita`];
+      if (r.hora_dorada) partes.push(`${numero(r.hora_dorada)} hora dorada`);
+      if (r.bienvenida) partes.push(`${numero(r.bienvenida)} de bienvenida`);
+      if (r.bono_racha) partes.push(`${numero(r.bono_racha)} por ${numero(r.racha)} semanas seguidas`);
+      const total = r.monedas + (r.hora_dorada || 0) + (r.bienvenida || 0) + (r.bono_racha || 0);
+      toast(`+${numero(total)} ${caja.moneda_plural}${partes.length > 1 ? ` (${partes.join(' + ')})` : ''}${r.bono_racha ? ' ¡Racha!' : ''}`);
     } else {
       if (r.error === 'muy_pronto') { cliente.desde = r.desde; pintarFicha(); }
       toast('No se sumó: ' + mensajeError(r));

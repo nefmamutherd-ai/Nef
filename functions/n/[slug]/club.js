@@ -42,7 +42,7 @@ export async function onRequestGet({ params, request, env }) {
   </section>
 
   <section id="tarjeta" class="pt-club" hidden>
-    <div class="pt-neg">${esc(n.nombre)}</div>
+    <div class="pt-neg" id="t-neg">${esc(n.nombre)}</div>
     <h1 id="t-hola">Hola</h1>
     <div class="pt-saldo" id="t-saldo"><div><b id="t-numero">0</b><span>${plural}</span></div></div>
     <p class="pt-frase" id="t-frase"></p>

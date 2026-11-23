@@ -12,6 +12,22 @@ const leerToken = () => { try { return localStorage.getItem(CLAVE); } catch { re
 const guardarToken = (t) => { try { localStorage.setItem(CLAVE, t); } catch { /* modo privado: la tarjeta dura la sesión */ } };
 const borrarToken = () => { try { localStorage.removeItem(CLAVE); } catch { /* nada */ } };
 
+// "17:00" → "5 p. m."; "12:30" → "12:30 m."
+const hora12 = (hhmm) => {
+  const [h, m] = String(hhmm || '0:00').split(':').map(Number);
+  const mm = m ? `:${String(m).padStart(2, '0')}` : '';
+  if (h === 0) return `12${mm} a. m.`;
+  if (h < 12) return `${h}${mm} a. m.`;
+  if (h === 12) return `12${mm} m.`;
+  return `${h - 12}${mm} p. m.`;
+};
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
+
 let tokenActual = null;
 const hojaCodigo = hoja($('hoja-codigo'));
 const hojaPremios = hoja($('hoja-premios'));
@@ -38,18 +54,59 @@ function pintarTarjeta(t) {
   const progreso = t.cercano ? Math.min(100, Math.round((t.saldo / t.cercano.costo) * 100)) : (t.premios || []).length ? 100 : 0;
   $('t-saldo').style.setProperty('--progreso', String(progreso));
 
-  if (t.cercano && !alcanzables.length) frase($('t-frase'), ['Te faltan ', { b: numero(t.cercano.faltan) }, ' para un ', { b: t.cercano.nombre }]);
+  if (t.cercano) frase($('t-frase'), ['Te faltan ', { b: numero(t.cercano.faltan) }, ' para un ', { b: t.cercano.nombre }]);
   else if (alcanzables.length) frase($('t-frase'), ['¡Ya puedes canjear ', { b: alcanzables[alcanzables.length - 1].nombre }, '!']);
   else frase($('t-frase'), [`Muestra tu código en la caja cada vez que vengas y gana ${plural}.`]);
 
-  // Un solo aviso: la bienvenida pendiente
-  const aviso = $('t-aviso');
-  aviso.hidden = !(t.bienvenida_pendiente > 0);
-  if (t.bienvenida_pendiente > 0) aviso.textContent = `Tus ${numero(t.bienvenida_pendiente)} de bienvenida se activan en tu primera visita`;
+  // Nivel discreto junto al negocio
+  if (t.nivel && t.nivel.nombre) $('t-neg').textContent = `${t.negocio} · ${t.nivel.nombre}`;
 
-  // Lista de premios (hoja)
+  // Un solo aviso: el servidor ya eligió cuál (bienvenida → hora dorada → premio → racha → te faltan)
+  const aviso = $('t-aviso');
+  const a = t.aviso;
+  const veces = (m) => (Number(m) === 2 ? 'el doble' : Number(m) === 3 ? 'el triple' : `×${String(m).replace('.', ',')}`);
+  const textos = {
+    bienvenida: () => [`Tus ${numero(a.n)} de bienvenida se activan en tu primera visita`, 'neutro'],
+    hora_dorada: () => [`Hoy hasta las ${hora12(a.hasta)} ganas ${veces(a.multiplicador)}`, ''],
+    premio: () => [`¡Ya te alcanza para ${a.nombre}!`, 'ok'],
+    racha: () => [`Vuelve antes del domingo para mantener tu racha de ${numero(a.semanas)} semanas`, ''],
+  };
+  const elegido = a && textos[a.tipo] ? textos[a.tipo]() : null; // "te faltan" ya lo dice la frase
+  aviso.hidden = !elegido;
+  if (elegido) { aviso.textContent = elegido[0]; aviso.className = 'pt-aviso' + (elegido[1] ? ' ' + elegido[1] : ''); }
+
+  // ¿Subió de nivel desde la última vez que abrió la tarjeta? Celebración una sola vez.
+  try {
+    const clave = CLAVE + '_nivel';
+    const antes = localStorage.getItem(clave);
+    if (t.nivel && t.nivel.nombre && antes && antes !== t.nivel.nombre && t.nivel.desde > 0) {
+      $('t-saldo').classList.add('pt-celebra');
+      toast(`¡Subiste a ${t.nivel.nombre}!`);
+    }
+    if (t.nivel && t.nivel.nombre) localStorage.setItem(clave, t.nivel.nombre);
+  } catch { /* sin almacenamiento */ }
+
+  // Lista de premios (hoja) + nivel y racha
   const lista = $('lista-premios');
   lista.textContent = '';
+  const dato = (titulo, valor) => {
+    const d = document.createElement('div');
+    d.className = 'pt-dato';
+    const s = document.createElement('small'); s.textContent = titulo;
+    const b = document.createElement('b'); b.textContent = valor;
+    d.append(s, b);
+    lista.append(d);
+  };
+  if (t.nivel && t.nivel.nombre) {
+    dato('Tu nivel', t.nivel.siguiente ? `${t.nivel.nombre} · te faltan ${numero(t.nivel.siguiente.faltan)} para ${t.nivel.siguiente.nombre}` : t.nivel.nombre);
+  }
+  if (t.racha && t.racha.semanas > 0) dato('Tu racha', `${numero(t.racha.semanas)} ${t.racha.semanas === 1 ? 'semana seguida' : 'semanas seguidas'}`);
+  if (t.hora_dorada) dato('Hora dorada ahora', `${veces(t.hora_dorada.multiplicador)} hasta las ${hora12(t.hora_dorada.hasta)}`);
+  else if (t.proxima_hora_dorada) {
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const p = t.proxima_hora_dorada;
+    dato('Próxima hora dorada', `${dias[p.dia]} de ${hora12(p.desde)} a ${hora12(p.hasta)}: ganas ${veces(p.multiplicador)}`);
+  }
   if (!(t.premios || []).length) {
     const v = document.createElement('div');
     v.className = 'pt-vacio';
