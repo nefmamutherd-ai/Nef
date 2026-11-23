@@ -42,17 +42,17 @@ Solo se muestra el primero que aplique. Comprobar: [ ] prueba de la función de 
 ### [ ] 6.5 Cierre de la fase 6.
 
 ## Fase 7 — Vender y cobrar
-### [ ] 7.1 Negocios de demostración
+### [x] 7.1 Negocios de demostración
 `supabase/demo.sql` (idempotente, separado del esquema): empresa "Demostración", `/n/demo-cafe` (12 productos, 3 premios)
 y `/n/demo-gym` (6 máquinas con pasos, 4 clases), con un cliente de ejemplo. La landing ya muestra "Tócalo tú" sola cuando
-`/n/demo-cafe` existe: compruébalo. Comprobar: [ ] e2e: el botón "Tócalo tú" aparece y lleva al portal demo.
-### [ ] 7.2 Mensualidades en el admin
+`/n/demo-cafe` existe: compruébalo. Comprobar: [x] e2e: el botón "Tócalo tú" aparece y lleva al portal demo.
+### [x] 7.2 Mensualidades en el admin
 `empresas.estado_pago`, `empresas.vence date`, `empresas.dias_gracia int default 5`. Estados "Al día / Vence en N días / Vencido"
 con `.n-estado`. Vencido + gracia → `resolver_toque` y `negocio_publico` devuelven inactivo (prueba SQL con `nef.ahora`).
-### [ ] 7.3 Plantillas legales
+### [x] 7.3 Plantillas legales
 `docs/legal/terminos-club.md`, `politica-datos.md`, `contrato-transmision-datos.md`, `contrato-servicio.md`. Arriba de cada uno:
 "PLANTILLA — revisar con abogado antes de usar". Leyes: 1581 de 2012 (datos), 1480 de 2011 (consumidor), 2300 de 2023 (contacto).
-### [ ] 7.4 Cierre de la fase 7.
+### [x] 7.4 Cierre de la fase 7.
 
 ## Fase 8 — Panel del dueño
 Referencia: `docs/ARQUITECTURA.md` §2, §4, §7 · `docs/UI.md` filas del panel.

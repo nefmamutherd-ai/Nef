@@ -615,6 +615,41 @@ await caso('"Elige por mí": sugiere un postre disponible, "Lo pido" se registra
   assert.equal((await api('movimientos')).length, movAntes, 'girar no da monedas');
 });
 
+console.log('Fase 7');
+await caso('mensualidades: vencido + sin gracia apaga el toque; "Registrar pago" lo prende', async () => {
+  await panel.click('.tab[data-tab=cobros]');
+  const fila = panel.locator('#lista-cobros tr', { hasText: 'Café Prueba' }).first();
+  await fila.waitFor();
+  const hace40 = new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10);
+  await fila.locator('input[type=number]').fill('0');
+  await fila.locator('input[type=number]').dispatchEvent('change');
+  await panel.waitForTimeout(400);
+  await panel.locator('#lista-cobros tr', { hasText: 'Café Prueba' }).first().locator('input[type=date]').fill(hace40);
+  await panel.locator('#lista-cobros tr', { hasText: 'Café Prueba' }).first().locator('input[type=date]').dispatchEvent('change');
+  await panel.waitForSelector('#lista-cobros tr:has-text("Café Prueba") .n-estado.alerta');
+  await panel.screenshot({ path: DIR + 'panel_mensualidades.png' });
+  const [s1, l1] = await ir(`/t/${codigos[0]}`);
+  assert.equal(s1, 302); assert.match(l1, /\/inactivo$/,'vencido: el tag lleva a inactivo');
+  assert.match((await ir(`/n/${slug}`))[1] || '', /\/inactivo$/,'vencido: el portal no se muestra');
+  await panel.locator('#lista-cobros tr', { hasText: 'Café Prueba' }).first().locator('button').click();
+  await panel.waitForSelector('#lista-cobros tr:has-text("Café Prueba") .n-estado.ok');
+  const [s2, l2] = await ir(`/t/${codigos[0]}`);
+  assert.equal(s2, 302); assert.match(l2, new RegExp(`/n/${slug}`), 'pagado: vuelve al portal');
+});
+await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal cuando existe', async () => {
+  const p = await ctx.newPage();
+  await p.goto(BASE + '/');
+  await p.waitForTimeout(800);
+  assert.equal(await p.isVisible('#demo'), false, 'sin demo-cafe el botón no aparece');
+  if (!(await api('negocios?slug=eq.demo-cafe')).length) await api('negocios', 'POST', { slug: 'demo-cafe', nombre: 'Café Demo' });
+  await p.reload();
+  await p.waitForTimeout(800);
+  assert.equal(await p.isVisible('#demo'), true);
+  await p.click('#demo');
+  await p.waitForURL(/\/n\/demo-cafe$/);
+  await p.close();
+});
+
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));
 console.log(`\n${ok} pruebas OK · capturas en tests/capturas/`);

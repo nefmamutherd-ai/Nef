@@ -111,3 +111,28 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Pruebas: test:sql **58 OK** (4 nuevas, incluida la de 10.000 tiradas con semilla) · test:e2e **32 OK** (3 nuevas) · verificar ✓.
 - Capturas revisadas: `carta-movil.png`, `carta-detalle.png`, `elige-por-mi.png`, `admin-plato.png`, `admin-carta.png`.
 - Seguridad: anon no lee `eventos_carta`; el evento ignora productos de otro negocio; girar no crea movimientos (e2e lo verifica).
+
+### Fase 6 · Hora dorada, racha y niveles — hecha
+- Hora dorada (franjas por negocio, monedas × 2), racha semanal con comodín y bono a las 4 semanas, niveles por total ganado,
+  un solo aviso en la tarjeta (prioridad bienvenida → hora dorada → premio → racha → te faltan). Ver commit `3229012`.
+
+### 2026-11-23 · Diseño (pedido de Jacobo) + investigación de competencia
+- Portal, carta y club con estilo de carta impresa (no "estilo IA"); "Elige por mí" como tragamonedas; landing con más movimiento,
+  también con "reducir movimiento" activo (decisión de Jacobo).
+- Competencia investigada en `docs/COMPETENCIA.md`. Aplicado: carrusel **"Lo más pedido"** con fotos grandes (`carta_populares`),
+  **camino de premios** en el club (cada premio es una parada), **pieles por negocio** (`negocios.tema`: cálido, limpio, noche, energía;
+  nueva piel "noche"), elegibles en el admin ("Estilo del portal").
+- Fotos de los 12 platos de la demo: renders 3D en Blender (Cycles), script en `scripts/platos_blender.py`, WebP 600×600 en
+  `public/assets/demo/`. Las ilustraciones SVG quedan de respaldo. Croissant, natas y changua son los renders más flojos.
+
+### Fase 7 · Vender y cobrar — hecha
+- **Demo**: `supabase/demo.sql` (demo-cafe y demo-gym); "Tócalo tú" aparece solo si existe la demo (e2e).
+- **Mensualidades**: `empresas.vence`, `dias_gracia` (5 por defecto), `_negocio_habilitado` (vencido + gracia → `resolver_toque` y
+  `negocio_publico` dan inactivo), `mensualidades_admin`, `registrar_pago` (suma meses; si estaba vencido, desde hoy).
+  Todo negocio nuevo recibe su empresa (trigger). Admin › **Mensualidades**: pagado hasta, gracia, estado y "Registrar pago · 1 mes".
+- **Legal**: `docs/legal/` (términos del club, política de datos, contrato de transmisión, contrato de servicio), marcadas
+  "PLANTILLA — revisar con abogado".
+- Pruebas: test:sql **70 OK** · test:e2e **34 OK** · verificar ✓.
+- Capturas revisadas: `panel_mensualidades.png`, carta con "Lo más pedido", club con camino de premios, piel noche.
+- Seguridad: anon no llama `registrar_pago` ni `mensualidades_admin`; un logueado que no es admin recibe "no autorizado";
+  `_negocio_habilitado` y `_estado_pago` revocadas al público.

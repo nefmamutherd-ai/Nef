@@ -159,3 +159,5 @@
   .n-tarjeta { padding: 28px; }
 }
 @media (prefers-reduced-motion: reduce) { .nef *, .nef *::before, .nef *::after { animation: none !important; transition: none !important; } }
+p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
+.n-tabla input { font: inherit; padding: 6px 10px; border: 1px solid var(--n-arena); border-radius: 10px; background: var(--n-blanco); color: inherit; }

@@ -1983,3 +1983,16 @@ returns json language sql stable security definer set search_path = public as $$
   )
   from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
 $$;
+
+-- Todo negocio nuevo sin empresa recibe una con su mismo nombre (quien paga la mensualidad)
+create or replace function public._empresa_por_defecto()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.empresa_id is null then
+    insert into public.empresas (nombre) values (new.nombre) returning id into new.empresa_id;
+  end if;
+  return new;
+end $$;
+revoke execute on function public._empresa_por_defecto() from public, anon, authenticated;
+drop trigger if exists negocios_empresa on public.negocios;
+create trigger negocios_empresa before insert on public.negocios for each row execute function public._empresa_por_defecto();

@@ -70,3 +70,6 @@ Formato: fecha · decisión · por qué. Las más recientes arriba.
 - 2026-11-20 · El proyecto lo puede construir Claude u otro modelo: `AGENTS.md` + tarjetas + `npm run verificar`. · Jacobo puede quedarse sin tokens de Claude; las guardas evitan que un modelo más débil dañe el proyecto.
 - 2026-11-20 · Componentes de interfaz cerrados (`portal.css`, `nef-ui.css`) y prohibido inventar estilos. · Que cualquier modelo produzca pantallas iguales a la maqueta.
 - 2026-11-20 · Landing con precios "Te lo cotizamos" hasta definirlos; "Tócalo tú" oculto hasta que exista la demo. · No mostrar cifras inventadas ni botones rotos.
+- 2026-11-23 · El estado de pago (al día / por vencer / gracia / vencido) se calcula con `vence` + `dias_gracia` y la hora de `_ahora()`, no se guarda. · No depende de un cron para apagar o prender un portal; `estado_pago` queda como columna vieja.
+- 2026-11-23 · Todo negocio nuevo recibe su propia empresa (trigger) si no se le asigna una. · Sin empresa no habría a quién cobrarle; agrupar sedes en una empresa se hace en el admin/panel después.
+- 2026-11-23 · Fotos de la demo como renders 3D propios (Blender), no fotos de bancos de imágenes. · Sin problemas de derechos y con el mismo estilo en los 12 platos.

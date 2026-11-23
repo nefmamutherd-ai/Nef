@@ -96,8 +96,9 @@ await caso('un negocio creado antes recibe empresa al correr el esquema', async 
   await db.exec(sql);
   const [n] = await q(`select n.empresa_id, e.nombre from negocios n join empresas e on e.id = n.empresa_id where n.slug = 'cafe-luna'`);
   assert.ok(n && n.empresa_id); assert.equal(n.nombre, 'Café Luna');
+  const antes = (await q(`select count(*)::int n from empresas`))[0].n;
   await db.exec(sql); // otra vez: no crea empresas repetidas
-  assert.equal((await q(`select count(*)::int n from empresas`))[0].n, 1);
+  assert.equal((await q(`select count(*)::int n from empresas`))[0].n, antes);
 });
 await caso('negocio_publico trae sector y servicios, no empresa ni notas', async () => {
   await como('anon');
@@ -780,6 +781,13 @@ await caso('estados: al día, por vencer (≤ 5 días), gracia; pagar antes de v
   assert.equal((await q(`select registrar_pago($1, 2)::text v`, [emp]))[0].v, '2027-02-10', 'al día: suma sobre el vencimiento');
   await db.exec('reset role; reset nef.ahora;');
   await db.exec(`update empresas set vence = null, dias_gracia = 5 where id = '${emp}'`);
+});
+await caso('un negocio nuevo recibe su propia empresa (para cobrarle)', async () => {
+  await db.exec('reset role;');
+  const [n] = await q("insert into negocios (slug, nombre) values ('pan-sol', 'Pan del Sol') returning empresa_id");
+  assert.ok(n.empresa_id);
+  assert.equal((await q('select nombre from empresas where id = $1', [n.empresa_id]))[0].nombre, 'Pan del Sol');
+  await db.exec("delete from negocios where slug = 'pan-sol'");
 });
 await caso('solo el admin ve y registra mensualidades', async () => {
   const emp = await empLuna();

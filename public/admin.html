@@ -45,6 +45,7 @@
       <button class="tab" role="tab" data-tab="stats" aria-selected="false">Estadísticas</button>
       <button class="tab" role="tab" data-tab="entradas" aria-selected="false">Entradas</button>
       <button class="tab" role="tab" data-tab="catalogo" aria-selected="false">Catálogo</button>
+      <button class="tab" role="tab" data-tab="cobros" aria-selected="false">Mensualidades</button>
     </nav>
 
     <!-- NEGOCIOS -->
@@ -134,6 +135,15 @@
         <div class="n-herramientas"><button class="n-btn principal" id="i-importar">Importar</button></div>
       </div>
       <div id="i-resultado"></div>
+    </section>
+
+    <!-- MENSUALIDADES (Fase 7): vencido + días de gracia → el portal y los tags se apagan solos -->
+    <section id="tab-cobros" hidden>
+      <div class="n-tabla-caja"><table class="n-tabla">
+        <thead><tr><th>Empresa</th><th>Negocios</th><th>Pagado hasta</th><th>Gracia</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="lista-cobros"><tr><td colspan="6"><div class="n-cargando"></div></td></tr></tbody>
+      </table></div>
+      <p class="n-ayuda">Si pasa la fecha y se acaban los días de gracia, el portal y los tags muestran "inactivo". Registrar el pago los prende al instante.</p>
     </section>
 
     <!-- CATÁLOGO (máquinas, clases y, en la Fase 5, la carta) -->
@@ -346,6 +356,7 @@ const SECCIONES = {
   stats: ['Estadísticas', 'Cómo usan los clientes cada portal.'],
   entradas: ['Entradas', 'Importa el registro del torniquete o del huellero (CSV).'],
   catalogo: ['Catálogo', 'Máquinas, clases y productos de cada negocio.'],
+  cobros: ['Mensualidades', 'Quién está al día, quién vence pronto y quién está apagado.'],
 };
 
 document.querySelectorAll('.nom-marca').forEach((e) => (e.textContent = cfg.marca));
@@ -405,6 +416,7 @@ document.querySelectorAll('.tab').forEach((b) =>
     $('#nuevo-negocio').hidden = b.dataset.tab !== 'negocios';
     if (b.dataset.tab === 'stats') cargarStats();
     if (b.dataset.tab === 'catalogo') catalogo.cargar();
+    if (b.dataset.tab === 'cobros') cargarCobros();
   })
 );
 
@@ -741,6 +753,42 @@ $('#b-imprimir').addEventListener('click', () => {
 });
 
 // ---------------- Estadísticas ----------------
+// ---------------- Mensualidades ----------------
+const ESTADO_PAGO = {
+  al_dia: (d) => ['ok', 'Al día'],
+  por_vencer: (d) => ['aviso', d === 0 ? 'Vence hoy' : `Vence en ${d} ${d === 1 ? 'día' : 'días'}`],
+  gracia: (d) => ['aviso', `Vencido · se apaga en ${d} ${d === 1 ? 'día' : 'días'}`],
+  vencido: (d) => ['alerta', 'Vencido · portal apagado'],
+};
+async function cargarCobros() {
+  const tb = $('#lista-cobros');
+  const { data, error: err } = await sb.rpc('mensualidades_admin');
+  tb.textContent = '';
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+  if (err) { const td = el('td', '', 'No se pudieron cargar: ' + err.message); td.colSpan = 6; tb.append(el('tr')); tb.firstChild.append(td); return; }
+  if (!data.length) { const td = el('td', 'n-vacio', 'Aún no hay empresas: se crean solas al crear un negocio.'); td.colSpan = 6; tb.append(el('tr')); tb.firstChild.append(td); return; }
+  for (const e of data) {
+    const tr = el('tr');
+    tr.dataset.empresa = e.id;
+    const vence = el('input'); vence.type = 'date'; vence.value = e.vence || ''; vence.setAttribute('aria-label', 'Pagado hasta');
+    const gracia = el('input'); gracia.type = 'number'; gracia.min = 0; gracia.max = 60; gracia.value = e.dias_gracia; gracia.style.width = '70px'; gracia.setAttribute('aria-label', 'Días de gracia');
+    const guardar = async () => {
+      const { error: er } = await sb.from('empresas').update({ vence: vence.value || null, dias_gracia: Math.max(0, Math.min(60, +gracia.value || 0)) }).eq('id', e.id);
+      toast(er ? 'No se guardó: ' + er.message : 'Guardado'); cargarCobros();
+    };
+    vence.addEventListener('change', guardar); gracia.addEventListener('change', guardar);
+    const [clase, texto] = ESTADO_PAGO[e.estado.estado](e.estado.dias);
+    const pagar = el('button', 'n-btn secundario chico', 'Registrar pago · 1 mes');
+    pagar.addEventListener('click', async () => {
+      const { data: v, error: er } = await sb.rpc('registrar_pago', { p_empresa: e.id, p_meses: 1 });
+      toast(er ? 'No se registró: ' + er.message : `Pago registrado · pagado hasta ${v}`); cargarCobros();
+    });
+    const celdas = [el('b', '', e.nombre), el('span', '', e.negocios.map((n) => n.nombre).join(', ') || '—'), vence, gracia, el('span', 'n-estado ' + clase, texto), pagar];
+    for (const c of celdas) { const td = el('td'); td.append(c); tr.append(td); }
+    tb.append(tr);
+  }
+}
+
 async function cargarStats() {
   const id = $('#s-negocio').value;
   const cont = $('#s-contenido');

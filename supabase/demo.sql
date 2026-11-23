@@ -106,20 +106,21 @@ on conflict (id) do nothing;
 update public.negocios set pin_caja_hash = extensions.crypt('1234', extensions.gen_salt('bf'))
 where id in ('d0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000000a2') and pin_caja_hash is null;
 
--- Fotos (ilustraciones) de los platos de la demo, servidas por el propio sitio. Solo si el plato aún no tiene foto.
+-- Fotos de los platos de la demo (renders 3D de Blender, scripts/platos_blender.py), servidas por el propio sitio.
+-- Solo si el plato no tiene foto o tiene la ilustración vieja (.svg): nunca pisa una foto subida.
 update public.productos p set foto_url = v.foto
 from (values
-  ('d0000000-0000-4000-8000-00000000a001', '/assets/demo/calentado.svg'),
-  ('d0000000-0000-4000-8000-00000000a002', '/assets/demo/tostada-aguacate.svg'),
-  ('d0000000-0000-4000-8000-00000000a003', '/assets/demo/huevos-rancheros.svg'),
-  ('d0000000-0000-4000-8000-00000000a004', '/assets/demo/changua.svg'),
-  ('d0000000-0000-4000-8000-00000000a005', '/assets/demo/capuchino.svg'),
-  ('d0000000-0000-4000-8000-00000000a006', '/assets/demo/tinto.svg'),
-  ('d0000000-0000-4000-8000-00000000a007', '/assets/demo/cafe-filtrado.svg'),
-  ('d0000000-0000-4000-8000-00000000a008', '/assets/demo/chocolate.svg'),
-  ('d0000000-0000-4000-8000-00000000a009', '/assets/demo/torta-chocolate.svg'),
-  ('d0000000-0000-4000-8000-00000000a010', '/assets/demo/croissant.svg'),
-  ('d0000000-0000-4000-8000-00000000a011', '/assets/demo/galleta-avena.svg'),
-  ('d0000000-0000-4000-8000-00000000a012', '/assets/demo/natas.svg')
+  ('d0000000-0000-4000-8000-00000000a001', '/assets/demo/calentado.webp'),
+  ('d0000000-0000-4000-8000-00000000a002', '/assets/demo/tostada-aguacate.webp'),
+  ('d0000000-0000-4000-8000-00000000a003', '/assets/demo/huevos-rancheros.webp'),
+  ('d0000000-0000-4000-8000-00000000a004', '/assets/demo/changua.webp'),
+  ('d0000000-0000-4000-8000-00000000a005', '/assets/demo/capuchino.webp'),
+  ('d0000000-0000-4000-8000-00000000a006', '/assets/demo/tinto.webp'),
+  ('d0000000-0000-4000-8000-00000000a007', '/assets/demo/cafe-filtrado.webp'),
+  ('d0000000-0000-4000-8000-00000000a008', '/assets/demo/chocolate.webp'),
+  ('d0000000-0000-4000-8000-00000000a009', '/assets/demo/torta-chocolate.webp'),
+  ('d0000000-0000-4000-8000-00000000a010', '/assets/demo/croissant.webp'),
+  ('d0000000-0000-4000-8000-00000000a011', '/assets/demo/galleta-avena.webp'),
+  ('d0000000-0000-4000-8000-00000000a012', '/assets/demo/natas.webp')
 ) as v(id, foto)
-where p.id = v.id::uuid and p.foto_url is null;
+where p.id = v.id::uuid and (p.foto_url is null or p.foto_url like '/assets/demo/%.svg');

@@ -337,7 +337,7 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 /* "Lo más pedido": carrusel con fotos grandes arriba de la carta (como me&u) */
 .pt-populares { margin: 18px calc(-1 * var(--e-24)) 6px; }
 .pt-populares > h2 { padding: 0 var(--e-24); margin: 0 0 10px; }
-.pt-carrusel { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px var(--e-24) 14px; scrollbar-width: none; }
+.pt-carrusel { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--e-24); padding: 4px var(--e-24) 14px; scrollbar-width: none; }
 .pt-carrusel::-webkit-scrollbar { display: none; }
 .pt-pop { flex: none; width: 168px; scroll-snap-align: start; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .pt-pop img { display: block; width: 168px; height: 168px; border-radius: 22px; object-fit: cover; background: var(--papel-hondo);
@@ -357,3 +357,4 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .pt-parada.abajo small { order: 2; height: auto; align-items: flex-start; }
 .pt-parada.lograda span { background: var(--oro); border-color: var(--oro); }
 .pt-parada.lograda small { color: var(--oro-tinta); }
+.pt-parada:not(.abajo) span { margin-top: 0; }   /* con la etiqueta arriba (26px + 4px), el punto ya cae sobre la pista */
