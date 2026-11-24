@@ -45,7 +45,7 @@ export async function onRequestGet({ params, request, env }) {
     <div class="pt-neg pt-versalitas" id="t-neg">${esc(n.nombre)}</div>
     <h1 id="t-hola">Hola</h1>
     <div class="pt-filete" aria-hidden="true"><i></i></div>
-    <div class="pt-saldo" id="t-saldo"><div><b id="t-numero">0</b><span>${plural}</span></div></div>
+    <div class="pt-saldo" id="t-saldo"><div><b id="t-numero">0</b><span>${plural}</span><em class="pt-regalo" id="t-regalo" hidden></em></div></div>
     <p class="pt-frase" id="t-frase"></p>
     <div class="pt-camino" id="t-camino" aria-hidden="true" hidden></div>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>
@@ -59,6 +59,7 @@ export async function onRequestGet({ params, request, env }) {
     <h2>Mi código</h2>
     <div class="pt-qr" id="qr"></div>
     <p>Muéstraselo al cajero</p>
+    <p class="pt-espera" id="t-espera"><i aria-hidden="true"></i>Tus ${plural} aparecen aquí apenas te las sume</p>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <div class="pt-fondo" hidden></div>

@@ -17,7 +17,7 @@
     <form id="form-login" class="n-tarjeta n-form">
       <div><h1 id="l-titulo">Tu panel</h1><p id="l-sub">Entra con el correo que le diste a Nef.</p></div>
       <div class="n-campo"><label for="l-email">Correo</label><input type="email" id="l-email" autocomplete="username" required></div>
-      <div class="n-campo"><label for="l-clave">Contraseña</label><input type="password" id="l-clave" autocomplete="current-password" minlength="8" required></div>
+      <div class="n-campo n-clave"><label for="l-clave">Contraseña</label><div><input type="password" id="l-clave" autocomplete="current-password" minlength="8" required><button type="button" class="n-ver" aria-pressed="false" aria-label="Mostrar contraseña">Ver</button></div></div>
       <button type="submit" class="n-btn ancho" id="l-enviar">Entrar</button>
       <div class="n-aviso" id="l-aviso" hidden></div>
       <button type="button" class="n-btn fantasma chico" id="l-modo">¿Primera vez? Crea tu cuenta</button>
@@ -45,6 +45,7 @@
     <span class="n-espacio"></span>
     <div class="n-sede" id="sede-caja" hidden><select id="sede" aria-label="Sede"></select></div>
     <span class="n-negocio" id="sede-nombre"></span>
+    <button class="n-btn fantasma chico" id="guia">Guía</button>
     <button class="n-btn fantasma chico" id="salir">Salir</button>
   </header>
 
@@ -205,5 +206,6 @@
 
 <div class="n-toast" id="toast" role="status"></div>
 <script type="module" src="/assets/panel/panel.js"></script>
+<script type="module" src="/assets/ver-clave.js"></script>
 </body>
 </html>

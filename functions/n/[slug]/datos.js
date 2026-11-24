@@ -48,7 +48,7 @@ export async function onRequestGet({ params, request, env }) {
   <h2>Tus derechos</h2>
   <p>Puedes conocer, actualizar, corregir y pedir que borremos tus datos, y revocar esta autorización cuando quieras
   (Ley 1581 de 2012). ${contacto ? `Escríbele a ${nombre} por <a href="${esc(contacto)}">WhatsApp</a> o pídelo en la caja.` : `Pídelo en la caja de ${nombre}.`}
-  Responderemos en máximo 15 días hábiles. También puedes acudir a la Superintendencia de Industria y Comercio.</p>
+  Respondemos las consultas en máximo 10 días hábiles y los reclamos en máximo 15 (Ley 1581, arts. 14 y 15). También puedes acudir a la Superintendencia de Industria y Comercio.</p>
 
   <h2>Condiciones del club</h2>
   <ul>

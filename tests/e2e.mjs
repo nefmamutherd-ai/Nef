@@ -46,7 +46,7 @@ await caso('login', async () => {
   await panel.waitForSelector('#login:not(.oculto)');
   await panel.fill('#l-email', 'admin@prueba.co');
   await panel.fill('#l-clave', 'clave123');
-  await panel.click('#form-login button');
+  await panel.click('#form-login button[type=submit]');
   await panel.waitForSelector('#app:not(.oculto)');
 });
 await caso('crear negocio', async () => {
@@ -272,7 +272,9 @@ await caso('club: inscribirse en el celular → tarjeta con 0 y bienvenida pendi
   await p.click('#r-unirme');
   await p.waitForSelector('#tarjeta:not([hidden])');
   assert.equal(await p.textContent('#t-numero'), '0');
-  assert.match(await p.textContent('#t-aviso'), /50 de bienvenida se activan en tu primera visita/);
+  assert.equal(await p.textContent('#t-regalo'), '+50 de regalo', 'la bienvenida pendiente se ve en el aro');
+  assert.match(await p.textContent('#t-frase'), /En tu primera compra se activan tus 50 monedas de bienvenida/);
+  assert.equal(await p.isVisible('#t-aviso'), false, 'sin aviso repetido');
   await sinScrollHorizontal(p);
   await p.screenshot({ path: DIR + 'club-tarjeta.png', fullPage: true });
   await p.reload();
@@ -688,6 +690,10 @@ console.log('Fase 8 · panel del dueño');
     await p.click('#l-modo');
     await p.fill('#l-email', correo);
     await p.fill('#l-clave', 'clave123');
+    await p.click('.n-clave .n-ver');
+    assert.equal(await p.getAttribute('#l-clave', 'type'), 'text', '"Ver" muestra la contraseña');
+    await p.click('.n-clave .n-ver');
+    assert.equal(await p.getAttribute('#l-clave', 'type'), 'password', '"Ocultar" la esconde otra vez');
     await p.click('#l-enviar');
     await p.waitForSelector('#sin-acceso:not([hidden])');
     assert.equal(await p.textContent('#sa-email'), correo);
@@ -718,6 +724,25 @@ console.log('Fase 8 · panel del dueño');
   await caso('cada dueño ve SOLO lo suyo: resumen, catálogo, club e informes', async () => {
     await ana.reload();
     await ana.waitForSelector('#app:not([hidden])');
+    // Guía: sale sola la primera vez; Ana la recorre completa (en celular, tarjeta abajo)
+    await ana.waitForSelector('.n-guia-capa:not([hidden])');
+    let pasos = 0, vioAgotado = false;
+    while (pasos++ < 20) {
+      const titulo = await ana.textContent('#guia-titulo');
+      if (titulo === '¿Se acabó algo?') { vioAgotado = true; await ana.waitForTimeout(500); await ana.screenshot({ path: DIR + 'panel_guia_movil.png' }); }
+      if ((await ana.textContent('#guia-siguiente')) === 'Listo') { await ana.click('#guia-siguiente'); break; }
+      await ana.click('#guia-siguiente');
+    }
+    assert.ok(vioAgotado, 'la guía explica dónde marcar Agotado hoy');
+    assert.equal(await ana.isVisible('.n-guia-capa'), false, 'Listo cierra la guía');
+    assert.equal(await ana.textContent('#titulo-seccion'), 'Café de Ana', 'vuelve al resumen');
+    await ana.reload();
+    await ana.waitForSelector('#app:not([hidden])');
+    await ana.waitForTimeout(1000);
+    assert.equal(await ana.isVisible('.n-guia-capa'), false, 'la segunda vez no sale sola');
+    await ana.click('#guia');
+    await ana.waitForSelector('.n-guia-capa:not([hidden])');
+    await ana.click('#guia-saltar');
     assert.equal(await ana.textContent('#titulo-seccion'), 'Café de Ana');
     assert.equal(await ana.isVisible('#sede-caja'), false, 'una sola sede: sin selector');
     await ana.waitForSelector('#r-stats .n-kpi');
@@ -749,6 +774,10 @@ console.log('Fase 8 · panel del dueño');
 
     await beto.reload();
     await beto.waitForSelector('#app:not([hidden])');
+    await beto.waitForSelector('.n-guia-capa:not([hidden])');
+    await beto.waitForTimeout(600);
+    await beto.screenshot({ path: DIR + 'panel_guia_escritorio.png' });
+    await beto.click('#guia-saltar');
     assert.equal(await beto.textContent('#titulo-seccion'), 'Gym de Beto');
     await beto.click('.tab[data-tab=catalogo]');
     await beto.waitForSelector('#lista-productos tr:has-text("Batido de Beto")');

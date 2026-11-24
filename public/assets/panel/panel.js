@@ -7,6 +7,7 @@ import { montarCatalogo } from '/assets/admin-catalogo.js';
 import { montarImportador } from '/assets/importar.js';
 import { pintarEnRiesgo } from '/assets/panel/en-riesgo.js';
 import { montarClub } from '/assets/panel/club.js';
+import { montarTutorial } from '/assets/panel/tutorial.js';
 
 const cfg = window.TOQUE || {};
 const sb = createClient(cfg.url, cfg.anon);
@@ -92,6 +93,7 @@ async function iniciar() {
   const recordada = leer();
   elegir(negocios.find((n) => n.id === recordada) || negocios[0]);
   mostrar('app');
+  guia.primeraVez();
 }
 $('#sede').addEventListener('change', () => elegir(negocios.find((n) => n.id === $('#sede').value)));
 
@@ -140,6 +142,13 @@ async function cargarStats() {
 $('#dias').addEventListener('change', cargarStats);
 
 // ---------------- Catálogo, club e importador (módulos compartidos) ----------------
+// Guía paso a paso: sola la primera vez; el botón "Guía" la repite
+const guia = montarTutorial({
+  ir,
+  pestanaVisible: (tab) => (tab === 'entradas' ? !!actual && actual.sector === 'gimnasio' : !document.querySelector(`.tab[data-tab="${tab}"]`).hidden),
+});
+$('#guia').addEventListener('click', () => guia.abrir());
+
 const catalogo = montarCatalogo({ sb, toast, esc, negocioActual: () => actual && actual.id, alCambiar: () => {} });
 const club = montarClub({ sb, toast, esc, negocio: () => actual, alCambiarPin: (n) => { n.tiene_pin = true; } });
 montarImportador({ sb, toast, negocioActual: () => actual && actual.id, negocios: () => negocios, alTerminar: cargarStats });

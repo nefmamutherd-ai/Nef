@@ -177,3 +177,31 @@ p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 .n-premio-pie .costo { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .n-premio-pie .n-interruptor { padding: 0; border: 0; gap: 8px; }
 .n-tarjeta + .n-tabla-caja, .n-tarjeta + .n-tarjeta { margin-top: 16px; }
+/* Campo de contraseña con botón "Ver" adentro (login de /panel y /admin) */
+.n-clave > div { position: relative; }
+.n-clave input { padding-right: 84px; }
+.n-ver { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--n-arena); color: var(--n-tinta); font: 600 14px var(--n-texto); cursor: pointer; }
+.n-ver:focus-visible { outline: 2px solid var(--n-tinta); outline-offset: 2px; }
+
+/* ── Guía paso a paso (panel del dueño): foco que resalta + tarjeta con el paso ── */
+.n-guia-capa { position: fixed; inset: 0; z-index: 50; }
+.n-guia-foco { position: fixed; left: 0; top: 0; border-radius: 14px; box-shadow: 0 0 0 200vmax rgba(31, 27, 23, .58); outline: 2px solid var(--n-mandarina); outline-offset: 0;
+  transition: transform .25s var(--n-ease, ease), width .25s ease, height .25s ease; pointer-events: none; }
+.n-guia-foco[hidden] + .n-guia, .n-guia[data-lugar="centro"] { box-shadow: 0 0 0 200vmax rgba(31, 27, 23, .58), 0 20px 50px -20px rgba(0, 0, 0, .5); }
+.n-guia { position: fixed; z-index: 51; width: min(360px, calc(100vw - 32px)); padding: 20px; border-radius: 18px; background: var(--n-blanco); color: var(--n-tinta);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .5); }
+.n-guia[data-lugar="centro"] { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.n-guia[data-lugar="abajo"] { left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: auto; }
+.n-guia h2 { margin: 4px 0 6px; font: 800 20px/1.2 var(--n-titulos); }
+.n-guia p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--n-gris); }
+.n-guia-cuenta { font: 700 12px var(--n-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--n-mandarina); }
+.n-guia-puntos { display: flex; gap: 5px; margin: 14px 0 12px; }
+.n-guia-puntos i { width: 6px; height: 6px; border-radius: 3px; background: var(--n-arena); transition: width .2s ease, background .2s ease; }
+.n-guia-puntos i.activo { width: 18px; background: var(--n-mandarina); }
+.n-guia-acciones { display: flex; align-items: center; gap: 8px; }
+.n-guia-acciones .n-espacio { flex: 1; }
+.n-guia.entra { animation: n-guia-entra .25s cubic-bezier(.2, .8, .2, 1); }
+.n-guia[data-lugar="centro"].entra { animation-name: n-guia-entra-centro; }
+@keyframes n-guia-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes n-guia-entra-centro { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } to { opacity: 1; transform: translate(-50%, -50%); } }
+@media (max-width: 639px) { body.n-guiando .n-contenido { padding-bottom: 75vh; } } /* que lo resaltado pueda subir por encima de la tarjeta de la guía */

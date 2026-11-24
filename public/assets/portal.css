@@ -411,3 +411,47 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .pt-rollo div { gap: 12px; font-size: 17px; line-height: 1.12; }
 .pt-rollo div > span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .pt-rollo img, .pt-rollo .pt-sin-foto { width: 50px; height: 50px; }
+
+/* ── Club: tarjeta viva (regalo que espera, monedas que caen, "+N", siguiente parada) ── */
+.pt-club .pt-saldo { position: relative; isolation: isolate; }
+.pt-saldo > div:first-child { position: relative; z-index: 2; }
+/* Tramo fantasma del aro: la bienvenida que espera (palpita); --fantasma 0–100 */
+.pt-saldo::before, .pt-saldo::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 1;
+  -webkit-mask: radial-gradient(closest-side, transparent 87%, #000 88%); mask: radial-gradient(closest-side, transparent 87%, #000 88%); opacity: 0; }
+.pt-saldo.con-regalo::before { opacity: .55; animation: pt-respira 1.8s ease-in-out infinite;
+  background: conic-gradient(from -90deg, transparent calc(var(--progreso) * 1%), var(--oro) 0 calc(var(--fantasma, 0) * 1%), transparent 0); }
+/* Brillo que recorre el aro cuando ya alcanza para un premio */
+.pt-saldo.listo::after { opacity: 1; animation: pt-gira 3.2s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0 78%, rgba(255, 255, 255, .7) 87%, transparent 95%); }
+@keyframes pt-respira { 0%, 100% { opacity: .3; } 50% { opacity: .75; } }
+@keyframes pt-gira { to { transform: rotate(1turn); } }
+.pt-regalo { display: block; margin-top: 8px; font: 700 15px var(--sans); font-style: normal; color: var(--oro-tinta); animation: pt-sube .5s cubic-bezier(.2, .8, .2, 1) both .3s; }
+/* Monedas que caen al centro del aro */
+.pt-lluvia { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 3; pointer-events: none; }
+.pt-lluvia i { position: absolute; left: -13px; top: -13px; width: 26px; height: 26px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle at 35% 30%, #fff6 0 18%, transparent 19%), radial-gradient(circle, var(--oro) 0 54%, color-mix(in srgb, var(--oro) 70%, #000) 55% 64%, var(--oro) 65%);
+  animation: pt-cae .9s cubic-bezier(.45, 0, .6, 1) forwards; }
+@keyframes pt-cae { 0% { opacity: 0; transform: translate(var(--x), -230px) scale(.9) rotate(0); } 15% { opacity: 1; }
+  80% { opacity: 1; transform: translate(calc(var(--x) * .15), -6px) scale(.75) rotate(200deg); } 100% { opacity: 0; transform: translate(0, 0) scale(.3) rotate(260deg); } }
+/* "+70" que sube sobre el aro */
+.pt-mas { position: absolute; left: 50%; top: -6px; z-index: 4; transform: translateX(-50%); pointer-events: none; padding: 6px 14px; border-radius: var(--r-pildora);
+  background: var(--oro); color: #fff; font: 800 22px var(--sans); font-variant-numeric: tabular-nums; animation: pt-flota 2.1s cubic-bezier(.2, .8, .2, 1) forwards; }
+@keyframes pt-flota { 0% { opacity: 0; transform: translate(-50%, 18px) scale(.6); } 18% { opacity: 1; transform: translate(-50%, -6px) scale(1.12); }
+  30% { transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -34px) scale(1); } }
+/* Onda dorada al terminar de contar */
+.pt-onda { position: absolute; inset: 0; border-radius: 50%; z-index: 0; pointer-events: none; border: 6px solid var(--oro); animation: pt-expande .8s cubic-bezier(.2, .8, .2, 1) forwards; }
+@keyframes pt-expande { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(1.28); } }
+/* Camino: la bienvenida como tramo fantasma y la siguiente parada que llama */
+.pt-pista { overflow: visible; }
+.pt-pista i { position: absolute; left: 0; top: 0; }
+.pt-pista i.fantasma { background: var(--oro); opacity: .35; animation: pt-respira 1.8s ease-in-out infinite; transition: none; }
+.pt-parada span { position: relative; }
+.pt-parada.siguiente span::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--oro); animation: pt-llama 1.8s ease-out infinite; }
+@keyframes pt-llama { 0% { opacity: .8; transform: scale(.6); } 100% { opacity: 0; transform: scale(1.6); } }
+/* En el código: "esperando al cajero" con un punto que late */
+.pt-espera { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: var(--tinta-2); }
+.pt-espera i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: pt-respira 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .pt-saldo.con-regalo::before, .pt-saldo.listo::after, .pt-pista i.fantasma, .pt-parada.siguiente span::after, .pt-espera i { animation: none; }
+  .pt-saldo.listo::after { opacity: 0; }
+}

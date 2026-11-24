@@ -157,3 +157,15 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Aplicado en el Supabase real (2026-11-23): esquema.sql + storage.sql + correo de admin (archivo privado en `_local`, no en el repo). Comprobado: RLS en todas las tablas, anon sin `panel_negocios`, interruptor encendido.
 - Pedidos de Jacobo para después: tarjeta del club más llamativa (las 50 monedas de bienvenida no se notaron), QR de compra
   desde la caja (productos → monedas), mejorar los renders de croissant, natas y changua, realidad aumentada de platos.
+
+### 2026-11-23 (noche) · Pedidos de Jacobo después de la Fase 8
+- **Tarjeta del club viva**: "+50 de regalo" en el aro con tramo que palpita, frase "con eso ya te alcanza para…", monedas que
+  caen y "+N" al ganar (también al inscribirse), brillo cuando alcanza un premio, siguiente parada que llama. Mientras el
+  código está abierto, la tarjeta se actualiza sola cuando el cajero suma (cada 3 s, máx. 5 min).
+- **Guía paso a paso en /panel** (sale sola la primera vez; botón "Guía" para repetirla). Explica dónde marcar "Agotado hoy".
+- **Ver la contraseña** al iniciar sesión (/panel y /admin). **"Entrar"** en el menú de la portada → /panel.
+- Página de datos: plazos corregidos (consultas 10 días hábiles, reclamos 15).
+- Ojo: la prueba "importar entradas" a veces pasa los 2 min en el Supabase simulado cuando el PC está cargado (recalcular es lento
+  en pglite); repetirla pasa. No es un problema de producción.
+- Pendiente legal (decide Jacobo): los textos siguen marcados "Plantilla — revisar con abogado"; faltan NIT, dirección y correo
+  de cada negocio en su página de datos, y la política de privacidad / términos propios de Nef (cuentas del panel, portada).

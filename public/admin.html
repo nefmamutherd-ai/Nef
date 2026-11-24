@@ -18,7 +18,7 @@
     <form id="form-login" class="n-tarjeta n-form">
       <div><h1>Panel de <span class="nom-marca">Nef</span></h1></div>
       <div class="n-campo"><label for="l-email">Correo</label><input type="email" id="l-email" autocomplete="username" required></div>
-      <div class="n-campo"><label for="l-clave">Contraseña</label><input type="password" id="l-clave" autocomplete="current-password" required></div>
+      <div class="n-campo n-clave"><label for="l-clave">Contraseña</label><div><input type="password" id="l-clave" autocomplete="current-password" required><button type="button" class="n-ver" aria-pressed="false" aria-label="Mostrar contraseña">Ver</button></div></div>
       <button type="submit" class="n-btn ancho">Entrar</button>
       <div class="n-aviso alerta" id="l-error" hidden></div>
     </form>
@@ -906,5 +906,6 @@ $('#i-negocio').addEventListener('change', () => importador.reiniciar());
 
 iniciar();
 </script>
+<script type="module" src="/assets/ver-clave.js"></script>
 </body>
 </html>
