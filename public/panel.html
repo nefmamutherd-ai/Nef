@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tu panel · Nef</title>
+<link rel="stylesheet" href="/assets/nef-ui.css">
+<script src="/api/config"></script>
+</head>
+<body class="nef">
+
+<!-- ============ ENTRAR / CREAR CUENTA ============ -->
+<main id="login" class="n-contenido" hidden>
+  <div class="n-entrar">
+    <img class="n-logo" src="/assets/marca/logo-nef.svg" alt="nef" width="80" height="30">
+    <form id="form-login" class="n-tarjeta n-form">
+      <div><h1 id="l-titulo">Tu panel</h1><p id="l-sub">Entra con el correo que le diste a Nef.</p></div>
+      <div class="n-campo"><label for="l-email">Correo</label><input type="email" id="l-email" autocomplete="username" required></div>
+      <div class="n-campo"><label for="l-clave">Contraseña</label><input type="password" id="l-clave" autocomplete="current-password" minlength="8" required></div>
+      <button type="submit" class="n-btn ancho" id="l-enviar">Entrar</button>
+      <div class="n-aviso" id="l-aviso" hidden></div>
+      <button type="button" class="n-btn fantasma chico" id="l-modo">¿Primera vez? Crea tu cuenta</button>
+    </form>
+  </div>
+</main>
+
+<!-- ============ SIN ACCESO TODAVÍA ============ -->
+<main id="sin-acceso" class="n-contenido" hidden>
+  <div class="n-entrar">
+    <img class="n-logo" src="/assets/marca/logo-nef.svg" alt="nef" width="80" height="30">
+    <div class="n-tarjeta n-vacio">
+      <b>Tu cuenta está lista</b>
+      <span>Ahora Nef tiene que conectarla con tu negocio. Envíales este correo: <strong id="sa-email"></strong></span>
+      <a class="n-btn" id="sa-admin" href="/admin" hidden>Ir al admin</a>
+      <button type="button" class="n-btn fantasma chico" id="sa-salir">Salir</button>
+    </div>
+  </div>
+</main>
+
+<!-- ============ PANEL ============ -->
+<div id="app" hidden>
+  <header class="n-barra">
+    <img class="n-logo" src="/assets/marca/logo-nef.svg" alt="nef" width="70" height="26">
+    <span class="n-espacio"></span>
+    <div class="n-sede" id="sede-caja" hidden><select id="sede" aria-label="Sede"></select></div>
+    <span class="n-negocio" id="sede-nombre"></span>
+    <button class="n-btn fantasma chico" id="salir">Salir</button>
+  </header>
+
+  <main class="n-contenido">
+    <div class="n-encabezado">
+      <div><div class="n-etiqueta" id="empresa"></div><h1 id="titulo-seccion">Resumen</h1><p id="sub-seccion"></p></div>
+      <div class="n-campo" id="periodo-caja"><label for="dias">Periodo</label>
+        <select id="dias"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select></div>
+    </div>
+    <div class="n-aviso alerta" id="apagado" hidden>Tu portal está apagado: hay una mensualidad pendiente. Escríbele a Nef para prenderlo.</div>
+    <nav class="n-pestanas" role="tablist">
+      <button class="tab" role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
+      <button class="tab" role="tab" data-tab="clientes" aria-selected="false">Clientes</button>
+      <button class="tab" role="tab" data-tab="catalogo" aria-selected="false">Catálogo</button>
+      <button class="tab" role="tab" data-tab="club" aria-selected="false">Club</button>
+      <button class="tab" role="tab" data-tab="informes" aria-selected="false">Informes</button>
+    </nav>
+
+    <!-- RESUMEN -->
+    <section id="tab-resumen">
+      <div id="r-stats"><div class="n-tarjeta"><div class="n-cargando"></div></div></div>
+      <div id="r-riesgo"></div>
+    </section>
+
+    <!-- CLIENTES: en riesgo + importar entradas (gimnasio) -->
+    <section id="tab-clientes" hidden>
+      <div id="c-riesgo"></div>
+      <div id="c-entradas" hidden>
+        <h2>Entradas del torniquete</h2>
+        <label class="n-subir" id="i-subir"><input type="file" id="i-archivo" accept=".csv,text/csv,text/plain" hidden>
+          <b>Sube el CSV de entradas</b><span>Lo exportas desde el torniquete o el huellero. Separado por comas o punto y coma.</span></label>
+        <div id="i-paso2" hidden>
+          <div class="n-tarjeta">
+            <h2>Vista previa</h2><p id="i-resumen"></p>
+            <div class="n-tabla-caja"><table class="n-tabla" id="i-previa"></table></div>
+          </div>
+          <div class="n-tarjeta n-form" id="i-mapeo"><h2>¿Qué es cada columna?</h2></div>
+          <div class="n-herramientas"><button class="n-btn principal" id="i-importar">Importar</button></div>
+        </div>
+        <div id="i-resultado"></div>
+      </div>
+    </section>
+
+    <!-- CATÁLOGO -->
+    <section id="tab-catalogo" hidden>
+      <div class="n-herramientas">
+        <p class="n-ayuda">"Agotado hoy" se marca de un toque y el portal lo muestra al instante.</p>
+        <span class="n-espacio"></span>
+        <button class="n-btn" id="k-nuevo">Agregar</button>
+      </div>
+      <div class="n-tarjeta" id="k-categorias">
+        <h2>Categorías de la carta</h2>
+        <div class="n-herramientas">
+          <div class="n-campo"><label for="k-cat-nueva">Nueva categoría</label><input id="k-cat-nueva" maxlength="60" placeholder="Desayunos"></div>
+          <button class="n-btn secundario" id="k-cat-agregar">Agregar categoría</button>
+        </div>
+        <ul class="n-lista" id="k-cat-lista"></ul>
+      </div>
+      <div class="n-tabla-caja"><table class="n-tabla">
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Agotado hoy</th><th>Activo</th><th></th></tr></thead>
+        <tbody id="lista-productos"></tbody>
+      </table></div>
+    </section>
+
+    <!-- CLUB: premios, devolución y PIN de la caja -->
+    <section id="tab-club" hidden>
+      <div class="n-rejilla dos">
+        <div class="n-tarjeta n-form">
+          <h2>Premios</h2>
+          <p>Pones el valor en pesos; Nef calcula cuántas monedas cuesta.</p>
+          <ul class="n-lista n-premios" id="lista-premios"></ul>
+          <div class="n-fila">
+            <div class="n-campo"><label for="p-nombre">Nuevo premio</label><input id="p-nombre" maxlength="80" placeholder="Un café gratis"></div>
+            <div class="n-campo"><label for="p-valor">Valor en pesos</label><input id="p-valor" type="number" min="100" step="100" placeholder="4000"></div>
+          </div>
+          <button type="button" class="n-btn secundario" id="p-agregar">Agregar premio</button>
+        </div>
+        <div class="n-rejilla">
+          <div class="n-tarjeta" id="devolucion"></div>
+          <form class="n-tarjeta n-form" id="form-pin">
+            <h2>PIN de la caja</h2>
+            <p id="pin-estado"></p>
+            <div class="n-campo"><label for="pin">PIN nuevo (4 a 6 números)</label><input id="pin" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6" autocomplete="off" required></div>
+            <button type="submit" class="n-btn">Guardar PIN</button>
+            <p class="n-ayuda">Cambiarlo cierra la caja en los celulares donde esté abierta.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- INFORMES -->
+    <section id="tab-informes" hidden>
+      <div class="n-tarjeta">
+        <h2>Informes del estudio</h2>
+        <p>El análisis trimestral de tus datos, en lenguaje simple.</p>
+        <ul class="n-lista" id="lista-informes"></ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ FORMULARIO PRODUCTO (mismo del admin: /assets/admin-catalogo.js) ============ -->
+<dialog id="dlg-producto" class="n-dialogo">
+  <form id="form-producto" class="n-form" method="dialog">
+    <h2 id="k-titulo">Agregar</h2>
+    <div class="n-campo"><label>Tipo</label>
+      <div class="n-opciones">
+        <label><input type="radio" name="tipo" value="maquina" checked><span>Máquina</span></label>
+        <label><input type="radio" name="tipo" value="clase"><span>Clase</span></label>
+        <label><input type="radio" name="tipo" value="plato"><span>Plato</span></label>
+        <label><input type="radio" name="tipo" value="servicio"><span>Servicio</span></label>
+      </div>
+    </div>
+    <div class="n-campo"><label for="k-nombre">Nombre *</label><input id="k-nombre" name="nombre" maxlength="80" required></div>
+    <div class="n-campo"><label for="k-desc">Una línea (opcional)</label><input id="k-desc" name="descripcion" maxlength="140"></div>
+    <div data-para="plato servicio">
+      <div class="n-fila">
+        <div class="n-campo"><label for="k-precio">Precio</label><input id="k-precio" name="precio" type="number" min="0" step="100" value="0"></div>
+        <div class="n-campo"><label for="k-categoria">Categoría</label><select id="k-categoria" name="categoria_id"></select></div>
+      </div>
+      <div class="n-campo"><label>Foto (se recorta cuadrada y se guarda en WebP 1000×1000)</label>
+        <label class="n-subir"><input type="file" id="k-foto" accept="image/*" hidden><b id="k-foto-txt">Subir foto</b><span>Cuadrada, cenital o a 45°, fondo neutro, luz natural.</span></label></div>
+      <div class="n-campo"><label>Etiquetas</label>
+        <div class="n-opciones" id="k-etiquetas">
+          <label><input type="checkbox" value="dulce"><span>Dulce</span></label>
+          <label><input type="checkbox" value="salado"><span>Salado</span></label>
+          <label><input type="checkbox" value="bebida"><span>Bebida</span></label>
+          <label><input type="checkbox" value="vegetariano"><span>Vegetariano</span></label>
+          <label><input type="checkbox" value="vegano"><span>Vegano</span></label>
+          <label><input type="checkbox" value="picante"><span>Picante</span></label>
+          <label><input type="checkbox" value="sin_gluten"><span>Sin gluten</span></label>
+          <label><input type="checkbox" value="nuevo"><span>Nuevo</span></label>
+        </div>
+        <div class="n-ayuda">"Dulce", "Salado" y "Bebida" son los antojos de "Elige por mí".</div></div>
+      <label class="n-interruptor"><div><b>Destacado</b><span>Sale primero en su categoría y pesa doble en "Elige por mí"</span></div><input type="checkbox" name="destacado"></label>
+      <label class="n-interruptor"><div><b>Agotado hoy</b><span>Se ve en gris y "Elige por mí" no lo sugiere</span></div><input type="checkbox" name="agotado"></label>
+    </div>
+    <div data-para="maquina">
+      <div class="n-campo"><label for="k-video">Video (YouTube o link al archivo)</label><input id="k-video" name="video_url" type="url" placeholder="https://www.youtube.com/watch?v=…"></div>
+      <div class="n-campo"><label for="k-paso1">Paso 1</label><input id="k-paso1" name="paso1" maxlength="90"></div>
+      <div class="n-campo"><label for="k-paso2">Paso 2</label><input id="k-paso2" name="paso2" maxlength="90"></div>
+      <div class="n-campo"><label for="k-paso3">Paso 3</label><input id="k-paso3" name="paso3" maxlength="90"></div>
+    </div>
+    <div data-para="clase">
+      <div class="n-campo"><label>Horario</label></div>
+      <div id="k-horario"></div>
+      <button type="button" class="n-btn secundario chico" id="k-mas-horario">Agregar día y hora</button>
+    </div>
+    <label class="n-interruptor"><div><b>Activo</b><span>Si lo apagas, no aparece en el portal</span></div><input type="checkbox" name="activo" checked></label>
+    <div class="n-aviso alerta" id="k-error" hidden></div>
+    <div class="n-acciones">
+      <button type="button" class="n-btn peligro chico" id="k-eliminar">Eliminar</button>
+      <button type="button" class="n-btn secundario" id="k-cancelar">Cancelar</button>
+      <button type="submit" class="n-btn" id="k-guardar">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="n-toast" id="toast" role="status"></div>
+<script type="module" src="/assets/panel/panel.js"></script>
+</body>
+</html>

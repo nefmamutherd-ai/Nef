@@ -136,3 +136,24 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Capturas revisadas: `panel_mensualidades.png`, carta con "Lo más pedido", club con camino de premios, piel noche.
 - Seguridad: anon no llama `registrar_pago` ni `mensualidades_admin`; un logueado que no es admin recibe "no autorizado";
   `_negocio_habilitado` y `_estado_pago` revocadas al público.
+
+### Fase 8 · Panel del dueño — hecha
+- **Acceso por empresa**: tabla `accesos` (usuario ↔ empresa, rol dueño/gerente), `es_mi_negocio(p_negocio)` y políticas
+  `dueno_*` en productos, categorías y premios (leer/escribir), tags e informes (solo leer), empresas y accesos (solo lo suyo).
+  La tabla `negocios` **no** se abre al dueño (tiene notas, token y hash del PIN): la ve por `panel_negocios()`.
+  `stats_dueno` (con "en riesgo" y teléfonos, porque son sus clientes), `fijar_pin_caja`, `importar_entradas` y `admin_recalcular`
+  aceptan admin o dueño de ese negocio. Membresías y clientes siguen cerrados (los ve solo por las estadísticas).
+- **Admin por correo**: `admins_correos`; al **confirmar** la cuenta con un correo de la lista, queda como admin (trigger).
+- **`/panel`**: crear cuenta / entrar, "tu cuenta está lista" mientras no tenga acceso, selector de sede (solo con 2+ sedes),
+  pestañas Resumen, Clientes (en riesgo + importar entradas si es gimnasio), Catálogo, Club (premios, devolución real, PIN) e
+  Informes (PDF con URL firmada de 1 hora). Módulos compartidos con el admin en `public/assets/panel/`.
+- **Admin › Dueños**: dar acceso por correo (la persona primero crea su cuenta en /panel) y quitarlo.
+- **`/stats?k=`** sigue funcionando y muestra "Ahora entras por /panel". Interruptor `links_stats_viejos` (ver DECISIONES).
+- Guía para grabar chips: `docs/kit/GRABAR-NFC.md`.
+- Pruebas: test:sql **81 OK** (11 de aislamiento, una por tabla) · test:e2e **39 OK** (dos dueños en dos navegadores, también
+  por la API con la sesión de cada uno) · verificar ✓. El e2e ahora guarda `tests/capturas/fallo-*.png` si un caso falla.
+- Capturas revisadas: `panel_dueno_resumen_movil.png`, `panel_dueno_catalogo_movil.png`, `panel_dueno_club_movil.png`
+  (premios pasaron de tabla a lista: en 390 px no se leían), `panel_dueno_sin_acceso_movil.png`, `panel_admin_duenos.png`.
+- Pendiente: aplicar `supabase/esquema.sql` completo en el Supabase real (necesita la contraseña de la BD que da Jacobo).
+- Pedidos de Jacobo para después: tarjeta del club más llamativa (las 50 monedas de bienvenida no se notaron), QR de compra
+  desde la caja (productos → monedas), mejorar los renders de croissant, natas y changua, realidad aumentada de platos.

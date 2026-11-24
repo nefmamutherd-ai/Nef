@@ -11,7 +11,7 @@ await db.exec(`
   create schema extensions; create extension pgcrypto schema extensions;  -- como en Supabase
   grant usage on schema extensions to anon, authenticated;
   create schema auth;
-  create table auth.users (id uuid primary key);
+  create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz);
   create or replace function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
   grant usage on schema auth to anon, authenticated;
@@ -798,6 +798,137 @@ await caso('solo el admin ve y registra mensualidades', async () => {
   await assert.rejects(q(`select registrar_pago($1, 1)`, [emp]), /no autorizado/);
   await assert.rejects(q(`select _negocio_habilitado(gen_random_uuid())`), /permission denied/);
   await db.exec('reset role;');
+});
+
+console.log('Fase 8 · panel del dueño (aislamiento por empresa)');
+const DUENO_A = 'aaaaaaaa-0000-4000-8000-00000000000a';
+const DUENO_B = 'bbbbbbbb-0000-4000-8000-00000000000b';
+await db.exec('reset role;');
+await db.exec(`insert into auth.users (id, email, email_confirmed_at) values
+  ('${DUENO_A}', 'ana@cafe-a.co', now()), ('${DUENO_B}', 'beto@gym-b.co', now())`);
+const [na] = await q(`insert into negocios (slug, nombre, notas, sector) values ('cafe-a', 'Café A', 'nota privada A', 'cafe') returning id, empresa_id, token_stats`);
+const [nb] = await q(`insert into negocios (slug, nombre, notas, sector) values ('gym-b', 'Gym B', 'nota privada B', 'gimnasio') returning id, empresa_id, token_stats`);
+await q(`insert into tags (negocio_id, nombre) values ($1, 'Mesa A'), ($2, 'Recepción B')`, [na.id, nb.id]);
+await q(`insert into productos (negocio_id, nombre, precio) values ($1, 'Tinto A', 3000), ($2, 'Batido B', 9000)`, [na.id, nb.id]);
+await q(`insert into premios (negocio_id, nombre, valor_pesos) values ($1, 'Café gratis', 4000), ($2, 'Clase gratis', 20000)`, [na.id, nb.id]);
+await q(`insert into informes (negocio_id, periodo, ruta) values ($1, '2026 · T4', $3), ($2, '2026 · T4', $4)`, [na.id, nb.id, na.id + '/a.pdf', nb.id + '/b.pdf']);
+const [cl] = await q(`insert into clientes (telefono, nombre) values ('573009998877', 'Cliente B') returning id`);
+await q(`insert into membresias (cliente_id, negocio_id, acepto_datos_at) values ($1, $2, now())`, [cl.id, nb.id]);
+await como('authenticated', ADMIN);
+await assert.rejects(q(`select dar_acceso('nadie@x.co', $1, 'dueno')`, [na.empresa_id]), /todavía no tiene cuenta/);
+assert.equal((await q(`select dar_acceso(' ANA@cafe-a.co ', $1, 'dueno') r`, [na.empresa_id]))[0].r.user_id, DUENO_A);
+await q(`select dar_acceso('beto@gym-b.co', $1, 'gerente')`, [nb.empresa_id]);
+assert.equal((await q(`select accesos_admin() r`))[0].r.filter((a) => [DUENO_A, DUENO_B].includes(a.user_id)).length, 2);
+
+const cuenta = async (tabla, negocio) => (await q(`select count(*)::int n from ${tabla} where negocio_id = $1`, [negocio]))[0].n;
+await caso('negocios: el dueño A solo ve SU sede, por RPC y sin nada privado; la tabla directa no se abre', async () => {
+  await como('authenticated', DUENO_A);
+  const mios = (await q(`select panel_negocios() r`))[0].r;
+  assert.deepEqual(mios.map((n) => n.slug), ['cafe-a']);
+  for (const k of ['notas', 'token_stats', 'pin_caja_hash', 'contacto_telefono']) assert.ok(!(k in mios[0]), k);
+  assert.equal((await q(`select count(*)::int n from negocios`))[0].n, 0);
+  assert.equal((await q(`update negocios set nombre = 'hackeado' where id = $1 returning id`, [nb.id])).length, 0);
+  await db.exec('reset role;');
+  assert.equal((await q(`select nombre from negocios where id = $1`, [nb.id]))[0].nombre, 'Gym B');
+});
+await caso('tags: A ve los suyos y ninguno de B; no los modifica', async () => {
+  await como('authenticated', DUENO_A);
+  assert.equal(await cuenta('tags', na.id), 1);
+  assert.equal(await cuenta('tags', nb.id), 0);
+  assert.equal((await q(`update tags set nombre = 'x' where negocio_id = $1 returning id`, [nb.id])).length, 0);
+  assert.equal((await q(`update tags set nombre = 'x' where negocio_id = $1 returning id`, [na.id])).length, 0, 'tags: solo lectura');
+});
+await caso('productos: A edita su carta; no lee, no crea ni mueve nada a la de B', async () => {
+  await como('authenticated', DUENO_A);
+  assert.equal(await cuenta('productos', nb.id), 0);
+  assert.equal((await q(`update productos set agotado = true where negocio_id = $1 returning id`, [na.id])).length, 1);
+  assert.equal((await q(`update productos set precio = 1 where negocio_id = $1 returning id`, [nb.id])).length, 0);
+  assert.equal((await q(`delete from productos where negocio_id = $1 returning id`, [nb.id])).length, 0);
+  await assert.rejects(q(`insert into productos (negocio_id, nombre) values ($1, 'intruso')`, [nb.id]), /row-level security/);
+  await assert.rejects(q(`update productos set negocio_id = $1 where negocio_id = $2`, [nb.id, na.id]), /row-level security/);
+  await q(`insert into productos (negocio_id, nombre, precio) values ($1, 'Pandebono A', 2500)`, [na.id]);
+  await q(`insert into categorias (negocio_id, nombre) values ($1, 'Panadería')`, [na.id]);
+  await assert.rejects(q(`insert into categorias (negocio_id, nombre) values ($1, 'x')`, [nb.id]), /row-level security/);
+});
+await caso('premios: A crea y cambia los suyos; los de B ni los ve', async () => {
+  await como('authenticated', DUENO_A);
+  assert.equal(await cuenta('premios', nb.id), 0);
+  assert.equal((await q(`update premios set valor_pesos = 1 where negocio_id = $1 returning id`, [nb.id])).length, 0);
+  await q(`insert into premios (negocio_id, nombre, valor_pesos) values ($1, 'Croissant', 6000)`, [na.id]);
+  assert.equal(await cuenta('premios', na.id), 2);
+  await assert.rejects(q(`insert into premios (negocio_id, nombre, valor_pesos) values ($1, 'x', 100)`, [nb.id]), /row-level security/);
+});
+await caso('membresias y clientes: el dueño no los lee directo (ni los suyos ni los de B)', async () => {
+  await como('authenticated', DUENO_B);
+  assert.equal(await cuenta('membresias', nb.id), 0);
+  assert.equal((await q(`select count(*)::int n from clientes`))[0].n, 0);
+  await como('authenticated', DUENO_A);
+  assert.equal(await cuenta('membresias', nb.id), 0);
+});
+await caso('informes: A ve solo los suyos (con la ruta para firmar el PDF)', async () => {
+  await como('authenticated', DUENO_A);
+  const r = await q(`select negocio_id, ruta from informes`);
+  assert.deepEqual(r.map((x) => x.negocio_id), [na.id]);
+  assert.equal(await cuenta('informes', nb.id), 0);
+  await assert.rejects(q(`insert into informes (negocio_id, periodo, ruta) values ($1, 'x', 'y')`, [na.id]), /row-level security/);
+});
+await caso('empresas y accesos: cada uno ve solo lo suyo', async () => {
+  await como('authenticated', DUENO_A);
+  assert.deepEqual((await q(`select id from empresas`)).map((e) => e.id), [na.empresa_id]);
+  assert.deepEqual((await q(`select user_id from accesos`)).map((a) => a.user_id), [DUENO_A]);
+  assert.equal((await q(`update empresas set vence = '2099-01-01' where id = $1 returning id`, [na.empresa_id])).length, 0, 'no se paga solo');
+});
+await caso('RPC del dueño: stats, PIN e importar solo sobre lo suyo; nada de admin', async () => {
+  await como('authenticated', DUENO_B);
+  const s = (await q(`select stats_dueno($1, 30) r`, [nb.id]))[0].r;
+  assert.equal(s.negocio, 'Gym B');
+  assert.ok(Array.isArray(s.stats.gimnasio.en_riesgo), 'el dueño con sesión ve la lista en riesgo');
+  await assert.rejects(q(`select stats_dueno($1, 30)`, [na.id]), /no autorizado/);
+  await q(`select fijar_pin_caja($1, '4321')`, [nb.id]);
+  await assert.rejects(q(`select fijar_pin_caja($1, '4321')`, [na.id]), /no autorizado/);
+  const imp = (await q(`select importar_entradas($1, '[{"codigo":"77","fecha_hora":"2026-11-20 07:00"}]'::jsonb) r`, [nb.id]))[0].r;
+  assert.equal(imp.nuevas, 1);
+  await assert.rejects(q(`select importar_entradas($1, '[]'::jsonb)`, [na.id]), /no autorizado/);
+  await assert.rejects(q(`select admin_recalcular($1, '2026-11-01')`, [na.id]), /no autorizado/);
+  for (const f of [`stats_admin('${nb.id}', 30)`, `dar_acceso('beto@gym-b.co', '${na.empresa_id}', 'dueno')`, `accesos_admin()`, `exportar_estudio('${nb.id}', '2026-01-01', '2026-12-31')`, `mensualidades_admin()`])
+    await assert.rejects(q(`select ${f}`), /no autorizado/, f);
+  assert.ok((await q(`select panel_negocios() r`))[0].r[0].tiene_pin);
+});
+await caso('fotos: el dueño solo puede escribir en la carpeta de su negocio', async () => {
+  await como('authenticated', DUENO_A);
+  assert.equal((await q(`select foto_es_mia($1) v`, [na.id + '/x.webp']))[0].v, true);
+  assert.equal((await q(`select foto_es_mia($1) v`, [nb.id + '/x.webp']))[0].v, false);
+  assert.equal((await q(`select foto_es_mia('../x.webp') v`))[0].v, false);
+  await como('anon');
+  await assert.rejects(q(`select foto_es_mia('x')`), /permission denied/);
+  await assert.rejects(q(`select panel_negocios()`), /permission denied/);
+  await assert.rejects(q(`select es_mi_negocio($1)`, [na.id]), /permission denied/);
+});
+await caso('admin por correo: solo cuando la cuenta se confirma', async () => {
+  await db.exec('reset role;');
+  await db.exec(`insert into admins_correos values ('jefe@nef.co')`);
+  const J = 'cccccccc-0000-4000-8000-00000000000c';
+  await db.exec(`insert into auth.users (id, email) values ('${J}', 'Jefe@nef.co')`);
+  assert.equal((await q(`select count(*)::int n from admins where user_id = $1`, [J]))[0].n, 0, 'sin confirmar no es admin');
+  await db.exec(`update auth.users set email_confirmed_at = now() where id = '${J}'`);
+  await como('authenticated', J);
+  assert.equal((await q(`select es_admin() v`))[0].v, true);
+  await como('authenticated', DUENO_A);
+  assert.equal((await q(`select count(*)::int n from admins_correos`))[0].n, 0, 'la lista no se ve');
+  await assert.rejects(q(`insert into admins_correos values ('ana@cafe-a.co')`), /row-level security/);
+});
+await caso('interruptor: los links viejos /stats?k= siguen hasta que Jacobo los apague', async () => {
+  await como('anon');
+  assert.ok((await q(`select stats_token($1, 7) r`, [nb.token_stats]))[0].r);
+  assert.equal((await q(`select stats_token($1, 7) r`, [nb.token_stats]))[0].r.stats.gimnasio.en_riesgo, null, 'el link no trae teléfonos');
+  await db.exec('reset role;');
+  await db.exec(`update interruptores set encendido = false where nombre = 'links_stats_viejos'`);
+  await como('anon');
+  assert.equal((await q(`select stats_token($1, 7) r`, [nb.token_stats]))[0].r, null);
+  assert.equal((await q(`select informe_ruta($1, gen_random_uuid()) r`, [nb.token_stats]))[0].r, null);
+  await db.exec('reset role;');
+  await db.exec(`update interruptores set encendido = true where nombre = 'links_stats_viejos'`);
+  await db.exec(`delete from negocios where slug in ('cafe-a', 'gym-b'); delete from clientes where id = '${cl.id}'`);
 });
 
 console.log(`\n${ok} pruebas OK`);

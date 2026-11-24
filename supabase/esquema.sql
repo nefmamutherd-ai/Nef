@@ -610,11 +610,11 @@ grant execute on function public.club_tarjeta(text, text)                  to an
 --  RPC de la caja (PIN → sesión de 12 h; las operaciones reciben la sesión, no el PIN)
 -- =====================================================================
 
--- Solo admin (luego, el dueño desde /panel): fija el PIN de 4 a 6 dígitos
+-- Admin o dueño del negocio (desde /panel): fija el PIN de 4 a 6 dígitos
 create or replace function public.fijar_pin_caja(p_negocio uuid, p_pin text)
 returns void language plpgsql security definer set search_path = public, extensions as $$
 begin
-  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if not (public.es_admin() or public.es_mi_negocio(p_negocio)) then raise exception 'no autorizado'; end if;   -- es_mi_negocio: Fase 8
   if coalesce(p_pin, '') !~ '^[0-9]{4,6}$' then raise exception 'El PIN debe tener de 4 a 6 números'; end if;
   update public.negocios set pin_caja_hash = extensions.crypt(p_pin, extensions.gen_salt('bf')) where id = p_negocio;
   delete from public.sesiones_caja where negocio_id = p_negocio;   -- cambiar el PIN cierra las sesiones abiertas
@@ -994,7 +994,7 @@ declare
   v_n int;
   v_filas int := 0; v_nuevas int := 0; v_repetidas int := 0; v_invalidas int := 0;
 begin
-  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if not (public.es_admin() or public.es_mi_negocio(p_negocio)) then raise exception 'no autorizado'; end if;   -- es_mi_negocio: Fase 8
   if jsonb_typeof(p_filas) <> 'array' then raise exception 'p_filas debe ser un arreglo'; end if;
   if jsonb_array_length(p_filas) > 5000 then raise exception 'Máximo 5.000 filas por llamada'; end if;
   if not exists (select 1 from public.negocios where id = p_negocio) then raise exception 'negocio no existe'; end if;
@@ -1494,7 +1494,7 @@ end $$;
 create or replace function public.admin_recalcular(p_negocio uuid, p_desde date)
 returns int language plpgsql security definer set search_path = public as $$
 begin
-  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if not (public.es_admin() or public.es_mi_negocio(p_negocio)) then raise exception 'no autorizado'; end if;   -- es_mi_negocio: Fase 8
   return public.recalcular_metricas(p_negocio, greatest(p_desde, (public._ahora() at time zone 'America/Bogota')::date - 400));
 end $$;
 
@@ -1996,3 +1996,188 @@ end $$;
 revoke execute on function public._empresa_por_defecto() from public, anon, authenticated;
 drop trigger if exists negocios_empresa on public.negocios;
 create trigger negocios_empresa before insert on public.negocios for each row execute function public._empresa_por_defecto();
+
+-- =====================================================================
+-- ===== Fase 8 =====  panel del dueño: acceso por empresa (accesos + RLS), stats sin token,
+-- admin dado por correo, y el interruptor de los links viejos /stats?k=.
+-- La tabla negocios NO se abre al dueño (tiene notas, token y hash del PIN): la ve por panel_negocios().
+-- =====================================================================
+
+-- ¿El usuario de la sesión es dueño o gerente de esta empresa / de la empresa de este negocio?
+create or replace function public.es_dueno(p_empresa uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select auth.uid() is not null
+     and exists (select 1 from public.accesos where user_id = auth.uid() and empresa_id = p_empresa)
+$$;
+create or replace function public.es_mi_negocio(p_negocio uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select auth.uid() is not null and exists (
+    select 1 from public.negocios n join public.accesos a on a.empresa_id = n.empresa_id
+    where n.id = p_negocio and a.user_id = auth.uid())
+$$;
+revoke execute on function public.es_dueno(uuid)      from public, anon;
+revoke execute on function public.es_mi_negocio(uuid) from public, anon;
+grant  execute on function public.es_dueno(uuid)      to authenticated;   -- las usan las políticas
+grant  execute on function public.es_mi_negocio(uuid) to authenticated;
+
+-- Lectura de lo propio
+drop policy if exists dueno_ver on public.empresas;
+create policy dueno_ver on public.empresas for select to authenticated using (public.es_dueno(id));
+drop policy if exists dueno_ver on public.accesos;
+create policy dueno_ver on public.accesos  for select to authenticated using (user_id = auth.uid());
+drop policy if exists dueno_ver on public.tags;
+create policy dueno_ver on public.tags     for select to authenticated using (public.es_mi_negocio(negocio_id));
+drop policy if exists dueno_ver on public.informes;
+create policy dueno_ver on public.informes for select to authenticated using (public.es_mi_negocio(negocio_id));
+
+-- Configuración que el dueño edita solo (catálogo, premios, horas doradas): todo, pero solo de sus negocios
+drop policy if exists dueno_todo on public.categorias;
+create policy dueno_todo on public.categorias for all to authenticated
+  using (public.es_mi_negocio(negocio_id)) with check (public.es_mi_negocio(negocio_id));
+drop policy if exists dueno_todo on public.productos;
+create policy dueno_todo on public.productos for all to authenticated
+  using (public.es_mi_negocio(negocio_id)) with check (public.es_mi_negocio(negocio_id));
+drop policy if exists dueno_todo on public.premios;
+create policy dueno_todo on public.premios for all to authenticated
+  using (public.es_mi_negocio(negocio_id)) with check (public.es_mi_negocio(negocio_id));
+drop policy if exists dueno_todo on public.horas_doradas;
+create policy dueno_todo on public.horas_doradas for all to authenticated
+  using (public.es_mi_negocio(negocio_id)) with check (public.es_mi_negocio(negocio_id));
+-- membresias, clientes, movimientos, socios, entradas: sin política para el dueño (los ve resumidos por stats_dueno)
+
+-- Sus sedes, sin nada privado (ni notas, ni token, ni el hash del PIN: solo si ya tiene PIN)
+create or replace function public.panel_negocios()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object(
+      'id', n.id, 'slug', n.slug, 'nombre', n.nombre, 'sector', n.sector, 'servicios', n.servicios, 'color', n.color,
+      'ubicacion', n.ubicacion_etiqueta, 'empresa', e.nombre, 'rol', a.rol,
+      'mapeo_csv', n.mapeo_csv, 'tiene_pin', n.pin_caja_hash is not null, 'habilitado', n.activo and public._negocio_habilitado(n.id))
+    order by e.nombre, n.nombre), '[]'::json)
+  from public.accesos a
+  join public.empresas e on e.id = a.empresa_id
+  join public.negocios n on n.empresa_id = e.id
+  where a.user_id = auth.uid()
+$$;
+revoke execute on function public.panel_negocios() from public, anon;
+grant  execute on function public.panel_negocios() to authenticated;
+
+-- Estadísticas del dueño: lo mismo que el link, pero con la lista "en riesgo" con nombre y teléfono
+-- (el dueño entró con su contraseña y son SUS clientes; el link con token sigue sin teléfonos)
+create or replace function public.stats_dueno(p_negocio uuid, p_dias int default 30)
+returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_mi_negocio(p_negocio) then raise exception 'no autorizado'; end if;
+  return (
+    select json_build_object('negocio', n.nombre,
+      'stats', (public._stats_negocio(n.id, p_dias)::jsonb
+                || jsonb_build_object('sector', n.sector, 'nivel1', public._nivel1(n.id, p_dias),
+                                      'gimnasio', public._stats_gimnasio(n.id, true)))::json)
+    from public.negocios n where n.id = p_negocio);
+end $$;
+revoke execute on function public.stats_dueno(uuid, int) from public, anon;
+grant  execute on function public.stats_dueno(uuid, int) to authenticated;
+
+-- fijar_pin_caja, importar_entradas y admin_recalcular (más arriba) también dejan pasar al dueño del negocio
+
+-- Fotos de la carta: el dueño sube a la carpeta de su negocio (<negocio_id>/<uuid>.webp). Ver storage.sql.
+create or replace function public.foto_es_mia(p_nombre text)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  return public.es_mi_negocio(split_part(p_nombre, '/', 1)::uuid);
+exception when invalid_text_representation then return false;
+end $$;
+revoke execute on function public.foto_es_mia(text) from public, anon;
+grant  execute on function public.foto_es_mia(text) to authenticated;
+
+-- El admin da acceso por correo (la persona primero crea su cuenta en /panel)
+create or replace function public.dar_acceso(p_email text, p_empresa uuid, p_rol text default 'dueno')
+returns json language plpgsql security definer set search_path = public as $$
+declare v_user uuid;
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  if p_rol not in ('dueno', 'gerente') then raise exception 'Rol no válido'; end if;
+  select id into v_user from auth.users where lower(email) = lower(trim(p_email)) limit 1;
+  if v_user is null then raise exception 'Ese correo todavía no tiene cuenta: pídele que la cree en /panel'; end if;
+  insert into public.accesos (user_id, empresa_id, rol) values (v_user, p_empresa, p_rol)
+  on conflict (user_id, empresa_id) do update set rol = excluded.rol;
+  return json_build_object('user_id', v_user, 'email', lower(trim(p_email)), 'rol', p_rol);
+end $$;
+create or replace function public.accesos_admin()
+returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.es_admin() then raise exception 'no autorizado'; end if;
+  return (select coalesce(json_agg(json_build_object('user_id', a.user_id, 'empresa_id', a.empresa_id, 'rol', a.rol, 'email', u.email)
+                                   order by u.email), '[]'::json)
+          from public.accesos a left join auth.users u on u.id = a.user_id);
+end $$;
+revoke execute on function public.dar_acceso(text, uuid, text) from public, anon;
+grant  execute on function public.dar_acceso(text, uuid, text) to authenticated;
+revoke execute on function public.accesos_admin() from public, anon;
+grant  execute on function public.accesos_admin() to authenticated;
+
+-- Admin por correo: si alguien CONFIRMA su cuenta con un correo de esta lista, queda como admin.
+-- (Sin confirmar no cuenta: así nadie se vuelve admin registrando el correo de otro.)
+create table if not exists public.admins_correos (
+  email text primary key check (email = lower(email))
+);
+alter table public.admins_correos enable row level security;
+drop policy if exists admin_todo on public.admins_correos;
+create policy admin_todo on public.admins_correos for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+create or replace function public._admin_por_correo()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.email_confirmed_at is not null and exists (select 1 from public.admins_correos where email = lower(new.email)) then
+    insert into public.admins (user_id) values (new.id) on conflict do nothing;
+  end if;
+  return new;
+end $$;
+revoke execute on function public._admin_por_correo() from public, anon, authenticated;
+do $$
+begin
+  drop trigger if exists usuarios_admin_por_correo on auth.users;
+  create trigger usuarios_admin_por_correo after insert or update of email_confirmed_at on auth.users
+    for each row execute function public._admin_por_correo();
+exception when insufficient_privilege then
+  raise notice 'Sin permiso para el disparador en auth.users: corre la línea de abajo después de confirmar la cuenta';
+end $$;
+-- Y los que ya confirmaron antes de existir el disparador (se puede volver a correr)
+insert into public.admins (user_id)
+select u.id from auth.users u join public.admins_correos c on c.email = lower(u.email)
+where u.email_confirmed_at is not null
+on conflict do nothing;
+
+-- Interruptor de los links viejos /stats?k= (los apaga SOLO Jacobo; ver DECISIONES.md):
+--   update public.interruptores set encendido = false where nombre = 'links_stats_viejos';
+create table if not exists public.interruptores (
+  nombre    text primary key,
+  encendido boolean not null
+);
+alter table public.interruptores enable row level security;
+drop policy if exists admin_todo on public.interruptores;
+create policy admin_todo on public.interruptores for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+insert into public.interruptores values ('links_stats_viejos', true) on conflict (nombre) do nothing;
+
+create or replace function public._interruptor(p_nombre text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select encendido from public.interruptores where nombre = p_nombre), true)
+$$;
+revoke execute on function public._interruptor(text) from public, anon, authenticated;
+
+create or replace function public.stats_token(p_token text, p_dias int default 30)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('negocio', n.nombre, 'color', n.color,
+    'stats', (public._stats_negocio(n.id, p_dias)::jsonb
+              || jsonb_build_object('sector', n.sector, 'nivel1', public._nivel1(n.id, p_dias),
+                                    'gimnasio', public._stats_gimnasio(n.id, false)))::json,
+    'informes', (select coalesce(json_agg(json_build_object('id', i.id, 'periodo', i.periodo, 'creado', i.creado) order by i.creado desc), '[]'::json)
+                 from public.informes i where i.negocio_id = n.id))
+  from public.negocios n where n.token_stats = p_token and public._interruptor('links_stats_viejos');
+$$;
+create or replace function public.informe_ruta(p_token text, p_informe uuid)
+returns text language sql stable security definer set search_path = public as $$
+  select i.ruta from public.informes i join public.negocios n on n.id = i.negocio_id
+  where n.token_stats = p_token and i.id = p_informe and public._interruptor('links_stats_viejos')
+$$;

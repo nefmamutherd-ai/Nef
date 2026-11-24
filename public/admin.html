@@ -46,6 +46,7 @@
       <button class="tab" role="tab" data-tab="entradas" aria-selected="false">Entradas</button>
       <button class="tab" role="tab" data-tab="catalogo" aria-selected="false">Catálogo</button>
       <button class="tab" role="tab" data-tab="cobros" aria-selected="false">Mensualidades</button>
+      <button class="tab" role="tab" data-tab="duenos" aria-selected="false">Dueños</button>
     </nav>
 
     <!-- NEGOCIOS -->
@@ -144,6 +145,25 @@
         <tbody id="lista-cobros"><tr><td colspan="6"><div class="n-cargando"></div></td></tr></tbody>
       </table></div>
       <p class="n-ayuda">Si pasa la fecha y se acaban los días de gracia, el portal y los tags muestran "inactivo". Registrar el pago los prende al instante.</p>
+    </section>
+
+    <!-- DUEÑOS (Fase 8): quién entra a /panel y a qué empresa -->
+    <section id="tab-duenos" hidden>
+      <form class="n-tarjeta n-form" id="form-acceso">
+        <h2>Dar acceso al panel</h2>
+        <p>El dueño primero crea su cuenta en <b>/panel</b> con su correo. Luego escribes aquí ese mismo correo.</p>
+        <div class="n-fila">
+          <div class="n-campo"><label for="a-email">Correo del dueño</label><input type="email" id="a-email" required></div>
+          <div class="n-campo"><label for="a-empresa">Empresa</label><select id="a-empresa" required></select></div>
+          <div class="n-campo"><label for="a-rol">Rol</label><select id="a-rol"><option value="dueno">Dueño</option><option value="gerente">Gerente</option></select></div>
+        </div>
+        <button type="submit" class="n-btn">Dar acceso</button>
+      </form>
+      <div class="n-tabla-caja"><table class="n-tabla">
+        <thead><tr><th>Correo</th><th>Empresa</th><th>Rol</th><th></th></tr></thead>
+        <tbody id="lista-accesos"></tbody>
+      </table></div>
+      <p class="n-ayuda">Cada dueño ve solo los negocios de su empresa. Los teléfonos de "en riesgo" los ve porque son sus clientes.</p>
     </section>
 
     <!-- CATÁLOGO (máquinas, clases y, en la Fase 5, la carta) -->
@@ -339,6 +359,8 @@ import { renderStats } from '/assets/stats.js';
 import { montarImportador } from '/assets/importar.js';
 import { montarCatalogo } from '/assets/admin-catalogo.js';
 import { exportarEstudio } from '/assets/exportar.js';
+import { pintarEnRiesgo } from '/assets/panel/en-riesgo.js';
+import { montarAccesos } from '/assets/panel/accesos-admin.js';
 
 const cfg = window.TOQUE;
 const sb = createClient(cfg.url, cfg.anon);
@@ -357,6 +379,7 @@ const SECCIONES = {
   entradas: ['Entradas', 'Importa el registro del torniquete o del huellero (CSV).'],
   catalogo: ['Catálogo', 'Máquinas, clases y productos de cada negocio.'],
   cobros: ['Mensualidades', 'Quién está al día, quién vence pronto y quién está apagado.'],
+  duenos: ['Dueños', 'Quién entra a /panel y qué empresa ve.'],
 };
 
 document.querySelectorAll('.nom-marca').forEach((e) => (e.textContent = cfg.marca));
@@ -417,6 +440,7 @@ document.querySelectorAll('.tab').forEach((b) =>
     if (b.dataset.tab === 'stats') cargarStats();
     if (b.dataset.tab === 'catalogo') catalogo.cargar();
     if (b.dataset.tab === 'cobros') cargarCobros();
+    if (b.dataset.tab === 'duenos') accesos.cargar();
   })
 );
 
@@ -801,39 +825,8 @@ async function cargarStats() {
   pintarGimnasio(data.gimnasio, negocios.find((x) => x.id === id));
 }
 
-// "En riesgo" con teléfono y WhatsApp (solo admin); el botón solo aparece en horario legal (Ley 2300)
-const fmtN = new Intl.NumberFormat('es-CO');
-function pintarGimnasio(g, neg) {
-  const cont = $('#s-gimnasio');
-  cont.textContent = '';
-  if (!g || !neg) return;
-  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
-  const t = el('div', 'n-tarjeta');
-  t.append(el('h2', '', 'En riesgo'), el('p', '', g.puede_escribir ? 'Escríbeles hoy. El botón solo aparece en horario permitido.' : 'Ahora no se puede escribir: fuera del horario permitido (Ley 2300).'));
-  const proxima = g.proxima ? new Date(g.proxima) : null;
-  const disponible = proxima
-    ? `Disponible el ${proxima.toLocaleDateString('es-CO', { weekday: 'long', timeZone: 'America/Bogota' })} a las ${proxima.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' })}`
-    : '';
-  const ul = el('ul', 'n-lista');
-  for (const p of (g.en_riesgo || []).slice(0, 50)) {
-    const li = el('li');
-    const pr = el('div', 'n-principal');
-    pr.append(el('b', '', p.nombre || 'Sin nombre'), el('span', '', `${p.dias} días sin venir · ${p.visitas} visitas`));
-    li.append(pr);
-    let tel = String(p.telefono || '').replace(/\D/g, '');
-    if (tel.length === 10 && tel[0] === '3') tel = '57' + tel;
-    if (g.puede_escribir && tel.length >= 12) {
-      const a = el('a', 'n-btn chico secundario', 'WhatsApp');
-      const msg = `Hola ${String(p.nombre || '').split(' ')[0]}, te extrañamos en ${neg.nombre}. ¿Todo bien? Aquí te esperamos cuando quieras.`;
-      a.href = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`; a.target = '_blank'; a.rel = 'noopener';
-      li.append(a);
-    } else if (!g.puede_escribir) li.append(el('span', 'n-estado', disponible));
-    ul.append(li);
-  }
-  if (!(g.en_riesgo || []).length) t.append(el('div', 'n-vacio', 'Nadie en riesgo por ahora.'));
-  else t.append(ul);
-  cont.append(t);
-}
+// "En riesgo" con teléfono y WhatsApp: módulo compartido con /panel
+const pintarGimnasio = (g, neg) => { const c = $('#s-gimnasio'); if (!g || !neg) { c.textContent = ''; return; } pintarEnRiesgo(c, g, neg.nombre); };
 $('#s-negocio').addEventListener('change', cargarStats);
 $('#s-dias').addEventListener('change', cargarStats);
 $('#s-compartir').addEventListener('click', () => {
@@ -906,6 +899,7 @@ $('#inf-archivo').addEventListener('change', async (e) => {
 });
 
 const importador = montarImportador({ sb, toast, negocioActual: () => $('#i-negocio').value, negocios: () => negocios, alTerminar: recargar });
+const accesos = montarAccesos({ sb, toast });
 const catalogo = montarCatalogo({ sb, toast, esc, negocioActual: () => $('#k-negocio').value, alCambiar: recargar });
 $('#k-negocio').addEventListener('change', () => catalogo.cargar());
 $('#i-negocio').addEventListener('change', () => importador.reiniciar());

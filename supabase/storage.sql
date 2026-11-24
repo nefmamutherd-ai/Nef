@@ -47,3 +47,17 @@ create policy "fotos: admin cambia" on storage.objects for update to authenticat
 drop policy if exists "fotos: admin borra" on storage.objects;
 create policy "fotos: admin borra" on storage.objects for delete to authenticated
   using (bucket_id = 'fotos' and public.es_admin());
+
+-- Fase 8: el dueño sube, cambia y borra fotos SOLO en la carpeta de su negocio (<negocio_id>/…)
+drop policy if exists "fotos: dueño sube" on storage.objects;
+create policy "fotos: dueño sube" on storage.objects for insert to authenticated
+  with check (bucket_id = 'fotos' and public.foto_es_mia(storage.objects.name));
+
+drop policy if exists "fotos: dueño cambia" on storage.objects;
+create policy "fotos: dueño cambia" on storage.objects for update to authenticated
+  using (bucket_id = 'fotos' and public.foto_es_mia(storage.objects.name))
+  with check (bucket_id = 'fotos' and public.foto_es_mia(storage.objects.name));
+
+drop policy if exists "fotos: dueño borra" on storage.objects;
+create policy "fotos: dueño borra" on storage.objects for delete to authenticated
+  using (bucket_id = 'fotos' and public.foto_es_mia(storage.objects.name));

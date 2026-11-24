@@ -57,14 +57,14 @@ con `.n-estado`. Vencido + gracia → `resolver_toque` y `negocio_publico` devue
 ## Fase 8 — Panel del dueño
 Referencia: `docs/ARQUITECTURA.md` §2, §4, §7 · `docs/UI.md` filas del panel.
 
-### [ ] 8.1 Acceso por empresa
+### [x] 8.1 Acceso por empresa
 `es_dueno(p_empresa uuid) returns boolean` (security definer, lee `accesos` con `auth.uid()`). Políticas de lectura/escritura
 en cada tabla de configuración para dueños de su empresa. **Prueba obligatoria:** usuario A (empresa 1) no lee ni modifica
 nada de la empresa 2 — una prueba por tabla (negocios, tags, productos, premios, membresias, informes).
-### [ ] 8.2 `/panel`: login (Supabase Auth, correo + contraseña; el admin crea al dueño y le da acceso) y selector de sede.
-### [ ] 8.3 Secciones: Resumen, Clientes (en riesgo + importar entradas si es gym), Catálogo, Club (premios, devolución, PIN), Informes.
+### [x] 8.2 `/panel`: login (Supabase Auth, correo + contraseña; el admin crea al dueño y le da acceso) y selector de sede.
+### [x] 8.3 Secciones: Resumen, Clientes (en riesgo + importar entradas si es gym), Catálogo, Club (premios, devolución, PIN), Informes.
 Reutiliza lo que ya existe en `admin.html` moviéndolo a módulos en `public/assets/panel/*.js`, **sin romper el admin**.
-### [ ] 8.4 Reemplazar `/stats?k=`: `/stats` muestra "Ahora entras por /panel" + botón; los tokens viejos dejan de funcionar
+### [x] 8.4 Reemplazar `/stats?k=`: `/stats` muestra "Ahora entras por /panel" + botón; los tokens viejos dejan de funcionar
 solo cuando Jacobo lo decida (deja un interruptor en `DECISIONES.md`, no lo apagues tú).
-### [ ] 8.5 Prueba e2e de aislamiento: dos dueños, dos navegadores; cada uno solo ve lo suyo. Capturas.
-### [ ] 8.6 Cierre de la fase 8 + resumen final para Jacobo (`AGENTS.md` §9).
+### [x] 8.5 Prueba e2e de aislamiento: dos dueños, dos navegadores; cada uno solo ve lo suyo. Capturas.
+### [x] 8.6 Cierre de la fase 8 + resumen final para Jacobo (`AGENTS.md` §9).

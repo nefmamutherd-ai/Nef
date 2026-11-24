@@ -10,7 +10,7 @@ await db.exec(`
   create role anon; create role authenticated;
   create schema extensions; create extension pgcrypto schema extensions;  -- como en Supabase
   grant usage on schema extensions to anon, authenticated;
-  create schema auth; create table auth.users (id uuid primary key);
+  create schema auth; create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz);
   create or replace function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
   grant usage on schema auth to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;
   grant usage on schema public to anon, authenticated;
@@ -69,15 +69,36 @@ http.createServer(async (req, res) => {
   const crudo = Buffer.concat(trozos);
   body = crudo.toString();
   const url = new URL(req.url, 'http://x');
+  // Tokens: 'admintoken' = el admin de prueba; 'u:<uuid>' = un usuario registrado (dueños, Fase 8)
   const token = (req.headers.authorization || '').replace('Bearer ', '');
-  const role = token === 'admintoken' ? 'authenticated' : 'anon';
-  const uid = token === 'admintoken' ? ADMIN : '';
+  const uid = token === 'admintoken' ? ADMIN : /^u:[0-9a-f-]{36}$/.test(token) ? token.slice(2) : '';
+  const role = uid ? 'authenticated' : 'anon';
+  const usuario = (id, email) => ({ id, email, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() });
+  const sesion = (tk, user) => ({ access_token: tk, token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: tk, user });
+  const malas = () => send(res, 400, { error: 'invalid_grant', error_description: 'Invalid login credentials', code: 'invalid_credentials' });
   try {
     if (url.pathname === '/auth/v1/token') {
       const b = JSON.parse(body);
-      if (b.password !== 'clave123') return send(res, 400, { error: 'invalid_grant', error_description: 'Invalid login credentials', code: 'invalid_credentials' });
-      const user = { id: ADMIN, email: b.email, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
-      return send(res, 200, { access_token: 'admintoken', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'r', user });
+      if (url.searchParams.get('grant_type') === 'refresh_token') {
+        const tk = b.refresh_token;
+        const id = tk === 'admintoken' ? ADMIN : String(tk).slice(2);
+        const u = (await db.query('select email from auth.users where id::text = $1', [id])).rows[0];
+        return u ? send(res, 200, sesion(tk, usuario(id, u.email))) : malas();
+      }
+      if (b.password !== 'clave123') return malas();
+      const email = String(b.email || '').trim().toLowerCase();
+      if (email.startsWith('admin')) return send(res, 200, sesion('admintoken', usuario(ADMIN, email))); // como antes: admin*@… = admin
+      const u = (await db.query('select id from auth.users where lower(email) = $1', [email])).rows[0];
+      return u ? send(res, 200, sesion('u:' + u.id, usuario(u.id, email))) : malas();
+    }
+    if (url.pathname === '/auth/v1/signup') {
+      const b = JSON.parse(body);
+      const email = String(b.email || '').trim().toLowerCase();
+      if (String(b.password || '').length < 6) return send(res, 422, { code: 'weak_password', msg: 'Password should be at least 6 characters.' });
+      if ((await db.query('select 1 from auth.users where lower(email) = $1', [email])).rows.length) return send(res, 422, { code: 'user_already_exists', msg: 'User already registered' });
+      // Se confirma al instante (en Supabase real llega un correo con el link de confirmación)
+      const id = (await db.query('insert into auth.users (id, email, email_confirmed_at) values (gen_random_uuid(), $1, now()) returning id', [email])).rows[0].id;
+      return send(res, 200, sesion('u:' + id, usuario(id, email)));
     }
     if (url.pathname.startsWith('/auth/v1/logout')) return send(res, 204);
 
@@ -109,7 +130,11 @@ http.createServer(async (req, res) => {
       }
       return send(res, 404, { message: 'not found' });
     }
-    if (url.pathname.startsWith('/auth/v1/user')) return send(res, 200, { id: ADMIN, aud: 'authenticated', role: 'authenticated' });
+    if (url.pathname.startsWith('/auth/v1/user')) {
+      if (!uid) return send(res, 401, { code: 'no_authorization', msg: 'invalid JWT' });
+      const u = (await db.query('select email from auth.users where id::text = $1', [uid])).rows[0];
+      return send(res, 200, usuario(uid, u ? u.email : 'admin@prueba.co'));
+    }
 
     const out = await db.transaction(async (tx) => {
       await tx.exec(`set local role ${role}; select set_config('test.uid', '${uid}', true);`);

@@ -13,7 +13,16 @@ fs.mkdirSync(DIR, { recursive: true });
 
 let ok = 0;
 const errores = [];
-const caso = async (nombre, fn) => { await fn(); ok++; console.log('  ✓', nombre); };
+// Si un caso falla, guarda captura de cada página abierta (tests/capturas/fallo-*.png) antes de cortar
+const caso = async (nombre, fn) => {
+  try { await fn(); } catch (e) {
+    let k = 0;
+    for (const c of browser.contexts()) for (const pg of c.pages()) await pg.screenshot({ path: DIR + 'fallo-' + (k++) + '.png', fullPage: true }).catch(() => {});
+    console.error('  ✗', nombre, '· capturas en tests/capturas/fallo-*.png');
+    throw e;
+  }
+  ok++; console.log('  ✓', nombre);
+};
 // Petición sin seguir redirecciones → [status, Location]
 const ir = async (path, method = 'GET') => {
   const r = await fetch(BASE + path, { method, redirect: 'manual' });
@@ -649,6 +658,131 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.waitForURL(/\/n\/demo-cafe$/);
   await p.close();
 });
+
+console.log('Fase 8 · panel del dueño');
+{
+  const sufijo = Date.now().toString(36);
+  const SLUG_A = 'cafe-ana-' + sufijo, SLUG_B = 'gym-beto-' + sufijo;
+  const CORREO_A = `ana-${sufijo}@cafe.co`, CORREO_B = `beto-${sufijo}@gym.co`;
+  await api('negocios', 'POST', { slug: SLUG_A, nombre: 'Café de Ana', sector: 'cafe', servicios: { base: true, catalogo: true, club: true, estudio: false } });
+  await api('negocios', 'POST', { slug: SLUG_B, nombre: 'Gym de Beto', sector: 'gimnasio', servicios: { base: true, catalogo: true, club: true, estudio: false } });
+  const [A] = await api(`negocios?slug=eq.${SLUG_A}`);
+  const [B] = await api(`negocios?slug=eq.${SLUG_B}`);
+  await api('productos', 'POST', [{ negocio_id: A.id, nombre: 'Tinto de Ana', precio: 3000, tipo: 'plato' }, { negocio_id: B.id, nombre: 'Batido de Beto', precio: 9000, tipo: 'plato' }]);
+  await api('premios', 'POST', [{ negocio_id: A.id, nombre: 'Pandebono gratis', valor_pesos: 2500 }, { negocio_id: B.id, nombre: 'Clase gratis', valor_pesos: 20000 }]);
+  await api('informes', 'POST', { negocio_id: A.id, periodo: '2026 · 4.º trimestre', ruta: `${A.id}/${sufijo}.pdf` });
+
+  // Dos navegadores aparte: Ana en celular, Beto en escritorio
+  const ctxA = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const ctxB = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  for (const c of [ctxA, ctxB]) if (process.env.SB_BUNDLE) {
+    const body = fs.readFileSync(process.env.SB_BUNDLE, 'utf8');
+    await c.route(/cdn\.jsdelivr\.net\/.*supabase/, (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body }));
+  }
+  const ana = await ctxA.newPage(); ana.on('pageerror', (e) => errores.push('ana: ' + e.message));
+  const beto = await ctxB.newPage(); beto.on('pageerror', (e) => errores.push('beto: ' + e.message));
+
+  const registrar = async (p, correo) => {
+    await p.goto(BASE + '/panel');
+    await p.waitForSelector('#login:not([hidden])');
+    await p.click('#l-modo');
+    await p.fill('#l-email', correo);
+    await p.fill('#l-clave', 'clave123');
+    await p.click('#l-enviar');
+    await p.waitForSelector('#sin-acceso:not([hidden])');
+    assert.equal(await p.textContent('#sa-email'), correo);
+  };
+  await caso('el dueño crea su cuenta en /panel y queda esperando acceso', async () => {
+    await registrar(ana, CORREO_A);
+    await ana.screenshot({ path: DIR + 'panel_dueno_sin_acceso_movil.png' });
+    await registrar(beto, CORREO_B);
+  });
+  await caso('admin › Dueños: correo sin cuenta avisa; con cuenta da acceso a su empresa', async () => {
+    await panel.click('.tab[data-tab=duenos]');
+    await panel.waitForSelector('#a-empresa option', { state: 'attached' });
+    const opcion = async (nombre) => panel.$eval('#a-empresa', (s, n) => [...s.options].find((o) => o.text.startsWith(n)).value, nombre);
+    await panel.fill('#a-email', 'nadie-' + sufijo + '@x.co');
+    await panel.selectOption('#a-empresa', await opcion('Café de Ana'));
+    await panel.click('#form-acceso button[type=submit]');
+    await panel.waitForSelector('#toast.visible:has-text("todavía no tiene cuenta")');
+    await panel.fill('#a-email', CORREO_A);
+    await panel.click('#form-acceso button[type=submit]');
+    await panel.waitForSelector(`#lista-accesos tr:has-text("${CORREO_A}")`);
+    await panel.fill('#a-email', CORREO_B);
+    await panel.selectOption('#a-empresa', await opcion('Gym de Beto'));
+    await panel.selectOption('#a-rol', 'gerente');
+    await panel.click('#form-acceso button[type=submit]');
+    await panel.waitForSelector(`#lista-accesos tr:has-text("${CORREO_B}")`);
+    await panel.screenshot({ path: DIR + 'panel_admin_duenos.png' });
+  });
+  await caso('cada dueño ve SOLO lo suyo: resumen, catálogo, club e informes', async () => {
+    await ana.reload();
+    await ana.waitForSelector('#app:not([hidden])');
+    assert.equal(await ana.textContent('#titulo-seccion'), 'Café de Ana');
+    assert.equal(await ana.isVisible('#sede-caja'), false, 'una sola sede: sin selector');
+    await ana.waitForSelector('#r-stats .n-kpi');
+    await ana.screenshot({ path: DIR + 'panel_dueno_resumen_movil.png', fullPage: true });
+    await ana.click('.tab[data-tab=catalogo]');
+    await ana.waitForSelector('#lista-productos tr:has-text("Tinto de Ana")');
+    assert.equal(await ana.locator('#lista-productos tr', { hasText: 'Batido de Beto' }).count(), 0);
+    await ana.locator('#lista-productos tr', { hasText: 'Tinto de Ana' }).locator('.k-agotado').check();
+    await ana.waitForSelector('#toast.visible');
+    await ana.screenshot({ path: DIR + 'panel_dueno_catalogo_movil.png', fullPage: true });
+    await ana.click('.tab[data-tab=club]');
+    await ana.waitForSelector('#lista-premios input[value="Pandebono gratis"]');
+    assert.equal(await ana.locator('#lista-premios input[value="Clase gratis"]').count(), 0);
+    await ana.fill('#p-nombre', 'Croissant');
+    await ana.fill('#p-valor', '6000');
+    await ana.click('#p-agregar');
+    await ana.waitForSelector('#lista-premios input[value="Croissant"]');
+    await ana.fill('#pin', '2468');
+    await ana.click('#form-pin button[type=submit]');
+    await ana.waitForSelector('#pin-estado:has-text("ya tiene PIN")');
+    await ana.screenshot({ path: DIR + 'panel_dueno_club_movil.png', fullPage: true });
+    await ana.click('.tab[data-tab=informes]');
+    await ana.waitForSelector('#lista-informes li:has-text("4.º trimestre")');
+    // Chromium sin pantalla cancela los PDF como descarga: basta con ver que pide el PDF firmado
+    const pedido = ctxA.waitForEvent('request', (r) => /\/storage\/v1\/object\/sign\/informes\/.*token=/.test(r.url()));
+    const [pdf] = await Promise.all([ana.waitForEvent('popup'), ana.click('#lista-informes button')]);
+    await pedido;
+    await pdf.close();
+
+    await beto.reload();
+    await beto.waitForSelector('#app:not([hidden])');
+    assert.equal(await beto.textContent('#titulo-seccion'), 'Gym de Beto');
+    await beto.click('.tab[data-tab=catalogo]');
+    await beto.waitForSelector('#lista-productos tr:has-text("Batido de Beto")');
+    assert.equal(await beto.locator('#lista-productos tr', { hasText: 'Tinto de Ana' }).count(), 0);
+    await beto.click('.tab[data-tab=clientes]');
+    assert.equal(await beto.isVisible('#c-entradas'), true, 'gimnasio: importar entradas');
+    await beto.click('.tab[data-tab=informes]');
+    await beto.waitForSelector('#lista-informes .n-vacio');
+    assert.equal(await beto.locator('#lista-informes li', { hasText: '4.º trimestre' }).count(), 0, 'Beto no ve el informe de Ana');
+    await beto.screenshot({ path: DIR + 'panel_dueno_informes.png' });
+  });
+  await caso('aislamiento por la API con la sesión de cada dueño (no solo en la pantalla)', async () => {
+    const sesion = async (correo) => (await (await fetch(`${MOCK}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: correo, password: 'clave123' }) })).json()).access_token;
+    const tA = await sesion(CORREO_A);
+    const como = (tk, ruta, method = 'GET', body) => fetch(`${MOCK}/rest/v1/${ruta}`, { method, headers: { Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+    for (const t of ['productos', 'premios', 'tags', 'informes', 'membresias', 'categorias'])
+      assert.deepEqual(await (await como(tA, `${t}?negocio_id=eq.${B.id}`)).json(), [], `Ana no lee ${t} de Beto`);
+    assert.deepEqual(await (await como(tA, 'negocios')).json(), [], 'la tabla negocios no se abre al dueño');
+    assert.equal((await como(tA, 'productos', 'POST', { negocio_id: B.id, nombre: 'intruso' })).status, 400);
+    assert.equal((await como(tA, 'rpc/stats_dueno', 'POST', { p_negocio: B.id, p_dias: 30 })).status, 400);
+    assert.equal((await como(tA, 'rpc/fijar_pin_caja', 'POST', { p_negocio: B.id, p_pin: '1111' })).status, 400);
+    assert.equal((await (await como(tA, `premios?negocio_id=eq.${A.id}`)).json()).length, 2, 'los suyos sí (2 premios)');
+  });
+  await caso('/stats?k= sigue funcionando y avisa que ahora se entra por /panel', async () => {
+    const p = await ctxB.newPage();
+    await p.goto(`${BASE}/stats?k=${B.token_stats}`);
+    await p.waitForSelector('#titulo:has-text("Gym de Beto")');
+    await p.click('#aviso-panel a');
+    await p.waitForURL(/\/panel$/);
+    await p.close();
+  });
+  await ctxA.close();
+  await ctxB.close();
+}
 
 await browser.close();
 assert.deepEqual(errores, [], 'Errores de JavaScript en las páginas:\n' + errores.join('\n'));

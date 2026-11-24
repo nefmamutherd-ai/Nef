@@ -161,3 +161,19 @@
 @media (prefers-reduced-motion: reduce) { .nef *, .nef *::before, .nef *::after { animation: none !important; transition: none !important; } }
 p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 .n-tabla input { font: inherit; padding: 6px 10px; border: 1px solid var(--n-arena); border-radius: 10px; background: var(--n-blanco); color: inherit; }
+
+/* ── Panel del dueño (Fase 8): selector de sede en la barra y textos del vacío ── */
+.n-sede select { min-height: 40px; max-width: 46vw; padding: 6px 12px; border-radius: 10px; border: 1.5px solid var(--n-arena); background: var(--n-blanco); color: var(--n-tinta); font: 600 15px var(--n-texto); }
+.n-sede select:focus { outline: none; border-color: var(--n-tinta); }
+.n-barra .n-negocio { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.n-vacio > span { display: block; max-width: 36ch; margin: 0 auto; }
+.n-vacio > span strong { color: var(--n-tinta); overflow-wrap: anywhere; }
+.n-tarjeta > .n-num { font-size: 40px; margin: 8px 0; }
+.n-contenido > .n-aviso { margin-bottom: 20px; align-items: center; flex-wrap: wrap; } .n-contenido > .n-aviso > span { flex: 1 1 260px; }
+/* Lista editable de premios (panel del dueño): nombre arriba; valor, costo y activo debajo */
+.n-premios li { display: block; padding: 14px 0; }
+.n-premio-pie { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.n-premio-pie .n-campo { width: 130px; flex: none; }
+.n-premio-pie .costo { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.n-premio-pie .n-interruptor { padding: 0; border: 0; gap: 8px; }
+.n-tarjeta + .n-tabla-caja, .n-tarjeta + .n-tarjeta { margin-top: 16px; }
