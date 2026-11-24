@@ -77,9 +77,6 @@ async function abrir3d(p) {
     'touch-action': 'none', 'disable-pan': '', 'interpolation-decay': '120',
     'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
   };
-  // iPhone: realidad aumentada propia del teléfono (Quick Look, sin apps). Android y demás: la cámara en la web (abrirCamara),
-  // porque Scene Viewer y WebXR piden "Servicios de Google Play para RA", que muchos celulares no tienen.
-  if (ES_IPHONE) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
   // Al soltarlo, vuelve solo a la inclinación de siempre (conserva hacia dónde lo giraron de lado)
   let vuelta = null;
@@ -93,82 +90,42 @@ async function abrir3d(p) {
   mv.addEventListener('pointerup', volver);
   mv.addEventListener('pointercancel', volver);
   mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
-  const ar = document.createElement('button');
-  ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
-  if (ES_IPHONE) {
-    ar.slot = 'ar-button'; // model-viewer abre Quick Look
-    ar.addEventListener('click', () => evento('ver_ar', p.id));
-    mv.append(ar);
-  } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Plato puesto sobre la mesa (giroscopio + cámara, three.js); si el módulo no carga, la vista sencilla
-    ar.addEventListener('click', () => {
-      evento('ver_ar', p.id);
-      import('/assets/mesa-ar.js').then((m) => m.abrirMesa(p)).catch(() => abrirCamara(p));
-    });
-  }
   const caja = $('d-3d');
   caja.textContent = '';
   caja.append(mv);
-  if (!ES_IPHONE && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) caja.append(ar);
+  // "Verlo en tu mesa" SOLO donde se ve bien de verdad (decisión de Jacobo): iPhone (Quick Look) y Android con la
+  // realidad aumentada de Google (ARCore → WebXR, el plato queda pegado a la mesa). En los demás, solo el 3D que se gira.
+  const conArcore = !ES_IPHONE && await tieneArcore();
+  if (abierto !== p) return;
+  if (ES_IPHONE || conArcore) {
+    const ar = document.createElement('button');
+    ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
+    ar.slot = 'ar-button';
+    ar.addEventListener('click', () => evento('ver_ar', p.id));
+    const modos = ES_IPHONE ? 'quick-look' : 'webxr';
+    for (const [k, v] of Object.entries({ ar: '', 'ar-modes': modos, 'ar-scale': 'fixed', 'ar-placement': 'floor' })) mv.setAttribute(k, v);
+    mv.append(ar);
+  }
+  if (conArcore) {
+    // Alternativa para probar: la app de realidad aumentada de Google (Scene Viewer); si falla, vuelve a esta página
+    const g = document.createElement('a');
+    g.className = 'pt-ar-google';
+    g.textContent = 'Con la app de Google';
+    const glb = new URL(p.modelo_url, location.href).href;
+    g.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred&title=${encodeURIComponent(p.nombre)}`
+      + `#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(location.href)};end;`;
+    g.addEventListener('click', () => evento('ver_ar', p.id));
+    $('d-vista').append(g);
+  }
   caja.hidden = false;
   $('d-foto').hidden = true;
   evento('ver_3d', p.id);
 }
 let abierto = null;
 
-// ── "Verlo en tu mesa" desde la web (sin apps): la cámara trasera de fondo y el plato encima.
-//    El plato se inclina con el celular (giroscopio): mirando hacia la mesa se ve desde arriba, como apoyado en ella.
 const ES_IPHONE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-async function abrirCamara(p) {
-  const capa = document.createElement('div');
-  capa.className = 'pt-camara';
-  capa.setAttribute('role', 'dialog');
-  capa.setAttribute('aria-label', `${p.nombre} en tu mesa`);
-  const video = document.createElement('video');
-  video.playsInline = true; video.muted = true; video.autoplay = true;
-  const msg = document.createElement('p');
-  msg.className = 'pt-camara-msg';
-  msg.textContent = 'Apunta la cámara a tu mesa';
-  const cerrar = document.createElement('button');
-  cerrar.type = 'button'; cerrar.className = 'pt-camara-cerrar'; cerrar.textContent = 'Listo';
-  capa.append(video, msg, cerrar);
-  document.body.append(capa);
-  let stream = null;
-  const salir = () => {
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-    window.removeEventListener('deviceorientation', alInclinar);
-    capa.remove();
-  };
-  cerrar.addEventListener('click', salir);
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-  } catch {
-    msg.textContent = 'Para verlo en tu mesa, permite el uso de la cámara.';
-    return;
-  }
-  video.srcObject = stream;
-  const mv = document.createElement('model-viewer');
-  for (const [k, v] of Object.entries({
-    src: p.modelo_url, alt: `${p.nombre} en tu mesa`, 'camera-controls': '', 'touch-action': 'none', 'disable-pan': '',
-    'camera-orbit': '0deg 55deg auto', 'min-camera-orbit': 'auto 10deg auto', 'max-camera-orbit': 'auto 88deg auto',
-    'field-of-view': '32deg', 'shadow-intensity': '1.4', 'shadow-softness': '0.6', 'environment-image': 'neutral',
-    exposure: '1', 'interaction-prompt': 'none', 'interpolation-decay': '80',
-  })) mv.setAttribute(k, v);
-  capa.insertBefore(mv, msg);
-  setTimeout(() => { msg.textContent = 'Gíralo con el dedo · acércalo con dos dedos'; }, 2500);
-  // Inclinación del celular (beta: 0 = acostado mirando abajo, 90 = de pie) → ángulo desde arriba del plato
-  let tocando = false;
-  mv.addEventListener('pointerdown', () => { tocando = true; });
-  mv.addEventListener('pointerup', () => { tocando = false; });
-  function alInclinar(e) {
-    if (tocando || e.beta == null) return;
-    const o = mv.getCameraOrbit && mv.getCameraOrbit();
-    if (!o) return;
-    const phi = Math.max(12, Math.min(86, e.beta));
-    mv.cameraOrbit = `${o.theta}rad ${phi}deg ${o.radius}m`;
-  }
-  window.addEventListener('deviceorientation', alInclinar);
-}
+// ¿Tiene la realidad aumentada de Google (ARCore)? Solo entonces WebXR puede abrir una sesión de realidad aumentada
+const tieneArcore = async () => { try { return !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); } catch { return false; } };
 
 function abrirDetalle(p) {
   abierto = p;
@@ -177,6 +134,7 @@ function abrirDetalle(p) {
   if (p.foto_url) { foto.src = p.foto_url; foto.alt = p.nombre; }
   $('d-3d').hidden = true;
   $('d-3d').textContent = '';
+  $('d-vista').querySelectorAll('.pt-ar-google').forEach((x) => x.remove());
   if (p.modelo_url) abrir3d(p);
   $('d-nombre').textContent = p.nombre;
   $('d-precio').textContent = pesos(p.precio);

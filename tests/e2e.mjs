@@ -692,12 +692,11 @@ await caso('plato en 3D: abre directo en 3D si tiene modelo (giro limitado, AR c
   await p.waitForSelector('#d-3d model-viewer');
   const mv = (k) => p.getAttribute('#d-3d model-viewer', k);
   assert.equal(await mv('src'), '/assets/demo/3d/capuchino.glb');
-  assert.equal(await mv('ar'), null, 'fuera de iPhone no se usa Scene Viewer ni WebXR (piden una app de Google)');
-  await p.click('#d-3d .pt-ar');
-  await p.waitForSelector('.pt-camara .pt-camara-msg');
-  assert.match(await p.textContent('.pt-camara-msg'), /mesa|cámara/, 'abre la cámara de la web (o pide el permiso)');
-  await p.click('.pt-camara-cerrar');
-  assert.equal(await p.$('.pt-camara'), null, '"Listo" cierra la cámara');
+  await p.waitForTimeout(800);
+  // Sin iPhone ni realidad aumentada de Google (como este navegador), "Verlo en tu mesa" no se ofrece: solo el 3D que se gira
+  assert.equal(await mv('ar'), null, 'sin ARCore no hay realidad aumentada');
+  assert.equal(await p.$('#d-3d .pt-ar'), null, 'no se muestra un botón que no funcionaría bien');
+  assert.equal(await p.$('.pt-ar-google'), null);
   assert.equal(await mv('touch-action'), 'none', 'deslizar gira el plato, no la página');
   assert.match(await mv('max-camera-orbit'), /80deg/, 'no se ve el plato por debajo');
   await p.close();
