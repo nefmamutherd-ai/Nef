@@ -317,14 +317,49 @@ def p_torta():
         asignar(bpy.context.object, MAT['arequipe'])
     hierbas(0.45, 0.3, 0.05, 0.1, 3)
 
+def croissant_malla(m, rc=0.4, centro=(0.0, 0.3, 0.0), arco=250, n=140, lados=40, capas=7):
+    # Media luna enrollada: un tubo que sigue un arco; el grosor crece al centro y adelgaza en las puntas,
+    # con "capas" (bultos del hojaldre enrollado) y la base aplanada donde toca el plato.
+    me = bpy.data.meshes.new('croissant'); bm = bmesh.new()
+    a0 = math.radians(270 - arco / 2)
+    anillos = []
+    for i in range(n + 1):
+        t = i / n
+        a = a0 + math.radians(arco) * t
+        cx, cy = centro[0] + rc * math.cos(a), centro[1] + rc * math.sin(a)
+        nx, ny = math.cos(a), math.sin(a)                     # hacia afuera del arco
+        perfil = math.sin(math.pi * t) ** 0.95                # gordo al centro, puntas finas
+        capa = None                                           # los rollos van en diagonal (dependen del ángulo)
+        w = 0.03 + 0.27 * perfil
+        h = 0.025 + 0.21 * perfil
+        anillo = []
+        for j in range(lados):
+            th = 2 * math.pi * j / lados
+            # Rollo en diagonal: el bulto avanza con el ángulo, como la masa enrollada en espiral
+            capa = 0.8 + 0.2 * abs(math.cos(math.pi * capas * t + 0.9 * th))
+            dx, dz = math.cos(th) * w * capa, math.sin(th) * h * capa
+            z = max(dz, -0.25 * h) + 0.25 * h + 0.012          # base plana sobre el plato
+            anillo.append(bm.verts.new((cx + nx * dx, cy + ny * dx, centro[2] + z)))
+        anillos.append(anillo)
+    for i in range(n):
+        A, B = anillos[i], anillos[i + 1]
+        for j in range(lados):
+            k = (j + 1) % lados
+            bm.faces.new((A[j], A[k], B[k], B[j]))
+    for anillo, invertir in ((anillos[0], True), (anillos[-1], False)):  # tapas de las puntas
+        bm.faces.new(anillo[::-1] if invertir else anillo)
+    bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new('croissant', me); bpy.context.collection.objects.link(o)
+    sub = o.modifiers.new('suave', 'SUBSURF'); sub.levels = 1; sub.render_levels = 2
+    ruido_mesh(o, 0.008, 0.25)
+    return asignar(o, m)
+
 def p_croissant():
     plato(MAT['ceramica_azul'], 1.0)
-    for k in range(-3, 4):
-        a = math.radians(k * 22 - 90 + 180)
-        x, y = math.cos(a) * 0.42, math.sin(a) * 0.42 + 0.3
-        t = 0.24 - abs(k) * 0.03
-        e = esfera(x, y, 0.1 + t * 0.4, t * 0.75, t, t * 0.7, MAT['hojaldre'], rot=a)
-    granitos(0, 0.05, 0.3, 0.3, 20, MAT['queso'], tam=(0.012, 0.02))
+    # Hojaldre horneado: dorado oscuro arriba, más claro en los pliegues; brillo de huevo batido
+    MAT['croissant'] = mat('croissant', (0.24, 0.08, 0.015), rough=0.42, coat=0.2, bump=0.45, color2=(0.5, 0.22, 0.04), escala_ruido=6)
+    croissant_malla(MAT['croissant'])
+    granitos(0.0, -0.05, 0.03, 0.45, 14, MAT['hojaldre'], tam=(0.012, 0.022), alto=0.2)   # migas sobre el plato
 
 def p_galletas():
     plato(MAT['ceramica'], 1.0)
@@ -339,20 +374,6 @@ def p_huevos_rancheros():
     granitos(0, 0, 0.1, 0.6, 30, MAT['queso'], tam=(0.025, 0.04))
     hierbas(0, 0, 0.12, 0.6, 18)
 
-def p_changua():
-    tazon(MAT['barro'], r=0.95, h=0.42)
-    cilindro(0, 0, 0.34, 0.86, 0.02, MAT['leche'])
-    huevo(0.05, 0.05, 0.36, 0.85, 1.2)
-    for _ in range(14):
-        x, y = random.uniform(-0.6, 0.6), random.uniform(-0.6, 0.6)
-        if x * x + y * y < 0.45:
-            bpy.ops.mesh.primitive_torus_add(major_radius=0.035, minor_radius=0.012, location=(x, y, 0.36))
-            asignar(bpy.context.object, MAT['cebolla'])
-    for _ in range(6):
-        x, y = random.uniform(-0.55, 0.55), random.uniform(-0.55, 0.55)
-        if x * x + y * y < 0.4:
-            caja(x, y, 0.38, 0.06, 0.05, 0.04, MAT['pan'], rot=random.uniform(0, 3), bisel=0.01)
-
 def p_tostada():
     plato(MAT['ceramica_azul'], 1.1)
     caja(0, 0, 0.08, 0.62, 0.45, 0.06, MAT['corteza'], rot=0.25, bisel=0.06)
@@ -362,10 +383,31 @@ def p_tostada():
     huevo(0.1, 0.05, 0.2, 0.65, 0.2)
     granitos(0, 0, 0.21, 0.4, 20, MAT['salsa'], tam=(0.008, 0.012))
 
+def superficie(o, fuerza, escala):
+    # Malla fina para que el desplazamiento haga ondas/arrugas (la tapa del cilindro trae muy pocos puntos)
+    s = o.modifiers.new('malla', 'SUBSURF'); s.subdivision_type = 'SIMPLE'; s.levels = 4; s.render_levels = 4
+    return ruido_mesh(o, fuerza, escala)
+
+def p_changua():
+    tazon(MAT['barro'], r=0.95, h=0.42)
+    superficie(cilindro(0, 0, 0.34, 0.86, 0.03, MAT['leche'], seg=96), 0.012, 0.35)   # caldo de leche, con ondas
+    huevo(0.05, 0.05, 0.37, 0.95, 1.2)
+    hierbas(0.0, 0.0, 0.37, 0.6, 26)                                                  # cilantro picado
+    for _ in range(22):                                                               # cebollín en rodajas
+        x, y = random.uniform(-0.62, 0.62), random.uniform(-0.62, 0.62)
+        if x * x + y * y < 0.42:
+            bpy.ops.mesh.primitive_torus_add(major_radius=0.035, minor_radius=0.012, location=(x, y, 0.37))
+            asignar(bpy.context.object, MAT['cebolla'])
+    for (x, y, r) in [(-0.42, 0.22, 0.4), (-0.25, -0.42, 1.3), (0.4, -0.3, 2.2), (0.36, 0.4, 0.9), (-0.5, -0.1, 2.8)]:  # pan calado
+        superficie(caja(x, y, 0.38, 0.09, 0.075, 0.06, MAT['corteza'], rot=r, bisel=0.015), 0.01, 0.3)
+
 def p_natas():
     tazon(MAT['barro'], r=0.85, h=0.38)
-    c = cilindro(0, 0, 0.3, 0.77, 0.04, MAT['crema']); ruido_mesh(c, 0.025, 0.25)
-    granitos(0, 0, 0.33, 0.55, 18, MAT['pasa'], tam=(0.035, 0.045), forma=(1, 0.7, 0.5))
+    MAT['natilla'] = mat('natilla', (0.88, 0.7, 0.42), rough=0.38, sss=0.35, coat=0.15, bump=0.5, color2=(0.97, 0.87, 0.64), escala_ruido=4)
+    superficie(cilindro(0, 0, 0.3, 0.77, 0.05, MAT['natilla'], seg=96), 0.035, 0.12)  # la "piel" arrugada de las natas
+    granitos(0, 0, 0.345, 0.62, 140, MAT['canela'], tam=(0.006, 0.01), alto=0.1)       # canela espolvoreada
+    granitos(0.05, -0.05, 0.35, 0.5, 14, MAT['pasa'], tam=(0.04, 0.055), forma=(1, 0.75, 0.55))
+    cilindro(0.5, -0.66, 0.42, 0.03, 0.55, MAT['canela'], seg=16, rot=(math.pi / 2, 0, 0.7))  # astilla de canela en el borde
 
 PLATOS = {
     'calentado': p_calentado, 'capuchino': p_capuchino, 'tinto': p_tinto, 'cafe-filtrado': p_cafe_filtrado,
