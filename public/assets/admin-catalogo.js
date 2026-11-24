@@ -120,6 +120,7 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       f.nombre.value = p.nombre; f.descripcion.value = p.descripcion || ''; f.precio.value = p.precio || 0;
       f.categoria_id.value = p.categoria_id || '';
       f.video_url.value = p.video_url || '';
+      f.modelo_url.value = p.modelo_url || '';
       ['paso1', 'paso2', 'paso3'].forEach((k, i) => (f[k].value = (p.pasos || [])[i] || ''));
       (p.horario || []).forEach(filaHorario);
       f.querySelectorAll('#k-etiquetas input').forEach((c) => (c.checked = (p.etiquetas || []).includes(c.value)));
@@ -165,6 +166,8 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
     if (!nombre) return err('Escribe el nombre.');
     const video = f.video_url.value.trim();
     if (tipo === 'maquina' && video && !/^https?:\/\//i.test(video)) return err('El video debe ser un link que empiece por https://');
+    const modelo = f.modelo_url.value.trim();
+    if (modelo && !/^(https:\/\/\S+|\/assets\/[\w\-/.]+)\.glb$/i.test(modelo)) return err('El modelo 3D debe ser un link https que termine en .glb');
     const horario = [...$('#k-horario').querySelectorAll('[data-horario]')].map((x) => ({
       dia: +x.querySelector('[data-h=dia]').value,
       hora: x.querySelector('[data-h=hora]').value,
@@ -181,6 +184,7 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       destacado: esCarta && f.destacado.checked,
       agotado: esCarta && f.agotado.checked,
       video_url: tipo === 'maquina' ? video || null : null,
+      modelo_url: esCarta ? modelo || null : null,
       pasos: tipo === 'maquina' ? ['paso1', 'paso2', 'paso3'].map((k) => f[k].value.trim()).filter(Boolean) : [],
       horario: tipo === 'clase' ? horario : [],
       activo: f.activo.checked,

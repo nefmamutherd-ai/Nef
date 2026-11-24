@@ -1,12 +1,17 @@
 # Renders 3D de los platos de la demo de Nef (Blender 5.x, Eevee). Todo procedural, sin archivos externos.
 # Uso: blender --background --factory-startup --python platos.py -- <plato|todos> <carpeta_salida> [tam]
-import bpy, bmesh, math, random, sys
+import bpy, bmesh, math, random, sys, os
 from mathutils import Vector
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 QUE = argv[0] if argv else 'calentado'
 SALIDA = argv[1] if len(argv) > 1 else '.'
 TAM = int(argv[2]) if len(argv) > 2 else 900
+MUESTRAS = int(argv[3]) if len(argv) > 3 else 72
+# Recursos reales (Poly Haven, CC0) si están en el PC: HDRI de estudio y madera de roble. Sin ellos, todo procedural como antes.
+RECURSOS = os.environ.get('NEF_RECURSOS', 'D:/Herramientas/assets-polyhaven')
+HDRI = os.path.join(RECURSOS, 'hdri', 'brown_photostudio_02_2k.hdr')
+ROBLE = os.path.join(RECURSOS, 'tex', 'oak_veneer_01')
 
 # ---------- utilidades ----------
 def limpiar():
@@ -137,7 +142,7 @@ def escena(madera=(0.32, 0.17, 0.08), madera2=(0.12, 0.06, 0.03)):
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'
-    sc.cycles.samples = 72
+    sc.cycles.samples = MUESTRAS
     sc.cycles.use_denoising = True
     sc.cycles.max_bounces = 6
     sc.render.resolution_x = TAM; sc.render.resolution_y = TAM
@@ -163,6 +168,20 @@ def escena(madera=(0.32, 0.17, 0.08), madera2=(0.12, 0.06, 0.03)):
     b.inputs['Roughness'].default_value = 0.55
     bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = 0.15
     nt.links.new(w.outputs['Fac'], bp.inputs['Height']); nt.links.new(bp.outputs['Normal'], b.inputs['Normal'])
+    if os.path.exists(os.path.join(ROBLE, 'diff.jpg')):
+        # Mesa de roble real: color, relieve y rugosidad de foto (escala: tablas de ~15 cm)
+        m = bpy.data.materials.new('roble'); m.use_nodes = True; nt = m.node_tree; b = nt.nodes['Principled BSDF']
+        tc = nt.nodes.new('ShaderNodeTexCoord'); mp = nt.nodes.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1.6, 1.6, 1.6)
+        nt.links.new(tc.outputs['Generated'], mp.inputs['Vector'])
+        def img(nombre, color=True):
+            n = nt.nodes.new('ShaderNodeTexImage'); n.image = bpy.data.images.load(os.path.join(ROBLE, nombre))
+            if not color: n.image.colorspace_settings.name = 'Non-Color'
+            nt.links.new(mp.outputs['Vector'], n.inputs['Vector']); return n
+        dif = img('diff.jpg'); ru = img('rough.jpg', False); no = img('nor.jpg', False)
+        nm = nt.nodes.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = 0.6
+        nt.links.new(dif.outputs['Color'], b.inputs['Base Color'])
+        nt.links.new(ru.outputs['Color'], b.inputs['Roughness'])
+        nt.links.new(no.outputs['Color'], nm.inputs['Color']); nt.links.new(nm.outputs['Normal'], b.inputs['Normal'])
     mesa.data.materials.append(m)
     # luz de ventana (área grande al costado) + relleno
     bpy.ops.object.light_add(type='AREA', location=(-3.6, 2.6, 2.4)); l = bpy.context.object
@@ -175,6 +194,12 @@ def escena(madera=(0.32, 0.17, 0.08), madera2=(0.12, 0.06, 0.03)):
     world = bpy.data.worlds.new('mundo'); sc.world = world; world.use_nodes = True
     world.node_tree.nodes['Background'].inputs['Color'].default_value = (0.55, 0.5, 0.45, 1)
     world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.18
+    if os.path.exists(HDRI):
+        # Luz de estudio real: reflejos creíbles en la cerámica, el café y las salsas; la ventana sigue siendo la luz principal
+        wt = world.node_tree; env = wt.nodes.new('ShaderNodeTexEnvironment'); env.image = bpy.data.images.load(HDRI)
+        wt.links.new(env.outputs['Color'], wt.nodes['Background'].inputs['Color'])
+        wt.nodes['Background'].inputs['Strength'].default_value = 0.55
+        l.data.energy = 900
     # cámara a 50°, con desenfoque de fondo
     bpy.ops.object.camera_add(location=(0, -2.25, 2.35)); cam = bpy.context.object
     direc = Vector((0, 0.05, 0.05)) - cam.location; cam.rotation_euler = direc.to_track_quat('-Z', 'Y').to_euler()
