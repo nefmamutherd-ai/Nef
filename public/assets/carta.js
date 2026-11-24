@@ -76,9 +76,10 @@ async function abrir3d(p) {
     'min-camera-orbit': `auto ${VISTA.min}deg auto`, 'max-camera-orbit': `auto ${VISTA.max}deg auto`,
     'touch-action': 'none', 'disable-pan': '', 'interpolation-decay': '120',
     'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
-    // Android: Scene Viewer (app de Google) primero; WebXR dentro de Chrome hace caer el navegador en muchos celulares
-    ar: '', 'ar-modes': 'scene-viewer quick-look webxr', 'ar-scale': 'fixed', 'ar-placement': 'floor',
   };
+  // iPhone: realidad aumentada propia del teléfono (Quick Look, sin apps). Android y demás: la cámara en la web (abrirCamara),
+  // porque Scene Viewer y WebXR piden "Servicios de Google Play para RA", que muchos celulares no tienen.
+  if (ES_IPHONE) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
   // Al soltarlo, vuelve solo a la inclinación de siempre (conserva hacia dónde lo giraron de lado)
   let vuelta = null;
@@ -92,19 +93,79 @@ async function abrir3d(p) {
   mv.addEventListener('pointerup', volver);
   mv.addEventListener('pointercancel', volver);
   mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
-  // Botón de realidad aumentada: model-viewer lo muestra solo si el celular puede (Android con ARCore, iPhone)
   const ar = document.createElement('button');
-  ar.slot = 'ar-button'; ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
-  ar.addEventListener('click', () => evento('ver_ar', p.id));
-  mv.append(ar);
+  ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
+  if (ES_IPHONE) {
+    ar.slot = 'ar-button'; // model-viewer abre Quick Look
+    ar.addEventListener('click', () => evento('ver_ar', p.id));
+    mv.append(ar);
+  } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    ar.addEventListener('click', () => abrirCamara(p));
+  }
   const caja = $('d-3d');
   caja.textContent = '';
   caja.append(mv);
+  if (!ES_IPHONE && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) caja.append(ar);
   caja.hidden = false;
   $('d-foto').hidden = true;
   evento('ver_3d', p.id);
 }
 let abierto = null;
+
+// ── "Verlo en tu mesa" desde la web (sin apps): la cámara trasera de fondo y el plato encima.
+//    El plato se inclina con el celular (giroscopio): mirando hacia la mesa se ve desde arriba, como apoyado en ella.
+const ES_IPHONE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+async function abrirCamara(p) {
+  evento('ver_ar', p.id);
+  const capa = document.createElement('div');
+  capa.className = 'pt-camara';
+  capa.setAttribute('role', 'dialog');
+  capa.setAttribute('aria-label', `${p.nombre} en tu mesa`);
+  const video = document.createElement('video');
+  video.playsInline = true; video.muted = true; video.autoplay = true;
+  const msg = document.createElement('p');
+  msg.className = 'pt-camara-msg';
+  msg.textContent = 'Apunta la cámara a tu mesa';
+  const cerrar = document.createElement('button');
+  cerrar.type = 'button'; cerrar.className = 'pt-camara-cerrar'; cerrar.textContent = 'Listo';
+  capa.append(video, msg, cerrar);
+  document.body.append(capa);
+  let stream = null;
+  const salir = () => {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    window.removeEventListener('deviceorientation', alInclinar);
+    capa.remove();
+  };
+  cerrar.addEventListener('click', salir);
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+  } catch {
+    msg.textContent = 'Para verlo en tu mesa, permite el uso de la cámara.';
+    return;
+  }
+  video.srcObject = stream;
+  const mv = document.createElement('model-viewer');
+  for (const [k, v] of Object.entries({
+    src: p.modelo_url, alt: `${p.nombre} en tu mesa`, 'camera-controls': '', 'touch-action': 'none', 'disable-pan': '',
+    'camera-orbit': '0deg 55deg auto', 'min-camera-orbit': 'auto 10deg auto', 'max-camera-orbit': 'auto 88deg auto',
+    'field-of-view': '32deg', 'shadow-intensity': '1.4', 'shadow-softness': '0.6', 'environment-image': 'neutral',
+    exposure: '1', 'interaction-prompt': 'none', 'interpolation-decay': '80',
+  })) mv.setAttribute(k, v);
+  capa.insertBefore(mv, msg);
+  setTimeout(() => { msg.textContent = 'Gíralo con el dedo · acércalo con dos dedos'; }, 2500);
+  // Inclinación del celular (beta: 0 = acostado mirando abajo, 90 = de pie) → ángulo desde arriba del plato
+  let tocando = false;
+  mv.addEventListener('pointerdown', () => { tocando = true; });
+  mv.addEventListener('pointerup', () => { tocando = false; });
+  function alInclinar(e) {
+    if (tocando || e.beta == null) return;
+    const o = mv.getCameraOrbit && mv.getCameraOrbit();
+    if (!o) return;
+    const phi = Math.max(12, Math.min(86, e.beta));
+    mv.cameraOrbit = `${o.theta}rad ${phi}deg ${o.radius}m`;
+  }
+  window.addEventListener('deviceorientation', alInclinar);
+}
 
 function abrirDetalle(p) {
   abierto = p;
