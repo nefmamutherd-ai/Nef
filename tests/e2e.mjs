@@ -88,7 +88,7 @@ await caso('código inventado → inactivo', async () => {
 });
 await caso('botones registran y redirigen', async () => {
   assert.deepEqual(await ir(`/c/${slug}/resena?t=${codigos[0]}`), [302, 'https://g.page/r/abc/review']);
-  assert.deepEqual(await ir(`/c/${slug}/whatsapp?t=${codigos[0]}`), [302, 'https://wa.me/573001234567']);
+  assert.deepEqual(await ir(`/c/${slug}/whatsapp?t=${codigos[0]}`), [302, 'https://wa.me/573001234567?text=' + encodeURIComponent('Hola Café Prueba, ')], 'abre el chat con el saludo escrito');
   assert.equal((await ir(`/c/${slug}/wifi?t=${codigos[0]}`, 'POST'))[0], 204);
 });
 const movil = await ctx.newPage();

@@ -14,8 +14,9 @@ insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, s
   resena_url, whatsapp, instagram, wifi_nombre, wifi_clave, moneda_plural, moneda_singular, bienvenida, monedas_por_visita)
 values ('d0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-000000000001', 'demo-cafe', 'Café Luna',
   'Café de especialidad · demostración', '#b4532a', 'cafe', '{"base":true,"catalogo":true,"club":true,"estudio":false}',
-  'Mesa 4', 'https://www.google.com/maps', '3001234567', '@nef', 'CafeLuna_Clientes', 'luna2026', 'monedas', 'moneda', 50, 10)
-on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, servicios = excluded.servicios, activo = true;
+  'Mesa 4', 'https://www.google.com/maps', '3204871882', null, 'CafeLuna_Clientes', 'luna2026', 'monedas', 'moneda', 50, 10)
+on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, servicios = excluded.servicios, activo = true,
+  whatsapp = excluded.whatsapp, instagram = excluded.instagram;
 
 insert into public.categorias (id, negocio_id, nombre, orden) values
   ('d0000000-0000-4000-8000-0000000c0001', 'd0000000-0000-4000-8000-0000000000c1', 'Desayunos', 1),
@@ -62,8 +63,9 @@ insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, s
   resena_url, whatsapp, wifi_nombre, wifi_clave, bienvenida, monedas_por_visita)
 values ('d0000000-0000-4000-8000-0000000000a2', 'd0000000-0000-4000-8000-000000000001', 'demo-gym', 'Forja Gym',
   'Gimnasio · demostración', '#1f1f1f', 'gimnasio', '{"base":true,"catalogo":true,"club":true,"estudio":true}',
-  'Sede Chapinero', 'https://www.google.com/maps', '3001234567', 'Forja_Socios', 'fuerza123', 50, 10)
-on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, servicios = excluded.servicios, activo = true;
+  'Sede Chapinero', 'https://www.google.com/maps', '3204871882', 'Forja_Socios', 'fuerza123', 50, 10)
+on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, servicios = excluded.servicios, activo = true,
+  whatsapp = excluded.whatsapp, instagram = excluded.instagram;
 
 insert into public.productos (id, negocio_id, tipo, nombre, descripcion, pasos, orden) values
   ('d0000000-0000-4000-8000-00000000b101', 'd0000000-0000-4000-8000-0000000000a2', 'maquina', 'Prensa de piernas', 'Cuádriceps y glúteos',
