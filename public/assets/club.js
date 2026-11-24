@@ -62,7 +62,7 @@ function contar(el, hasta, desde = 0, ms = 900) {
 const CAIDA = [[-64, 0], [52, 60], [-18, 120], [80, 180], [-90, 240], [22, 300], [-46, 360], [66, 420], [-6, 480], [96, 540], [-80, 600], [38, 660]];
 function lluvia(cuantas) {
   if (quieto()) return;
-  const saldo = $('t-saldo');
+  const saldo = $('t-moneda').parentElement; // la lluvia cae hacia la moneda grande
   const capa = document.createElement('div');
   capa.className = 'pt-lluvia';
   capa.setAttribute('aria-hidden', 'true');
@@ -97,41 +97,33 @@ function onda() {
 }
 const vibrar = (patron) => { try { if (!quieto() && navigator.vibrate) navigator.vibrate(patron); } catch { /* sin vibración */ } };
 
-// ── Camino de premios: barra hasta el saldo; la bienvenida pendiente se ve como tramo "fantasma" ──
-function pintarCamino(t, base) {
+// ── Premios en fila (se deslizan): logrados con ✓, el siguiente resaltado, cada uno con su barrita ──
+function pintarCamino(t) {
   const cont = $('t-camino');
-  const premios = [...(t.premios || [])].sort((a, b) => a.costo - b.costo).slice(0, 4);
+  const premios = [...(t.premios || [])].sort((a, b) => a.costo - b.costo);
   cont.textContent = '';
-  cont.hidden = premios.length < 1;
-  if (!premios.length) return;
-  const max = premios[premios.length - 1].costo;
-  const pista = document.createElement('div');
-  pista.className = 'pt-pista';
-  const fantasma = document.createElement('i');
-  fantasma.className = 'fantasma';
-  const lleno = document.createElement('i');
-  pista.append(fantasma, lleno);
-  cont.append(pista);
-  const conRegalo = (t.saldo || 0) + (t.bienvenida_pendiente || 0);
+  cont.hidden = premios.length < 2; // con uno solo, ya está en "Tu próximo premio"
+  if (cont.hidden) return;
+  const regalo = Number(t.bienvenida_pendiente) || 0;
   let marcada = false;
-  premios.forEach((p, k) => {
+  for (const p of premios) {
     const logra = t.saldo >= p.costo;
-    const parada = document.createElement('div');
     const siguiente = !logra && !marcada;
     if (siguiente) marcada = true;
-    parada.className = 'pt-parada' + (logra ? ' lograda' : '') + (siguiente ? ' siguiente' : '') + (k % 2 ? ' abajo' : '');
-    parada.style.setProperty('--v', String(p.costo / max));
-    const punto = document.createElement('span');
-    const txt = document.createElement('small');
-    txt.textContent = `${p.nombre} · ${numero(p.costo)}`;
-    parada.append(punto, txt);
-    cont.append(parada);
-  });
-  // Arranca donde estaba (base) y corre hasta el saldo de ahora
-  lleno.style.setProperty('--v', String(Math.min(1, (base || 0) / max)));
-  fantasma.style.setProperty('--v', String(Math.min(1, conRegalo / max)));
-  fantasma.hidden = !(t.bienvenida_pendiente > 0);
-  requestAnimationFrame(() => requestAnimationFrame(() => lleno.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / max)))));
+    const d = document.createElement('div');
+    d.className = 'pt-pr' + (logra ? ' lograda' : '') + (siguiente ? ' siguiente' : '');
+    const b = document.createElement('b'); b.textContent = p.nombre;
+    const c = document.createElement('span'); c.className = 'pt-pr-cuesta';
+    const m = document.createElement('i'); m.className = 'pt-moneda-p'; m.setAttribute('aria-hidden', 'true');
+    c.append(m, numero(p.costo));
+    const barra = document.createElement('div'); barra.className = 'pt-pr-barra';
+    const lleno = document.createElement('i'); lleno.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / p.costo)));
+    barra.append(lleno);
+    const s = document.createElement('small');
+    s.textContent = logra ? '¡Ya te alcanza!' : regalo && t.saldo + regalo >= p.costo ? 'Con tu regalo, ¡ya!' : `Te faltan ${numero(p.costo - t.saldo)}`;
+    d.append(b, c, barra, s);
+    cont.append(d);
+  }
 }
 
 let tokenActual = null;
@@ -154,13 +146,9 @@ function frase(el, partes) {
   }
 }
 
-// Progreso del aro (0–100) hacia el premio que sigue; con todo alcanzado, lleno
-function progresoAro(t, saldo) {
-  const premios = [...(t.premios || [])].sort((a, b) => a.costo - b.costo);
-  const meta = premios.find((p) => p.costo > saldo);
-  if (!meta) return premios.length ? 100 : 0;
-  return Math.min(100, Math.round((saldo / meta.costo) * 100));
-}
+// Monedas por visita (modo "visita"): para decir "2 visitas más" en vez de "70 monedas" (más concreto, más cerca)
+const POR_VISITA = raiz.dataset.modo === 'visita' ? Number(raiz.dataset.porVisita) || 0 : 0;
+const visitas = (n) => `${numero(n)} ${n === 1 ? 'visita' : 'visitas'}`;
 
 // base = saldo desde el que corre la animación (lo último que vio el cliente)
 function pintarTarjeta(t, base = 0) {
@@ -169,45 +157,52 @@ function pintarTarjeta(t, base = 0) {
   const premios = [...(t.premios || [])].sort((a, b) => a.costo - b.costo);
   const alcanzables = premios.filter((p) => p.alcanzable);
   const regalo = Number(t.bienvenida_pendiente) || 0;
+  $('t-saldo').classList.toggle('listo', alcanzables.length > 0);
 
-  // Aro: lleno real + tramo fantasma con la bienvenida que espera; brilla si ya alcanza para algo
-  const aro = $('t-saldo');
-  const meta = premios.find((p) => p.costo > t.saldo);
-  aro.style.setProperty('--progreso', String(progresoAro(t, base)));
-  aro.style.setProperty('--fantasma', String(regalo && meta ? Math.min(100, Math.round(((t.saldo + regalo) / meta.costo) * 100)) : 0));
-  aro.classList.toggle('con-regalo', regalo > 0);
-  aro.classList.toggle('listo', alcanzables.length > 0);
-  requestAnimationFrame(() => requestAnimationFrame(() => aro.style.setProperty('--progreso', String(progresoAro(t, t.saldo)))));
-  $('t-regalo').hidden = !regalo;
+  // Boleto de regalo pegado al pase (progreso regalado: ya cuenta en la barra)
+  $('t-boleto').hidden = !regalo;
   $('t-regalo').textContent = regalo ? `+${numero(regalo)} de regalo` : '';
 
-  // Frase: con regalo pendiente, lo que ya alcanza con él; si no, lo que falta
-  if (regalo) {
+  // Tu próximo premio: barra ondulada desde lo que vio la última vez hasta hoy; el regalo, como tramo punteado
+  const meta = premios.find((p) => p.costo > t.saldo) || alcanzables[alcanzables.length - 1];
+  $('t-meta').hidden = !meta;
+  if (meta) {
+    const ola = $('t-ola');
+    const fr = (x) => String(Math.max(0, Math.min(1, x / meta.costo)));
+    ola.style.setProperty('--p', fr(base));
+    ola.style.setProperty('--g', fr(t.saldo + regalo));
+    requestAnimationFrame(() => requestAnimationFrame(() => ola.style.setProperty('--p', fr(t.saldo))));
+    $('t-meta-nombre').textContent = meta.nombre;
+    const cuesta = $('t-meta-cuesta');
+    cuesta.textContent = '';
+    const m = document.createElement('i'); m.className = 'pt-moneda-p'; m.setAttribute('aria-hidden', 'true');
+    cuesta.append(m, numero(meta.costo));
+    const faltan = meta.costo - t.saldo;
+    $('t-meta-titulo').textContent = faltan <= 0 ? 'Ya puedes canjear' : 'Tu próximo premio';
     const conRegalo = premios.filter((p) => p.costo <= t.saldo + regalo).pop();
-    frase($('t-frase'), conRegalo
-      ? ['En tu primera compra se activan tus ', { b: monedas(regalo) }, ' de bienvenida. Con eso ya te alcanza para ', { b: conRegalo.nombre }, '.']
-      : ['En tu primera compra se activan tus ', { b: monedas(regalo) }, ' de bienvenida.']);
-  } else if (t.cercano) frase($('t-frase'), ['Te faltan ', { b: numero(t.cercano.faltan) }, ' para un ', { b: t.cercano.nombre }]);
-  else if (alcanzables.length) frase($('t-frase'), ['Muéstrale tu código al cajero y ', { b: 'canjea tu premio' }, '.']);
-  else frase($('t-frase'), [`Muestra tu código en la caja cada vez que vengas y gana ${plural}.`]);
+    if (faltan <= 0) frase($('t-frase'), ['¡Ya te alcanza! Muéstrale tu código al cajero y ', { b: 'canjéalo' }, '.']);
+    else if (regalo && conRegalo) frase($('t-frase'), ['Con tus ', { b: `${numero(regalo)} ${plural} de regalo` }, ' ya te alcanza para ', { b: conRegalo.nombre }, '. Se activan en tu primera compra.']);
+    else if (POR_VISITA) {
+      const v = Math.ceil(Math.max(0, faltan - regalo) / POR_VISITA);
+      frase($('t-frase'), ['Te faltan ', { b: visitas(v) }, ' para ', { b: meta.nombre }, '.']);
+    } else frase($('t-frase'), ['Te faltan ', { b: `${numero(faltan)} ${plural}` }, ' para ', { b: meta.nombre }, '.']);
+  } else frase($('t-frase'), [`Muestra tu código en la caja cada vez que vengas y gana ${plural}.`]);
 
-  pintarCamino(t, base);
+  pintarCamino(t);
 
-  // Nivel discreto junto al negocio
-  if (t.nivel && t.nivel.nombre) $('t-neg').textContent = `${t.negocio} · ${t.nivel.nombre}`;
+  // Nivel discreto arriba a la derecha
+  $('t-neg').textContent = t.nivel && t.nivel.nombre ? t.nivel.nombre : '';
 
   // Un solo aviso: el servidor ya eligió cuál (bienvenida → hora dorada → premio → racha → te faltan).
-  // La bienvenida ya la cuentan el aro y la frase: aquí se dice solo cuándo se activa.
+  // Bienvenida, premio alcanzado y "te faltan" ya los dicen el pase y la barra: aquí solo hora dorada y racha.
   const aviso = $('t-aviso');
   const a = t.aviso;
   const veces = (m) => (Number(m) === 2 ? 'el doble' : Number(m) === 3 ? 'el triple' : `×${String(m).replace('.', ',')}`);
   const textos = {
-    bienvenida: () => [`Tus ${numero(a.n)} de bienvenida se activan en tu primera visita`, 'neutro'],
     hora_dorada: () => [`Hoy hasta las ${hora12(a.hasta)} ganas ${veces(a.multiplicador)}`, ''],
-    premio: () => [`¡Ya te alcanza para ${a.nombre}!`, 'ok'],
     racha: () => [`Vuelve antes del domingo para mantener tu racha de ${numero(a.semanas)} semanas`, ''],
   };
-  const elegido = a && a.tipo !== 'bienvenida' && textos[a.tipo] ? textos[a.tipo]() : null; // bienvenida y "te faltan" ya los dicen el aro y la frase
+  const elegido = a && textos[a.tipo] ? textos[a.tipo]() : null;
   aviso.hidden = !elegido;
   if (elegido) { aviso.textContent = elegido[0]; aviso.className = 'pt-aviso' + (elegido[1] ? ' ' + elegido[1] : ''); }
 

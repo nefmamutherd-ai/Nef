@@ -272,8 +272,10 @@ await caso('club: inscribirse en el celular → tarjeta con 0 y bienvenida pendi
   await p.click('#r-unirme');
   await p.waitForSelector('#tarjeta:not([hidden])');
   assert.equal(await p.textContent('#t-numero'), '0');
-  assert.equal(await p.textContent('#t-regalo'), '+50 de regalo', 'la bienvenida pendiente se ve en el aro');
-  assert.match(await p.textContent('#t-frase'), /En tu primera compra se activan tus 50 monedas de bienvenida/);
+  assert.equal(await p.textContent('#t-regalo'), '+50 de regalo', 'la bienvenida pendiente se ve en el boleto del pase');
+  assert.equal(await p.isVisible('#t-boleto'), true);
+  assert.match(await p.textContent('#t-frase'), /Te faltan \d+ visitas? para|ya te alcanza para/, 'el próximo premio dice cuánto falta, en visitas');
+  assert.match(await p.getAttribute('#tarjeta .pt-volver', 'href'), new RegExp(`/n/${slug}$`), 'se puede volver al menú del negocio');
   assert.equal(await p.isVisible('#t-aviso'), false, 'sin aviso repetido');
   await sinScrollHorizontal(p);
   await p.screenshot({ path: DIR + 'club-tarjeta.png', fullPage: true });

@@ -455,3 +455,107 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
   .pt-saldo.con-regalo::before, .pt-saldo.listo::after, .pt-pista i.fantasma, .pt-parada.siguiente span::after, .pt-espera i { animation: none; }
   .pt-saldo.listo::after { opacity: 0; }
 }
+
+/* ══ Club v2 (pedido de Jacobo): pase con el color del negocio, moneda viva, boleto de regalo, próximo premio con barra
+   ondulada y premios que se deslizan. Principios: progreso regalado, gradiente de meta, tarea abierta, pico al sumar. ══ */
+.pt-club2 { text-align: left; --moneda: #FFC93C; --moneda-borde: #E39B00; }
+.pt-club2 h1 { font: 800 28px/1.1 "Bricolage", var(--sans); letter-spacing: -.02em; margin: 22px 0 8px; }
+.pt-club2 .pt-frase { text-align: left; }
+.pt-club-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px 0 12px; }
+.pt-club-top .pt-volver { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding-right: 8px; color: var(--tinta); font: 600 16px var(--sans); text-decoration: none; }
+.pt-nivel { padding: 6px 12px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta-2); font: 700 13px var(--sans); }
+.pt-nivel:empty { display: none; }
+
+/* El pase */
+.pt-pase { position: relative; isolation: isolate; border-radius: 28px; padding: 20px 22px 22px; background: var(--marca); color: var(--sobre-marca);
+  box-shadow: 0 24px 40px -26px color-mix(in srgb, var(--marca) 85%, #000); }
+.pt-pase-fondo { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.pt-pase-fondo i { position: absolute; display: block; background: color-mix(in srgb, var(--sobre-marca) 13%, transparent); }
+.pt-pase-fondo i:nth-child(1) { width: 250px; height: 250px; right: -90px; top: -120px; border-radius: 42% 58% 63% 37% / 45% 38% 62% 55%; animation: pt-deriva 16s ease-in-out infinite alternate; }
+.pt-pase-fondo i:nth-child(2) { width: 160px; height: 160px; left: -60px; bottom: -80px; border-radius: 50%; background: color-mix(in srgb, var(--moneda) 30%, transparent); animation: pt-deriva 12s ease-in-out infinite alternate-reverse; }
+.pt-pase-fondo i:nth-child(3) { width: 64px; height: 64px; right: 64px; bottom: 44px; border-radius: 30%; animation: pt-gira 24s linear infinite; }
+@keyframes pt-deriva { from { transform: translate(0, 0) rotate(0) scale(1); } to { transform: translate(-22px, 16px) rotate(25deg) scale(1.08); } }
+.pt-pase-hola { margin: 0; font: 600 17px var(--sans); opacity: .92; }
+.pt-pase-saldo { position: relative; display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.pt-pase-saldo b { font: 800 86px/.9 "Bricolage", var(--sans); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+.pt-pase-unidad { margin: 8px 0 0; font: 600 16px var(--sans); opacity: .85; }
+.pt-pase.muestra .pt-pase-saldo b::before { content: "+"; }
+
+/* Moneda: brilla sola cada pocos segundos y de vez en cuando se voltea */
+.pt-moneda-g { position: relative; flex: none; width: 58px; height: 58px; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 34% 28%, #FFF4C8 0 10%, transparent 11%), radial-gradient(circle, var(--moneda) 0 54%, var(--moneda-borde) 55% 62%, var(--moneda) 63%);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .16), 0 8px 16px -8px rgba(0, 0, 0, .5); animation: pt-voltea 7s ease-in-out infinite 1.5s; }
+.pt-moneda-g::after { content: ""; position: absolute; inset: -30%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .8) 50%, transparent 60%); animation: pt-destello 4.5s ease-in-out infinite; }
+@keyframes pt-destello { 0%, 55% { transform: translateX(-90%); } 80%, 100% { transform: translateX(90%); } }
+@keyframes pt-voltea { 0%, 86% { transform: rotateY(0); } 94%, 100% { transform: rotateY(360deg); } }
+.pt-moneda-p { display: inline-block; flex: none; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle, var(--moneda, #FFC93C) 0 54%, var(--moneda-borde, #E39B00) 55% 64%, var(--moneda, #FFC93C) 65%); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .15); }
+/* Las monedas que caen van hacia la moneda grande */
+.pt-pase-saldo > .pt-lluvia { left: 29px; top: 50%; }
+.pt-club2 .pt-onda { border-radius: 28px; border-width: 5px; }
+.pt-club2 .pt-pase.pt-celebra { animation: pt-salto-suave .55s var(--ease); }
+@keyframes pt-salto-suave { 40% { transform: scale(1.035); } 100% { transform: none; } }
+.pt-club2 .pt-mas { top: -18px; background: var(--moneda); color: #3A2600; box-shadow: 0 10px 20px -10px rgba(0, 0, 0, .5); }
+
+/* Boleto de regalo: perforado, pegado al pase; el lazo se mueve de vez en cuando */
+.pt-boleto { position: relative; display: flex; align-items: center; gap: 14px; margin: 18px -22px -22px; padding: 16px 22px 18px;
+  border-radius: 0 0 28px 28px; background: #FFF6DC; color: #3A2600; border-top: 2px dashed color-mix(in srgb, var(--marca) 45%, transparent); }
+.pt-boleto::before, .pt-boleto::after { content: ""; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 50%; background: var(--papel); }
+.pt-boleto::before { left: -10px; }
+.pt-boleto::after { right: -10px; }
+.pt-boleto b { display: block; font: 800 21px/1.1 "Bricolage", var(--sans); }
+.pt-boleto small { display: block; margin-top: 2px; font: 600 13.5px var(--sans); color: #7A5A1E; }
+.pt-lazo { position: relative; flex: none; width: 40px; height: 34px; margin-top: 8px; border-radius: 8px; transform-origin: 50% 100%;
+  background: linear-gradient(90deg, transparent 41%, var(--moneda-borde) 41% 59%, transparent 59%), var(--marca); animation: pt-meneo 5s ease-in-out infinite 2s; }
+.pt-lazo i { position: absolute; top: -9px; width: 16px; height: 11px; border-radius: 50%; border: 4px solid var(--moneda-borde); }
+.pt-lazo i:first-child { left: 3px; transform: rotate(-25deg); }
+.pt-lazo i:last-child { right: 3px; transform: rotate(25deg); }
+@keyframes pt-meneo { 0%, 80%, 100% { transform: rotate(0); } 84% { transform: rotate(-9deg); } 88% { transform: rotate(8deg); } 92% { transform: rotate(-5deg); } 96% { transform: rotate(3deg); } }
+
+/* Tu próximo premio */
+.pt-meta { margin-top: 16px; padding: 18px 18px 14px; border-radius: 24px; background: var(--tarjeta); border: 1px solid var(--linea); }
+.pt-meta-fila { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.pt-meta-fila small { display: block; font: 600 13px var(--sans); color: var(--tinta-2); }
+.pt-meta-fila b { display: block; margin-top: 2px; font: 700 21px/1.2 var(--sans); }
+.pt-meta-cuesta { display: inline-flex; align-items: center; gap: 6px; font: 800 22px "Bricolage", var(--sans); font-variant-numeric: tabular-nums; }
+.pt-meta .pt-frase { margin: 0; font-size: 15.5px; line-height: 1.45; color: var(--tinta-2); }
+.pt-meta .pt-frase b { color: var(--tinta); }
+/* Barra ondulada (se mueve sola); --p = lleno, --g = con el regalo (tramo punteado) */
+.pt-ola { --p: 0; --g: 0; position: relative; height: 18px; margin: 14px 0 12px; }
+.pt-ola::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 6px; border-radius: 3px; background: var(--papel-hondo); }
+.pt-ola-fantasma { position: absolute; left: 0; top: 6px; height: 6px; width: calc(var(--g) * 100%); border-radius: 3px;
+  background: repeating-linear-gradient(90deg, var(--moneda-borde) 0 7px, transparent 7px 12px); animation: pt-respira 1.8s ease-in-out infinite; }
+.pt-ola-lleno { position: absolute; inset: 0; overflow: hidden; clip-path: inset(0 calc((1 - var(--p)) * 100%) 0 0 round 9px);
+  transition: clip-path 1.5s cubic-bezier(.2, .8, .2, 1) .25s; }
+.pt-ola-lleno svg { position: absolute; left: 0; top: 0; width: 200%; height: 18px; animation: pt-ola-corre 1.4s linear infinite; }
+.pt-ola-lleno path { fill: none; stroke: var(--marca); stroke-width: 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+@keyframes pt-ola-corre { to { transform: translateX(-5%); } }
+
+/* Premios que se deslizan */
+.pt-premios-fila { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--e-24);
+  margin: 14px calc(-1 * var(--e-24)) 0; padding: 4px var(--e-24) 10px; scrollbar-width: none; }
+.pt-premios-fila::-webkit-scrollbar { display: none; }
+.pt-pr { flex: none; width: 152px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 20px;
+  background: var(--tarjeta); border: 1px solid var(--linea); }
+.pt-pr b { min-height: 38px; font: 650 15px/1.25 var(--sans); }
+.pt-pr-cuesta { display: inline-flex; align-items: center; gap: 6px; font: 800 20px "Bricolage", var(--sans); font-variant-numeric: tabular-nums; }
+.pt-pr-barra { height: 8px; border-radius: 4px; background: var(--papel-hondo); overflow: hidden; }
+.pt-pr-barra i { display: block; height: 100%; width: calc(var(--v, 0) * 100%); border-radius: 4px; background: var(--marca); transform-origin: left; animation: pt-dibuja .9s cubic-bezier(.2, .8, .2, 1) both .3s; }
+.pt-pr small { font: 600 12.5px var(--sans); color: var(--tinta-2); }
+.pt-pr.siguiente { border: 2px solid var(--marca); padding: 13px; }
+.pt-pr.lograda { background: color-mix(in srgb, var(--ok) 9%, var(--tarjeta)); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+.pt-pr.lograda .pt-pr-barra i { background: var(--ok); }
+.pt-pr.lograda small { color: var(--ok); }
+.pt-club2 .pt-aviso { margin: 14px 0 0; }
+.pt-club2 .pt-accion { margin-top: 20px; border-radius: 999px; }
+.pt-club2 .pt-form { margin-top: 18px; }
+/* Hoja "todos los premios": barras gruesas con el color del negocio */
+#club .pt-premio b { font: 700 18px var(--sans); }
+#club .pt-premio .pt-barrita { height: 10px; border-radius: 5px; background: var(--papel-hondo); }
+#club .pt-premio .pt-barrita i { background: var(--marca); border-radius: 5px; }
+#club .pt-premio.listo .pt-barrita i { background: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-pase-fondo i, .pt-moneda-g, .pt-moneda-g::after, .pt-lazo, .pt-ola-lleno svg, .pt-ola-fantasma { animation: none; }
+  .pt-ola-lleno { transition: none; }
+}
