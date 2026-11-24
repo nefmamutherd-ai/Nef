@@ -1711,6 +1711,10 @@ returns json language sql stable security definer set search_path = public as $$
   from public.negocios where slug = lower(trim(p_slug)) and activo;
 $$;
 
+-- Modelo 3D del plato (.glb) para girarlo y verlo en la mesa (realidad aumentada). Solo del propio sitio o https.
+alter table public.productos add column if not exists modelo_url text
+  check (modelo_url is null or modelo_url ~ '^(https://[^[:space:]"<>]+|/assets/[A-Za-z0-9_/.-]+)[.]glb$');
+
 -- La carta en UNA llamada: categorías activas en orden + platos activos (destacados primero, agotados al final)
 create or replace function public.carta_publica(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
@@ -1721,7 +1725,7 @@ returns json language sql stable security definer set search_path = public as $$
   ),
   item as (
     select p.categoria_id, json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'precio', p.precio,
-      'foto_url', p.foto_url, 'etiquetas', p.etiquetas, 'destacado', p.destacado, 'agotado', p.agotado) as j,
+      'foto_url', p.foto_url, 'modelo_url', p.modelo_url, 'etiquetas', p.etiquetas, 'destacado', p.destacado, 'agotado', p.agotado) as j,
       p.agotado, p.destacado, p.orden, p.nombre
     from p
   )
@@ -1739,11 +1743,16 @@ returns json language sql stable security definer set search_path = public as $$
   where exists (select 1 from n)
 $$;
 
+-- Vista 3D y realidad aumentada de un plato también se cuentan (para saber si los clientes las usan)
+alter table public.eventos_carta drop constraint if exists eventos_carta_tipo_check;
+alter table public.eventos_carta add constraint eventos_carta_tipo_check
+  check (tipo in ('ver_carta', 'ver_producto', 'girar', 'ruleta_acepto', 'ver_3d', 'ver_ar'));
+
 create or replace function public.registrar_evento_carta(p_slug text, p_tipo text, p_producto uuid default null, p_tag text default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_negocio uuid;
 begin
-  if p_tipo not in ('ver_carta', 'ver_producto', 'girar', 'ruleta_acepto') then return; end if;
+  if p_tipo not in ('ver_carta', 'ver_producto', 'girar', 'ruleta_acepto', 'ver_3d', 'ver_ar') then return; end if;
   select id into v_negocio from public.negocios where slug = lower(trim(p_slug)) and activo;
   if v_negocio is null then return; end if;
   if p_producto is not null and not exists (select 1 from public.productos where id = p_producto and negocio_id = v_negocio) then

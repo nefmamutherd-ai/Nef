@@ -673,6 +673,30 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.close();
 });
 
+await caso('plato en 3D: "Girar en 3D" solo si tiene modelo; al tocarlo carga el visor con realidad aumentada', async () => {
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  const prods = await api(`productos?negocio_id=eq.${n.id}&tipo=eq.plato&activo=eq.true&select=id,nombre&order=nombre&limit=2`);
+  assert.ok(prods.length >= 2, 'hay platos para probar');
+  await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: '/assets/demo/3d/capuchino.glb' });
+  await assert.rejects(api(`productos?id=eq.${prods[1].id}`, 'PATCH', { modelo_url: 'javascript:alert(1).glb' }), /check|violates/i);
+  const p = await ctx.newPage();
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}/carta`);
+  await p.click(`.pt-prod[data-id="${prods[1].id}"], .pt-pop[data-id="${prods[1].id}"]`);
+  await p.waitForSelector('#hoja-detalle.abierta');
+  assert.equal(await p.isVisible('#d-girar'), false, 'sin modelo no hay botón 3D');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(400);
+  await p.click(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
+  await p.waitForSelector('#d-girar:visible');
+  await p.click('#d-girar');
+  await p.waitForSelector('#d-3d model-viewer');
+  assert.equal(await p.getAttribute('#d-3d model-viewer', 'src'), '/assets/demo/3d/capuchino.glb');
+  assert.equal(await p.getAttribute('#d-3d model-viewer', 'ar-scale'), 'fixed', 'en la mesa se ve a tamaño real');
+  await p.close();
+  await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
+});
+
 console.log('Fase 8 · panel del dueño');
 {
   const sufijo = Date.now().toString(36);

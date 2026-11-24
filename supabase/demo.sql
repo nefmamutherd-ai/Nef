@@ -126,3 +126,7 @@ from (values
   ('d0000000-0000-4000-8000-00000000a012', '/assets/demo/natas.webp')
 ) as v(id, foto)
 where p.id = v.id::uuid and (p.foto_url is null or p.foto_url like '/assets/demo/%.svg');
+
+-- Modelos 3D de los mismos platos (scripts/platos_glb.py): se giran con el dedo y se ven en la mesa (realidad aumentada)
+update public.productos p set modelo_url = replace(replace(p.foto_url, '/assets/demo/', '/assets/demo/3d/'), '.webp', '.glb')
+where p.negocio_id = 'd0000000-0000-4000-8000-0000000000c1' and p.foto_url like '/assets/demo/%.webp' and p.modelo_url is null;

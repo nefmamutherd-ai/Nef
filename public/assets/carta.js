@@ -62,10 +62,54 @@ if (pestanas.length && 'IntersectionObserver' in window) {
 // ── Hoja de detalle (cierra con fondo, Escape, "Cerrar" y el botón atrás del celular) ──
 const detalle = hoja($('hoja-detalle'));
 let conHistoria = false;
+// ── Vista 3D y realidad aumentada (model-viewer se descarga solo cuando alguien toca "Girar en 3D") ──
+let visor = null;
+const cargarVisor = () => (visor ||= import('/assets/vendor/model-viewer/model-viewer.min.js'));
+async function abrir3d(p) {
+  const girar = $('d-girar');
+  girar.disabled = true;
+  girar.lastChild.textContent = ' Cargando…';
+  try { await cargarVisor(); } catch {
+    girar.disabled = false; girar.lastChild.textContent = ' Girar en 3D';
+    return;
+  }
+  const mv = document.createElement('model-viewer');
+  const attrs = {
+    src: p.modelo_url, poster: p.foto_url || '', alt: `${p.nombre} en 3D`, 'camera-controls': '', 'auto-rotate': '',
+    'auto-rotate-delay': '0', 'rotation-per-second': '22deg', 'camera-orbit': '20deg 62deg auto', 'touch-action': 'pan-y',
+    'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
+    ar: '', 'ar-modes': 'webxr scene-viewer quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor',
+  };
+  for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
+  // Botón de realidad aumentada: model-viewer lo muestra solo si el celular puede (Android con ARCore, iPhone)
+  const ar = document.createElement('button');
+  ar.slot = 'ar-button'; ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
+  ar.addEventListener('click', () => evento('ver_ar', p.id));
+  mv.append(ar);
+  const caja = $('d-3d');
+  caja.textContent = '';
+  caja.append(mv);
+  caja.hidden = false;
+  $('d-foto').hidden = true;
+  girar.hidden = true;
+  evento('ver_3d', p.id);
+}
+$('d-girar').addEventListener('click', () => { if (abierto && abierto.modelo_url) abrir3d(abierto); });
+let abierto = null;
+
 function abrirDetalle(p) {
+  abierto = p;
   const foto = $('d-foto');
   foto.hidden = !p.foto_url;
   if (p.foto_url) { foto.src = p.foto_url; foto.alt = p.nombre; }
+  // Cada vez que se abre un plato, vuelve a la foto; "Girar en 3D" solo si tiene modelo
+  $('d-3d').hidden = true;
+  $('d-3d').textContent = '';
+  const girar = $('d-girar');
+  girar.hidden = !p.modelo_url;
+  girar.disabled = false;
+  girar.lastChild.textContent = ' Girar en 3D';
+  if (p.modelo_url && navigator.connection && !navigator.connection.saveData) cargarVisor().catch(() => {}); // precarga suave
   $('d-nombre').textContent = p.nombre;
   $('d-precio').textContent = pesos(p.precio);
   $('d-agotado').hidden = !p.agotado;

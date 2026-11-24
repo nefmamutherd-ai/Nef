@@ -1,7 +1,7 @@
 // /n/<slug>/carta → la carta del negocio (SSR: se ve completa sin esperar JS). Estilo carta impresa:
 // categorías numeradas, el plato estrella con foto grande, los demás con foto redonda y "nombre ······ precio".
 // public/assets/carta.js agrega pestañas que siguen el scroll, la hoja de detalle y "Elige por mí".
-import { rpc, esc, html, redirigir, paginaError, fotoSegura } from '../../../lib/util.js';
+import { rpc, esc, html, redirigir, paginaError, fotoSegura, modeloSeguro } from '../../../lib/util.js';
 import { paquete } from '../../../lib/sectores.js';
 import { inicioPagina, firma, icono } from '../../../lib/portal.js';
 
@@ -45,7 +45,7 @@ export async function onRequestGet({ params, request, env }) {
   const titulo = mayuscula(paquete(n.sector).palabras.catalogo);
   const todos = secciones.flatMap((s) => s.productos);
   // Datos para la hoja y "Elige por mí" (JSON seguro dentro de <script>)
-  const datos = JSON.stringify(todos.map((p) => ({ ...p, foto_url: fotoSegura(p.foto_url) }))).replace(/</g, '\\u003c');
+  const datos = JSON.stringify(todos.map((p) => ({ ...p, foto_url: fotoSegura(p.foto_url), modelo_url: modeloSeguro(p.modelo_url) }))).replace(/</g, '\\u003c');
   // En cada categoría, el primer plato destacado (y disponible) va con foto grande
   const cuerpo = (s) => {
     const i = s.productos.findIndex((p) => p.destacado && !p.agotado);
@@ -77,7 +77,11 @@ export async function onRequestGet({ params, request, env }) {
 
   <div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-detalle" role="dialog" aria-label="Detalle" hidden>
-    <img class="pt-foto-grande" id="d-foto" alt="" hidden>
+    <div class="pt-vista" id="d-vista">
+      <img class="pt-foto-grande" id="d-foto" alt="" hidden>
+      <div class="pt-3d" id="d-3d" hidden></div>
+      <button type="button" class="pt-girar" id="d-girar" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg><span> Girar en 3D</span></button>
+    </div>
     <h2 id="d-nombre"></h2>
     <span class="pt-precio" id="d-precio"></span>
     <span class="pt-agotado" id="d-agotado" hidden>Agotado hoy</span>
