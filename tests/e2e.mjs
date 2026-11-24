@@ -673,7 +673,7 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.close();
 });
 
-await caso('plato en 3D: "Girar en 3D" solo si tiene modelo; al tocarlo carga el visor con realidad aumentada', async () => {
+await caso('plato en 3D: abre directo en 3D si tiene modelo (giro limitado, AR con Scene Viewer); si no, solo la foto', async () => {
   const [n] = await api(`negocios?slug=eq.${slug}`);
   const prods = await api(`productos?negocio_id=eq.${n.id}&tipo=eq.plato&activo=eq.true&select=id,nombre&order=nombre&limit=2`);
   assert.ok(prods.length >= 2, 'hay platos para probar');
@@ -684,15 +684,18 @@ await caso('plato en 3D: "Girar en 3D" solo si tiene modelo; al tocarlo carga el
   await p.goto(`${BASE}/n/${slug}/carta`);
   await p.click(`.pt-prod[data-id="${prods[1].id}"], .pt-pop[data-id="${prods[1].id}"]`);
   await p.waitForSelector('#hoja-detalle.abierta');
-  assert.equal(await p.isVisible('#d-girar'), false, 'sin modelo no hay botón 3D');
+  await p.waitForTimeout(600);
+  assert.equal(await p.$('#d-3d model-viewer'), null, 'sin modelo no hay 3D');
   await p.keyboard.press('Escape');
   await p.waitForTimeout(400);
   await p.click(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
-  await p.waitForSelector('#d-girar:visible');
-  await p.click('#d-girar');
   await p.waitForSelector('#d-3d model-viewer');
-  assert.equal(await p.getAttribute('#d-3d model-viewer', 'src'), '/assets/demo/3d/capuchino.glb');
-  assert.equal(await p.getAttribute('#d-3d model-viewer', 'ar-scale'), 'fixed', 'en la mesa se ve a tamaño real');
+  const mv = (k) => p.getAttribute('#d-3d model-viewer', k);
+  assert.equal(await mv('src'), '/assets/demo/3d/capuchino.glb');
+  assert.equal(await mv('ar-scale'), 'fixed', 'en la mesa se ve a tamaño real');
+  assert.match(await mv('ar-modes'), /^scene-viewer/, 'Android usa Scene Viewer primero (WebXR hacía caer Chrome)');
+  assert.equal(await mv('touch-action'), 'none', 'deslizar gira el plato, no la página');
+  assert.match(await mv('max-camera-orbit'), /80deg/, 'no se ve el plato por debajo');
   await p.close();
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
 });

@@ -62,25 +62,36 @@ if (pestanas.length && 'IntersectionObserver' in window) {
 // ── Hoja de detalle (cierra con fondo, Escape, "Cerrar" y el botón atrás del celular) ──
 const detalle = hoja($('hoja-detalle'));
 let conHistoria = false;
-// ── Vista 3D y realidad aumentada (model-viewer se descarga solo cuando alguien toca "Girar en 3D") ──
+// ── Vista 3D y realidad aumentada: si el plato tiene modelo, la hoja abre directo en 3D (la foto se ve mientras carga) ──
 let visor = null;
 const cargarVisor = () => (visor ||= import('/assets/vendor/model-viewer/model-viewer.min.js'));
+const VISTA = { inclinacion: 62, min: 35, max: 80 }; // grados desde arriba: nunca se ve el plato por debajo
 async function abrir3d(p) {
-  const girar = $('d-girar');
-  girar.disabled = true;
-  girar.lastChild.textContent = ' Cargando…';
-  try { await cargarVisor(); } catch {
-    girar.disabled = false; girar.lastChild.textContent = ' Girar en 3D';
-    return;
-  }
+  try { await cargarVisor(); } catch { return; } // sin red: se queda la foto
+  if (abierto !== p) return; // cambiaron de plato mientras cargaba
   const mv = document.createElement('model-viewer');
   const attrs = {
     src: p.modelo_url, poster: p.foto_url || '', alt: `${p.nombre} en 3D`, 'camera-controls': '', 'auto-rotate': '',
-    'auto-rotate-delay': '0', 'rotation-per-second': '22deg', 'camera-orbit': '20deg 62deg auto', 'touch-action': 'pan-y',
+    'auto-rotate-delay': '2500', 'rotation-per-second': '20deg', 'camera-orbit': `20deg ${VISTA.inclinacion}deg auto`,
+    'min-camera-orbit': `auto ${VISTA.min}deg auto`, 'max-camera-orbit': `auto ${VISTA.max}deg auto`,
+    'touch-action': 'none', 'disable-pan': '', 'interpolation-decay': '120',
     'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
-    ar: '', 'ar-modes': 'webxr scene-viewer quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor',
+    // Android: Scene Viewer (app de Google) primero; WebXR dentro de Chrome hace caer el navegador en muchos celulares
+    ar: '', 'ar-modes': 'scene-viewer quick-look webxr', 'ar-scale': 'fixed', 'ar-placement': 'floor',
   };
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
+  // Al soltarlo, vuelve solo a la inclinación de siempre (conserva hacia dónde lo giraron de lado)
+  let vuelta = null;
+  const volver = () => {
+    clearTimeout(vuelta);
+    vuelta = setTimeout(() => {
+      const o = mv.getCameraOrbit && mv.getCameraOrbit();
+      if (o) mv.cameraOrbit = `${o.theta}rad ${VISTA.inclinacion}deg auto`;
+    }, 1400);
+  };
+  mv.addEventListener('pointerup', volver);
+  mv.addEventListener('pointercancel', volver);
+  mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
   // Botón de realidad aumentada: model-viewer lo muestra solo si el celular puede (Android con ARCore, iPhone)
   const ar = document.createElement('button');
   ar.slot = 'ar-button'; ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
@@ -91,10 +102,8 @@ async function abrir3d(p) {
   caja.append(mv);
   caja.hidden = false;
   $('d-foto').hidden = true;
-  girar.hidden = true;
   evento('ver_3d', p.id);
 }
-$('d-girar').addEventListener('click', () => { if (abierto && abierto.modelo_url) abrir3d(abierto); });
 let abierto = null;
 
 function abrirDetalle(p) {
@@ -102,14 +111,9 @@ function abrirDetalle(p) {
   const foto = $('d-foto');
   foto.hidden = !p.foto_url;
   if (p.foto_url) { foto.src = p.foto_url; foto.alt = p.nombre; }
-  // Cada vez que se abre un plato, vuelve a la foto; "Girar en 3D" solo si tiene modelo
   $('d-3d').hidden = true;
   $('d-3d').textContent = '';
-  const girar = $('d-girar');
-  girar.hidden = !p.modelo_url;
-  girar.disabled = false;
-  girar.lastChild.textContent = ' Girar en 3D';
-  if (p.modelo_url && navigator.connection && !navigator.connection.saveData) cargarVisor().catch(() => {}); // precarga suave
+  if (p.modelo_url) abrir3d(p);
   $('d-nombre').textContent = p.nombre;
   $('d-precio').textContent = pesos(p.precio);
   $('d-agotado').hidden = !p.agotado;

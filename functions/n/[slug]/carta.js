@@ -80,7 +80,6 @@ export async function onRequestGet({ params, request, env }) {
     <div class="pt-vista" id="d-vista">
       <img class="pt-foto-grande" id="d-foto" alt="" hidden>
       <div class="pt-3d" id="d-3d" hidden></div>
-      <button type="button" class="pt-girar" id="d-girar" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg><span> Girar en 3D</span></button>
     </div>
     <h2 id="d-nombre"></h2>
     <span class="pt-precio" id="d-precio"></span>
