@@ -154,6 +154,6 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
   por la API con la sesión de cada uno) · verificar ✓. El e2e ahora guarda `tests/capturas/fallo-*.png` si un caso falla.
 - Capturas revisadas: `panel_dueno_resumen_movil.png`, `panel_dueno_catalogo_movil.png`, `panel_dueno_club_movil.png`
   (premios pasaron de tabla a lista: en 390 px no se leían), `panel_dueno_sin_acceso_movil.png`, `panel_admin_duenos.png`.
-- Pendiente: aplicar `supabase/esquema.sql` completo en el Supabase real (necesita la contraseña de la BD que da Jacobo).
+- Aplicado en el Supabase real (2026-11-23): esquema.sql + storage.sql + correo de admin (archivo privado en `_local`, no en el repo). Comprobado: RLS en todas las tablas, anon sin `panel_negocios`, interruptor encendido.
 - Pedidos de Jacobo para después: tarjeta del club más llamativa (las 50 monedas de bienvenida no se notaron), QR de compra
   desde la caja (productos → monedas), mejorar los renders de croissant, natas y changua, realidad aumentada de platos.
