@@ -186,3 +186,13 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 6. QR de compra desde la caja (productos → monedas).
 7. Jacobo debe cambiar la contraseña de la base de datos de Supabase.
 8. Pregunta de Jacobo: cómo se hace el 3D de platos reales → fotogrametría (ver respuesta en la conversación; documentar en docs/kit).
+
+### 2026-11-24 · Pendientes de la noche anterior
+- 3D: abre directo en la hoja del plato, giro limitado (35°–80°) que vuelve solo, deslizar gira el plato (no la página),
+  AR con Scene Viewer primero (WebXR hacía caer Chrome). **Falta confirmar AR en un Android real.**
+- Admin y panel: campo "Modelo 3D (.glb)" en el plato. Guía de fotogrametría: `docs/kit/PLATOS-3D.md`.
+- Renders con HDRI de estudio y mesa de roble (Poly Haven, CC0) en `D:/Herramientas/assets-polyhaven`; este PC (i5-4300M, sin GPU útil)
+  tarda ~4,5 min por plato a 720 px / 96 muestras. La luz mejoró; los modelos de comida (croissant, natas, changua, espuma) siguen
+  pidiendo geometría y texturas nuevas.
+- **QR de compra**: la caja marca productos → QR de un solo uso (10 min) → el cliente lo abre y gana (con inscripción si es nuevo);
+  la caja dice "¡Listo!". Pruebas: sql 86 · e2e 41 · verificar ✓.

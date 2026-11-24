@@ -700,6 +700,50 @@ await caso('plato en 3D: abre directo en 3D si tiene modelo (giro limitado, AR c
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
 });
 
+await caso('QR de compra: la caja marca productos y genera el QR; una clienta nueva lo abre, se inscribe y gana; la caja dice ¡Listo!', async () => {
+  const caja = await ctx.newPage(); // misma sesión de caja (guardada en este navegador)
+  caja.on('pageerror', (e) => errores.push('caja qr: ' + e.message));
+  await caja.setViewportSize({ width: 390, height: 844 });
+  await caja.goto(`${BASE}/caja/${slug}`);
+  await caja.waitForSelector('#pantalla-buscar:not([hidden])');
+  await caja.waitForSelector('#cobrar-qr:not([hidden])');
+  await caja.click('#cobrar-qr');
+  await caja.waitForSelector('#compra-lista .pt-compra-item');
+  await caja.click('#compra-lista .pt-compra-item >> nth=0');
+  await caja.click('#compra-lista .pt-compra-item >> nth=0');
+  await caja.click('#compra-lista .pt-compra-item >> nth=1');
+  assert.equal(await caja.textContent('#compra-lista .pt-compra-item >> nth=0 >> .pt-compra-cant'), '×2');
+  const [resp] = await Promise.all([
+    caja.waitForResponse((r) => r.url().includes('/rpc/caja_crear_compra')),
+    caja.click('#compra-generar'),
+  ]);
+  const compra = await resp.json();
+  assert.match(compra.codigo, /^[0-9a-f]{32}$/);
+  await caja.waitForSelector('#compra-codigo svg');
+  assert.match(await caja.textContent('#compra-vence'), /Vence en (9|10):/);
+  await caja.screenshot({ path: DIR + 'caja-qr-compra.png' });
+
+  const ctxC = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  if (process.env.SB_BUNDLE) await ctxC.route(/cdn\.jsdelivr\.net\/.*supabase/, (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: fs.readFileSync(process.env.SB_BUNDLE, 'utf8') }));
+  const cli = await ctxC.newPage();
+  cli.on('pageerror', (e) => errores.push('cliente qr: ' + e.message));
+  await cli.goto(`${BASE}/n/${slug}/club?c=${compra.codigo}`);
+  await cli.waitForSelector('#registro:not([hidden])');
+  assert.equal(new URL(cli.url()).search, '', 'el código sale de la dirección (recargar no lo reintenta)');
+  await cli.fill('#r-nombre', 'Marta QR');
+  await cli.fill('#r-celular', '3209990011');
+  await cli.check('#r-acepto');
+  await cli.click('#r-unirme');
+  await cli.waitForSelector('#tarjeta:not([hidden])');
+  await cli.waitForFunction(() => document.getElementById('t-boleto').hidden, null, { timeout: 15000 }); // la bienvenida ya se activó
+  await cli.waitForTimeout(1800);
+  const saldo = Number((await cli.textContent('#t-numero')).replace(/\D/g, ''));
+  assert.ok(saldo >= 50 + 1, 'la compra sumó la visita y activó la bienvenida: ' + saldo);
+  await cli.screenshot({ path: DIR + 'club-qr-compra.png' });
+  await caja.waitForSelector('#compra-titulo:has-text("¡Listo!")', { timeout: 10000 });
+  await ctxC.close();
+});
+
 console.log('Fase 8 · panel del dueño');
 {
   const sufijo = Date.now().toString(36);

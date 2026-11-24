@@ -27,6 +27,8 @@ function pantalla(cual) {
   $('pantalla-buscar').hidden = cual !== 'buscar';
   if (cual === 'pin') setTimeout(() => $('pin').focus(), 50);
   if (cual === 'buscar') setTimeout(() => $('dato').focus(), 50);
+  // "Cobrar con QR" solo si el negocio tiene carta (se consulta después de que cargue todo el módulo)
+  if (cual === 'buscar') setTimeout(() => cargarCarta().then((c) => ($('cobrar-qr').hidden = !c.length)).catch(() => {}), 80);
 }
 
 function toast(msg) {
@@ -326,3 +328,98 @@ caja = leerSesion();
 pantalla(caja ? 'buscar' : 'pin');
 pintarPendientes();
 if (caja) vaciarCola();
+
+// ── Cobrar con QR: el cajero marca lo que compró; el cliente escanea y gana sus monedas en su celular ──
+// La lista sale de la carta pública; el valor lo recalcula la base (caja_crear_compra) con los precios reales.
+const hojaCompra = hoja($('hoja-compra'));
+let carta = null;
+const elegidos = new Map(); // producto_id → cantidad
+let vigiaCompra = null;
+
+async function cargarCarta() {
+  if (carta) return carta;
+  const c = await rpc('carta_publica', { p_slug: slug });
+  carta = (c && c.categorias ? c.categorias.flatMap((k) => k.productos || []) : []).filter((p) => !p.agotado);
+  return carta;
+}
+function pintarCompra() {
+  const lista = $('compra-lista');
+  lista.textContent = '';
+  let total = 0;
+  for (const p of carta) {
+    const cant = elegidos.get(p.id) || 0;
+    total += cant * (p.precio || 0);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pt-compra-item' + (cant ? ' elegido' : '');
+    const nom = document.createElement('span'); nom.textContent = p.nombre;
+    const pr = document.createElement('small'); pr.textContent = pesos(p.precio || 0);
+    b.append(nom, pr);
+    if (cant) { const c = document.createElement('b'); c.className = 'pt-compra-cant'; c.textContent = '×' + cant; b.append(c); }
+    b.addEventListener('click', () => { elegidos.set(p.id, Math.min(20, cant + 1)); pintarCompra(); });
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); if (cant > 1) elegidos.set(p.id, cant - 1); else elegidos.delete(p.id); pintarCompra(); });
+    lista.append(b);
+  }
+  $('compra-total').textContent = pesos(total);
+  $('compra-generar').disabled = !elegidos.size;
+}
+function reiniciarCompra() {
+  clearInterval(vigiaCompra);
+  elegidos.clear();
+  $('compra-elegir').hidden = false;
+  $('compra-qr').hidden = true;
+  if (carta) pintarCompra();
+}
+$('cobrar-qr').addEventListener('click', async () => {
+  reiniciarCompra();
+  hojaCompra.abrir();
+  try { await cargarCarta(); } catch { toast('Sin conexión: el QR necesita internet'); return; }
+  if (!carta.length) { toast('Este negocio aún no tiene carta'); hojaCompra.cerrar(); return; }
+  pintarCompra();
+});
+$('compra-limpiar').addEventListener('click', reiniciarCompra);
+$('compra-otra').addEventListener('click', reiniciarCompra);
+$('compra-generar').addEventListener('click', async () => {
+  const items = [...elegidos].map(([producto_id, cantidad]) => ({ producto_id, cantidad }));
+  $('compra-generar').disabled = true;
+  let r;
+  try { r = await rpc('caja_crear_compra', { p_sesion: caja.sesion, p_items: items }); } catch { toast('Sin conexión: el QR necesita internet'); $('compra-generar').disabled = false; return; }
+  if (!r || r.error) {
+    if (r && r.error === 'sesion') { cerrarSesion(); hojaCompra.cerrar(); return; }
+    toast(r && r.error === 'valor' ? 'La compra no tiene valor' : 'No se pudo crear el QR');
+    $('compra-generar').disabled = false;
+    return;
+  }
+  const qr = window.qrcode(0, 'M');
+  qr.addData(`${location.origin}/n/${slug}/club?c=${r.codigo}`);
+  qr.make();
+  $('compra-codigo').textContent = '';
+  // El SVG lo genera la librería a partir de una URL propia (código hexadecimal), no de texto del usuario
+  $('compra-codigo').insertAdjacentHTML('afterbegin', qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true }));
+  $('compra-titulo').textContent = 'Que lo escanee con su celular';
+  $('compra-resumen').textContent = `${pesos(r.valor)} · gana ${numero(r.monedas)} ${caja.moneda_plural || 'monedas'}`;
+  $('compra-elegir').hidden = true;
+  $('compra-qr').hidden = false;
+  $('compra-otra').hidden = true;
+  const fin = new Date(r.expira).getTime();
+  const tic = async (n) => {
+    const s = Math.max(0, Math.round((fin - Date.now()) / 1000));
+    $('compra-vence').textContent = s ? `Vence en ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'Este QR venció';
+    if (!s) { clearInterval(vigiaCompra); $('compra-otra').hidden = false; return; }
+    if (n % 3) return; // pregunta a la base cada 3 s
+    try {
+      const e = await rpc('caja_estado_compra', { p_sesion: caja.sesion, p_codigo: r.codigo });
+      if (e && e.usado) {
+        clearInterval(vigiaCompra);
+        $('compra-titulo').textContent = '¡Listo! Ya se sumaron';
+        $('compra-codigo').textContent = '';
+        $('compra-vence').textContent = '';
+        $('compra-otra').hidden = false;
+        try { navigator.vibrate && navigator.vibrate(60); } catch { /* nada */ }
+      }
+    } catch { /* sin señal: sigue intentando */ }
+  };
+  let n = 0;
+  tic(n);
+  vigiaCompra = setInterval(() => tic(++n), 1000);
+});

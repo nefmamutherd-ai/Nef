@@ -16,7 +16,7 @@ export async function onRequestGet({ params, request, env }) {
   if (!n) return redirigir(new URL('/inactivo', url).href);
   const nombre = esc(n.nombre);
 
-  return html(`${inicioPagina(n, { titulo: `Caja · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script>' })}
+  return html(`${inicioPagina(n, { titulo: `Caja · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
 <main class="pt-pagina" id="caja" data-slug="${esc(n.slug)}">
   <div class="pt-sin-conexion" id="sin-conexion" hidden></div>
 
@@ -41,6 +41,7 @@ export async function onRequestGet({ params, request, env }) {
       <div class="pt-o">o</div>
       <button type="button" class="pt-escanear" id="escanear">${icono('qr')}Escanear su código</button>
     </div>
+    <button type="button" class="pt-escanear" id="cobrar-qr" hidden>${icono('qr')}Cobrar con QR</button>
     <div class="pt-vacio" id="buscar-vacio" hidden></div>
 
     <div class="pt-cliente" id="ficha" hidden>
@@ -69,6 +70,25 @@ export async function onRequestGet({ params, request, env }) {
     <h2>Escanear su código</h2>
     <video id="video" playsinline muted class="pt-foto-grande"></video>
     <button type="button" class="pt-link" data-cerrar>Cancelar</button>
+  </div>
+  <div class="pt-fondo" hidden></div>
+  <div class="pt-hoja" id="hoja-compra" role="dialog" aria-label="Cobrar con QR" hidden>
+    <div id="compra-elegir">
+      <h2>¿Qué compró?</h2>
+      <p class="pt-ayuda-caja">Toca cada producto (otra vez para sumar uno más). El cliente escanea el QR y gana sus ${esc(n.moneda_plural || 'monedas')}.</p>
+      <div class="pt-compra-lista" id="compra-lista"></div>
+      <div class="pt-compra-total"><span>Total</span><b id="compra-total">$ 0</b></div>
+      <button type="button" class="pt-accion" id="compra-generar" disabled>Generar QR</button>
+      <button type="button" class="pt-link" id="compra-limpiar">Empezar de nuevo</button>
+    </div>
+    <div id="compra-qr" hidden>
+      <h2 id="compra-titulo">Que lo escanee con su celular</h2>
+      <div class="pt-qr" id="compra-codigo"></div>
+      <p class="pt-compra-resumen" id="compra-resumen"></p>
+      <p class="pt-ayuda-caja" id="compra-vence"></p>
+      <button type="button" class="pt-accion" id="compra-otra" hidden>Nueva compra</button>
+    </div>
+    <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <div class="pt-toast" id="toast" role="status"></div>
 </main>

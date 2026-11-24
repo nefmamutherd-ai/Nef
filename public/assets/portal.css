@@ -590,3 +590,19 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .pt-3d model-viewer { width: 100%; height: 100%; --poster-color: transparent; --progress-bar-color: var(--marca); }
 .pt-ar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-pildora);
   background: var(--marca); color: var(--sobre-marca); font: 700 15px var(--sans); cursor: pointer; box-shadow: 0 8px 20px -10px rgba(0, 0, 0, .5); }
+
+/* Caja · Cobrar con QR: productos en rejilla de toques grandes, total y QR con cuenta regresiva */
+#cobrar-qr { margin-top: 12px; }
+.pt-ayuda-caja { margin: 4px 0 14px; font-size: 14px; color: var(--tinta-2); }
+.pt-compra-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-height: 46dvh; overflow-y: auto; }
+.pt-compra-item { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; padding: 10px 12px;
+  border-radius: 14px; border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--tinta); font: 600 15px/1.2 var(--sans); text-align: left; cursor: pointer;
+  transition: transform var(--dur-1) var(--ease); }
+.pt-compra-item:active { transform: scale(.97); }
+.pt-compra-item small { color: var(--tinta-2); font-weight: 600; }
+.pt-compra-item.elegido { border-color: var(--marca); background: color-mix(in srgb, var(--marca) 8%, var(--tarjeta)); }
+.pt-compra-cant { position: absolute; top: 8px; right: 10px; color: var(--marca); font: 800 16px var(--sans); }
+.pt-compra-total { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0; font-size: 16px; }
+.pt-compra-total b { font: 800 24px var(--sans); font-variant-numeric: tabular-nums; }
+.pt-compra-resumen { margin: 12px 0 0; text-align: center; font: 700 18px var(--sans); }
+#compra-qr { text-align: center; }

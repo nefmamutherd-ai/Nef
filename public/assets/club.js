@@ -387,7 +387,7 @@ form.addEventListener('submit', async (e) => {
   $('r-unirme').disabled = true;
   try {
     const r = await rpc('club_registrar', { p_slug: slug, p_nombre: nombre, p_telefono: celular, p_acepta: true });
-    if (r && r.token) { guardar(CLAVE, r.token); borrar(CLAVE + '_visto'); await cargarTarjeta(r.token, 'registro'); return; }
+    if (r && r.token) { guardar(CLAVE, r.token); borrar(CLAVE + '_visto'); await cargarTarjeta(r.token, 'registro'); setTimeout(() => reclamarCompra(), 2500); return; }
     const err = r && r.error;
     if (err === 'telefono') errorCampo('campo-celular', true);
     else if (err === 'nombre') errorCampo('campo-nombre', true);
@@ -420,12 +420,35 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ── Arranque ─────────────────────────────────────────────────────────
+// ── QR de compra: la caja muestra /n/<slug>/club?c=<código>; al abrirlo, se suma esa compra (una sola vez) ──
+let compraPendiente = new URLSearchParams(location.search).get('c');
+if (compraPendiente) history.replaceState(null, '', location.pathname); // recargar no lo reintenta
+async function reclamarCompra() {
+  const codigo = compraPendiente;
+  compraPendiente = null;
+  if (!codigo || !/^[0-9a-f]{32}$/.test(codigo) || !tokenActual) return;
+  let r;
+  try { r = await rpc('club_reclamar_compra', { p_slug: slug, p_token: tokenActual, p_codigo: codigo }); } catch {
+    toast('Sin conexión: vuelve a escanear el código del cajero');
+    return;
+  }
+  if (r && r.ok) { await cargarTarjeta(tokenActual); return; } // compara con lo que vio antes y celebra lo ganado
+  const MENSAJES = {
+    vencido: 'Este código ya venció: pídele uno nuevo al cajero',
+    usado: 'Este código ya se usó',
+    muy_pronto: 'Ya sumaste hace poco: vuelve en tu próxima visita',
+    no_existe: 'Ese código no es de este negocio',
+  };
+  toast(MENSAJES[r && r.error] || 'No se pudo sumar esta compra');
+}
+
 const token = leer(CLAVE);
 if (token) {
-  cargarTarjeta(token).catch(() => {
+  cargarTarjeta(token).then(() => reclamarCompra()).catch(() => {
     mostrar('registro');
     errorGeneral('No pudimos cargar tu tarjeta. Revisa tu internet y recarga.');
   });
 } else {
   mostrar('registro');
+  if (compraPendiente) toast('Únete al club y esta compra se suma a tus monedas');
 }
