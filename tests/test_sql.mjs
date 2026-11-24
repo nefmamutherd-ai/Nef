@@ -800,6 +800,19 @@ await caso('solo el admin ve y registra mensualidades', async () => {
   await db.exec('reset role;');
 });
 
+console.log('Legal · responsable del tratamiento');
+await caso('datos legales del negocio: públicos en negocio_publico, solo el admin los escribe', async () => {
+  await db.exec('reset role;');
+  await db.exec(`insert into negocios (slug, nombre, legal_nombre, legal_documento, legal_direccion, legal_correo)
+    values ('legal-x', 'Café X', 'Café X S.A.S.', 'NIT 901.000.000-1', 'Cra. 7 # 1-2, Bogotá', 'datos@cafex.co')`);
+  await como('anon');
+  const n = (await q(`select negocio_publico('legal-x') r`))[0].r;
+  assert.deepEqual(n.legal, { nombre: 'Café X S.A.S.', documento: 'NIT 901.000.000-1', direccion: 'Cra. 7 # 1-2, Bogotá', correo: 'datos@cafex.co' });
+  assert.equal((await q(`update negocios set legal_nombre = 'x' where slug = 'legal-x' returning id`)).length, 0);
+  await db.exec('reset role;');
+  await assert.rejects(q(`update negocios set legal_correo = 'no es correo' where slug = 'legal-x'`), /check/);
+  await db.exec(`delete from negocios where slug = 'legal-x'`);
+});
 console.log('Fase 8 · panel del dueño (aislamiento por empresa)');
 const DUENO_A = 'aaaaaaaa-0000-4000-8000-00000000000a';
 const DUENO_B = 'bbbbbbbb-0000-4000-8000-00000000000b';

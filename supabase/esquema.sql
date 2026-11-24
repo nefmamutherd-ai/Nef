@@ -1972,6 +1972,13 @@ grant execute on function public.registrar_pago(uuid, int) to authenticated;
 revoke execute on function public._estado_pago(date, int) from public, anon, authenticated;
 
 -- El portal y el toque respetan la mensualidad (vencido + gracia → /inactivo)
+-- Datos legales del negocio: es el RESPONSABLE del tratamiento (Ley 1581, Decreto 1377 art. 13).
+-- Son públicos a propósito: salen en /n/<slug>/datos. Solo el admin los escribe (RLS de negocios).
+alter table public.negocios add column if not exists legal_nombre    text check (legal_nombre is null or char_length(legal_nombre) <= 120);
+alter table public.negocios add column if not exists legal_documento text check (legal_documento is null or char_length(legal_documento) <= 40);
+alter table public.negocios add column if not exists legal_direccion text check (legal_direccion is null or char_length(legal_direccion) <= 160);
+alter table public.negocios add column if not exists legal_correo    text check (legal_correo is null or legal_correo ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
 create or replace function public.negocio_publico(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object(
@@ -1979,7 +1986,8 @@ returns json language sql stable security definer set search_path = public as $$
     'menu_url', menu_url, 'resena_url', resena_url, 'whatsapp', whatsapp, 'instagram', instagram,
     'wifi_nombre', wifi_nombre, 'wifi_clave', wifi_clave, 'links', links,
     'sector', sector, 'servicios', servicios, 'ubicacion_etiqueta', ubicacion_etiqueta,
-    'tiene_carta', public._tiene_carta(id), 'tema', tema
+    'tiene_carta', public._tiene_carta(id), 'tema', tema,
+    'legal', json_build_object('nombre', legal_nombre, 'documento', legal_documento, 'direccion', legal_direccion, 'correo', legal_correo)
   )
   from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
 $$;

@@ -169,3 +169,7 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
   en pglite); repetirla pasa. No es un problema de producción.
 - Pendiente legal (decide Jacobo): los textos siguen marcados "Plantilla — revisar con abogado"; faltan NIT, dirección y correo
   de cada negocio en su página de datos, y la política de privacidad / términos propios de Nef (cuentas del panel, portada).
+- **Legal listo para vender (decisión de Jacobo, sin abogado)**: /privacidad y /terminos (enlazadas en la portada y al crear cuenta en
+  /panel, con casilla obligatoria), página de datos de cada negocio completa (Decreto 1377 art. 13) y sin etiqueta "Plantilla",
+  datos legales del negocio en Admin › Negocio, casilla del club explícita (club + WhatsApp). Contratos de `docs/legal` con los datos
+  de Jacobo. Pruebas: sql 82 · e2e 39 · verificar ✓.

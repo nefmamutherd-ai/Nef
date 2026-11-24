@@ -295,6 +295,16 @@ await caso('club: inscribirse en el celular → tarjeta con 0 y bienvenida pendi
   await p.goto(`${BASE}/n/${slug}/datos`);
   assert.match(await p.textContent('main'), /Ley 1581/);
   assert.match(await p.textContent('main'), /vencen si pasas 12 meses sin visitas/);
+  assert.match(await p.textContent('main'), /Juan Jacobo López Álvarez/, 'el encargado está identificado');
+  assert.match(await p.textContent('main'), /consultas en máximo 10 días hábiles/);
+  assert.doesNotMatch(await p.textContent('main'), /Plantilla/);
+  for (const ruta of ['/privacidad', '/terminos']) {
+    const r = await p.goto(BASE + ruta);
+    assert.equal(r.status(), 200, ruta);
+    assert.match(await p.textContent('main'), /1.011.093.718/, ruta + ' identifica a quien presta el servicio');
+  }
+  await p.screenshot({ path: DIR + 'terminos-movil.png' });
+  await p.goto(`${BASE}/n/${slug}/datos`);
   await p.screenshot({ path: DIR + 'club-datos.png', fullPage: true });
   await p.close();
 });
@@ -690,6 +700,7 @@ console.log('Fase 8 · panel del dueño');
     await p.click('#l-modo');
     await p.fill('#l-email', correo);
     await p.fill('#l-clave', 'clave123');
+    await p.check('#l-acepta');
     await p.click('.n-clave .n-ver');
     assert.equal(await p.getAttribute('#l-clave', 'type'), 'text', '"Ver" muestra la contraseña');
     await p.click('.n-clave .n-ver');

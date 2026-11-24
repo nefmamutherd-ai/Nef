@@ -1,9 +1,9 @@
-> **PLANTILLA — revisar con abogado antes de usar.** No es asesoría legal. Los textos entre [corchetes] se llenan por cliente.
+> Los textos entre [corchetes] se llenan por cliente.
 
 # Contrato de transmisión de datos personales
 
 Entre **[RAZÓN SOCIAL DEL NEGOCIO]**, NIT [NIT], representada por [NOMBRE], en adelante **el Responsable**, y
-**[RAZÓN SOCIAL DE MAMUT HERD]**, NIT [NIT], representada por Jacobo López, en adelante **el Encargado**.
+**Juan Jacobo López Álvarez** (nombre comercial Mamut Herd), C.C. 1.011.093.718, en adelante **el Encargado**.
 Fundamento: Ley 1581 de 2012 y artículo 2.2.2.25.5.2 del Decreto 1074 de 2015.
 
 ## 1. Objeto

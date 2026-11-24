@@ -35,7 +35,7 @@ export async function onRequestGet({ params, request, env }) {
       <div class="pt-campo" id="campo-celular"><label for="r-celular">Tu celular</label>
         <input id="r-celular" name="celular" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="14" placeholder="300 123 4567" required>
         <div class="pt-error" hidden>Escribe los 10 números.</div></div>
-      <label class="pt-casilla"><input type="checkbox" id="r-acepto"><span>Autorizo el uso de mis datos para el club. <a href="${datos}">Cómo se usan</a></span></label>
+      <label class="pt-casilla"><input type="checkbox" id="r-acepto"><span>Autorizo a ${esc(n.nombre)} a usar mi nombre y mi celular para el club y a escribirme por WhatsApp sobre él, según su <a href="${datos}">política de datos</a>.</span></label>
       <div class="pt-aviso alerta" id="r-error" hidden></div>
       <button type="submit" class="pt-accion marca" id="r-unirme" disabled>Unirme</button>
     </form>

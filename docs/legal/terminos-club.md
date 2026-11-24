@@ -1,4 +1,4 @@
-> **PLANTILLA — revisar con abogado antes de usar.** No es asesoría legal. Los textos entre [corchetes] los llena cada negocio.
+> Los textos entre [corchetes] los llena cada negocio.
 
 # Términos y condiciones del club de [NOMBRE DEL NEGOCIO]
 

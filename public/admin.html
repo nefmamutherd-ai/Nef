@@ -275,6 +275,17 @@
       <div class="n-ayuda" id="link-caja"></div>
     </div>
 
+    <div class="n-etiqueta">Datos legales (salen en su página de datos del club)</div>
+    <p class="n-ayuda">El negocio es el responsable de los datos de sus clientes (Ley 1581): la ley pide publicar quién es y cómo contactarlo.</p>
+    <div class="n-fila">
+      <div class="n-campo"><label for="f-lnom">Nombre legal</label><input id="f-lnom" name="legal_nombre" maxlength="120" placeholder="Café Luna S.A.S. o Ana Pérez"></div>
+      <div class="n-campo"><label for="f-ldoc">NIT o cédula</label><input id="f-ldoc" name="legal_documento" maxlength="40" placeholder="NIT 901.234.567-8"></div>
+    </div>
+    <div class="n-fila">
+      <div class="n-campo"><label for="f-ldir">Dirección</label><input id="f-ldir" name="legal_direccion" maxlength="160" placeholder="Cra. 7 # 45-10, Bogotá"></div>
+      <div class="n-campo"><label for="f-lcor">Correo para datos personales</label><input id="f-lcor" name="legal_correo" type="email" maxlength="120"></div>
+    </div>
+
     <div class="n-etiqueta">Privado (solo tú lo ves)</div>
     <div class="n-fila">
       <div class="n-campo"><label for="f-plan">Plan</label><select id="f-plan" name="plan"><option value="basico">Básico</option><option value="pro">Pro</option><option value="cortesia">Cortesía / prueba</option></select></div>
@@ -634,6 +645,7 @@ fN.addEventListener('submit', async (e) => {
     wifi_nombre: v('wifi_nombre'), wifi_clave: v('wifi_clave'), links,
     sector: fN.sector.value || 'cafe', servicios, tema: fN.tema.value || null, ubicacion_etiqueta: v('ubicacion_etiqueta'),
     plan: fN.plan.value, activo: fN.activo.checked, contacto_nombre: v('contacto_nombre'), contacto_telefono: v('contacto_telefono'), notas: v('notas'),
+    legal_nombre: v('legal_nombre'), legal_documento: v('legal_documento'), legal_direccion: v('legal_direccion'), legal_correo: v('legal_correo'),
     modo_monedas: fN.modo_monedas.value || 'visita', devolucion_pct: +(fN.devolucion_pct.value || 5),
     monedas_por_visita: Math.max(0, parseInt(fN.monedas_por_visita.value, 10) || 0), bienvenida: Math.max(0, parseInt(fN.bienvenida.value, 10) || 0),
     bono_racha: Math.max(0, parseInt(fN.bono_racha.value, 10) || 0),

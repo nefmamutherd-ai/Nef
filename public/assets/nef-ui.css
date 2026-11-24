@@ -205,3 +205,17 @@ p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 @keyframes n-guia-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes n-guia-entra-centro { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } to { opacity: 1; transform: translate(-50%, -50%); } }
 @media (max-width: 639px) { body.n-guiando .n-contenido { padding-bottom: 75vh; } } /* que lo resaltado pueda subir por encima de la tarjeta de la guía */
+
+/* Texto largo (privacidad, términos): columna cómoda de leer */
+.n-texto { max-width: 68ch; margin: 0 auto; padding-block: 32px 64px; font-size: 16px; line-height: 1.6; color: var(--n-texto-2); }
+.n-texto h1 { margin: 0 0 8px; font: 800 clamp(28px, 6vw, 40px)/1.1 var(--n-titulos); color: var(--n-tinta); letter-spacing: -.02em; }
+.n-texto h2 { margin: 36px 0 8px; font: 800 20px/1.25 var(--n-titulos); color: var(--n-tinta); }
+.n-texto p, .n-texto ul { margin: 0 0 12px; }
+.n-texto ul { padding-left: 22px; }
+.n-texto li { margin-bottom: 6px; }
+.n-texto a { color: var(--n-tinta); text-underline-offset: 3px; }
+.n-texto .n-vigencia { color: var(--n-gris); font-size: 14px; margin-bottom: 28px; }
+/* Casilla con texto (aceptar términos) */
+.n-casilla { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--n-texto-2); cursor: pointer; }
+.n-casilla input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--n-tinta); }
+.n-casilla a { color: var(--n-tinta); text-underline-offset: 3px; }

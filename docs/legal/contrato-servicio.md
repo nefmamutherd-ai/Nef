@@ -1,8 +1,8 @@
-> **PLANTILLA — revisar con abogado antes de usar.** No es asesoría legal. Los textos entre [corchetes] se llenan por cliente.
+> Los textos entre [corchetes] se llenan por cliente.
 
 # Contrato de prestación del servicio Nef
 
-Entre **[RAZÓN SOCIAL DE MAMUT HERD]**, NIT [NIT], en adelante **Mamut Herd**, y **[RAZÓN SOCIAL DEL NEGOCIO]**, NIT [NIT], en adelante **el Cliente**.
+Entre **Juan Jacobo López Álvarez** (nombre comercial Mamut Herd), C.C. 1.011.093.718, en adelante **Mamut Herd**, y **[RAZÓN SOCIAL DEL NEGOCIO]**, NIT [NIT], en adelante **el Cliente**.
 
 ## 1. Servicio
 Mamut Herd presta al Cliente el servicio Nef: chips NFC y códigos QR, portal web del negocio y, según el plan, catálogo/carta, club de

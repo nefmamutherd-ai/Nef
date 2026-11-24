@@ -1,4 +1,4 @@
-> **PLANTILLA — revisar con abogado antes de usar.** No es asesoría legal. Los textos entre [corchetes] los llena cada negocio.
+> Los textos entre [corchetes] los llena cada negocio.
 
 # Política de tratamiento de datos personales de [NOMBRE DEL NEGOCIO]
 
@@ -8,7 +8,7 @@ Ley 1581 de 2012, Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015) y 
 [RAZÓN SOCIAL], NIT [NIT], [DIRECCIÓN, CIUDAD]. Correo para datos personales: [CORREO]. Teléfono: [TELÉFONO].
 
 ## 2. Encargado
-**Mamut Herd** ([RAZÓN SOCIAL DE MAMUT HERD], NIT [NIT]) opera la plataforma Nef y trata los datos **por cuenta** del responsable,
+**Juan Jacobo López Álvarez** (nombre comercial Mamut Herd), C.C. 1.011.093.718, opera la plataforma Nef y trata los datos **por cuenta** del responsable,
 según el contrato de transmisión de datos firmado entre ambos. Mamut Herd no usa los datos para fines propios ni los vende.
 
 ## 3. Qué datos tratamos

@@ -47,6 +47,7 @@ function modo(crear) {
   $('#l-enviar').textContent = crear ? 'Crear cuenta' : 'Entrar';
   $('#l-modo').textContent = crear ? 'Ya tengo cuenta: entrar' : '¿Primera vez? Crea tu cuenta';
   $('#l-clave').autocomplete = crear ? 'new-password' : 'current-password';
+  $('#l-acepta-caja').hidden = !crear;
   aviso('', '');
 }
 $('#l-modo').addEventListener('click', () => modo(!creando));
@@ -58,6 +59,7 @@ $('#form-login').addEventListener('submit', async (e) => {
   $('#l-enviar').disabled = true;
   try {
     if (creando) {
+      if (!$('#l-acepta').checked) return aviso('alerta', 'Para crear tu cuenta, acepta los términos y la política de privacidad.');
       const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + '/panel' } });
       if (error) return aviso('alerta', /already|registered|exists/i.test(error.message) ? 'Ese correo ya tiene cuenta: entra con tu contraseña.' : 'No se pudo crear la cuenta: ' + error.message);
       if (!data.session) return aviso('ok', `Te enviamos un correo a ${email}. Ábrelo, confirma tu cuenta y vuelve a entrar aquí.`);
