@@ -718,10 +718,12 @@ begin
 end $$;
 
 -- Sumar una visita. Idempotente por p_op_id: reenviar la misma operación nunca suma dos veces.
-create or replace function public.caja_visita(p_sesion text, p_token text, p_op_id uuid, p_valor int default null)
+-- Interna: suma una visita (y bienvenida, hora dorada, racha) a una membresía del negocio. Idempotente por p_op_id.
+-- La llaman la caja (caja_visita, con sesión) y el QR de compra que genera la caja (club_reclamar_compra).
+create or replace function public._sumar_visita(p_negocio uuid, p_token text, p_op_id uuid, p_valor int default null)
 returns json language plpgsql security definer set search_path = public as $$
 declare
-  v_negocio uuid := public._sesion_valida(p_sesion);
+  v_negocio uuid := p_negocio;
   n public.negocios;
   m public.membresias;
   v_previo jsonb;
@@ -802,6 +804,13 @@ begin
     'nivel', public._nivel(v_negocio, m.total_ganado)::jsonb);
   update public.operaciones_caja set resultado = v_res where op_id = p_op_id;
   return v_res::json;
+end $$;
+revoke execute on function public._sumar_visita(uuid, text, uuid, int) from public, anon, authenticated;
+
+create or replace function public.caja_visita(p_sesion text, p_token text, p_op_id uuid, p_valor int default null)
+returns json language plpgsql security definer set search_path = public as $$
+begin
+  return public._sumar_visita(public._sesion_valida(p_sesion), p_token, p_op_id, p_valor);
 end $$;
 
 -- Canjear un premio (el cajero, viendo al cliente). Idempotente por p_op_id.
@@ -2198,3 +2207,103 @@ returns text language sql stable security definer set search_path = public as $$
   select i.ruta from public.informes i join public.negocios n on n.id = i.negocio_id
   where n.token_stats = p_token and i.id = p_informe and public._interruptor('links_stats_viejos')
 $$;
+
+-- =====================================================================
+-- ===== QR de compra =====  el cajero marca lo que compró el cliente y la caja muestra un QR de un solo uso (10 min).
+-- El cliente lo escanea con su celular y se suma la visita con el valor REAL de la compra (precios de la carta, calculados
+-- aquí, nunca enviados por el celular). Sigue la regla: las monedas solo salen de la caja (el QR lo crea la caja).
+-- =====================================================================
+create table if not exists public.compras_qr (
+  id           uuid primary key default gen_random_uuid(),
+  negocio_id   uuid not null references public.negocios(id) on delete cascade,
+  codigo       text not null unique default replace(gen_random_uuid()::text, '-', ''),
+  items        jsonb not null check (jsonb_typeof(items) = 'array'),
+  valor        int not null check (valor >= 0),
+  op_id        uuid not null unique default gen_random_uuid(),   -- la visita que suma (idempotente)
+  expira       timestamptz not null,
+  usado        timestamptz,
+  membresia_id uuid references public.membresias(id) on delete set null,
+  creado       timestamptz not null default now()
+);
+create index if not exists compras_qr_negocio_idx on public.compras_qr(negocio_id, creado);
+alter table public.compras_qr enable row level security;
+drop policy if exists admin_todo on public.compras_qr;
+create policy admin_todo on public.compras_qr for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- Caja: crea la compra con los productos marcados [{producto_id, cantidad}] → código para el QR
+create or replace function public.caja_crear_compra(p_sesion text, p_items jsonb)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  v_negocio uuid := public._sesion_valida(p_sesion);
+  n public.negocios;
+  v_items jsonb;
+  v_valor int;
+  v_validos int;
+  c public.compras_qr;
+begin
+  if v_negocio is null then return json_build_object('error', 'sesion'); end if;
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 or jsonb_array_length(p_items) > 40 then
+    return json_build_object('error', 'items');
+  end if;
+  select * into n from public.negocios where id = v_negocio;
+  -- Solo productos activos de este negocio; cantidad de 1 a 20; el precio sale de la carta
+  select coalesce(jsonb_agg(jsonb_build_object('producto_id', pr.id, 'nombre', pr.nombre, 'precio', pr.precio, 'cantidad', x.cantidad)), '[]'::jsonb),
+         coalesce(sum(pr.precio * x.cantidad), 0), count(*)
+    into v_items, v_valor, v_validos
+  from (select (e->>'producto_id')::uuid as producto_id, least(greatest(coalesce((e->>'cantidad')::int, 1), 1), 20) as cantidad
+        from jsonb_array_elements(p_items) e
+        where coalesce(e->>'producto_id', '') ~ '^[0-9a-f-]{36}$') x
+  join public.productos pr on pr.id = x.producto_id and pr.negocio_id = v_negocio and pr.activo;
+  if v_validos = 0 then return json_build_object('error', 'items'); end if;
+  if n.modo_monedas = 'valor' and v_valor <= 0 then return json_build_object('error', 'valor'); end if;
+  insert into public.compras_qr (negocio_id, items, valor, expira, creado)
+  values (v_negocio, v_items, v_valor, public._ahora() + interval '10 minutes', public._ahora())
+  returning * into c;
+  return json_build_object('codigo', c.codigo, 'valor', c.valor, 'expira', c.expira,
+    'monedas', case when n.modo_monedas = 'valor' then floor(c.valor::numeric * n.devolucion_pct / 100 / public.valor_moneda())::int
+                    else n.monedas_por_visita end);
+end $$;
+
+-- Caja: ¿ya la escaneó el cliente? (para que la pantalla diga "Listo")
+create or replace function public.caja_estado_compra(p_sesion text, p_codigo text)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object('usado', c.usado is not null, 'vencido', c.usado is null and c.expira < public._ahora())
+  from public.compras_qr c
+  where c.codigo = p_codigo and c.negocio_id = public._sesion_valida(p_sesion);
+$$;
+
+-- Cliente: reclama la compra con el token de su tarjeta. Un solo uso; vence a los 10 minutos.
+create or replace function public.club_reclamar_compra(p_slug text, p_token text, p_codigo text)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  n public.negocios;
+  c public.compras_qr;
+  m public.membresias;
+  v_res json;
+begin
+  select * into n from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
+  if not found then return json_build_object('error', 'negocio'); end if;
+  select * into c from public.compras_qr where codigo = p_codigo and negocio_id = n.id for update;
+  if not found then return json_build_object('error', 'no_existe'); end if;
+  select * into m from public.membresias where token = p_token and negocio_id = n.id;
+  if not found then return json_build_object('error', 'token'); end if;
+  if c.usado is not null then
+    -- Si lo reclama otra vez la misma persona, devuelve lo mismo (idempotente); si es otra, ya se usó
+    if c.membresia_id = m.id then return public._sumar_visita(n.id, p_token, c.op_id, c.valor); end if;
+    return json_build_object('error', 'usado');
+  end if;
+  if c.expira < public._ahora() then return json_build_object('error', 'vencido'); end if;
+  v_res := public._sumar_visita(n.id, p_token, c.op_id, c.valor);
+  if (v_res->>'ok')::boolean then
+    update public.compras_qr set usado = public._ahora(), membresia_id = m.id where id = c.id;
+  end if;
+  return v_res;
+end $$;
+
+revoke execute on function public.caja_crear_compra(text, jsonb) from public;
+revoke execute on function public.caja_estado_compra(text, text) from public;
+revoke execute on function public.club_reclamar_compra(text, text, text) from public;
+grant  execute on function public.caja_crear_compra(text, jsonb) to anon, authenticated;
+grant  execute on function public.caja_estado_compra(text, text) to anon, authenticated;
+grant  execute on function public.club_reclamar_compra(text, text, text) to anon, authenticated;

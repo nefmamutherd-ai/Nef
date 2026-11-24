@@ -143,6 +143,13 @@ def escena(madera=(0.32, 0.17, 0.08), madera2=(0.12, 0.06, 0.03)):
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'
     sc.cycles.samples = MUESTRAS
+    # Rápido sin perder realismo (este PC no tiene tarjeta gráfica útil): muestreo adaptativo, sin cáusticas, limpieza de ruido de Intel
+    sc.cycles.use_adaptive_sampling = True
+    sc.cycles.adaptive_threshold = 0.02
+    sc.cycles.caustics_reflective = False
+    sc.cycles.caustics_refractive = False
+    try: sc.cycles.denoiser = 'OPENIMAGEDENOISE'
+    except Exception: pass
     sc.cycles.use_denoising = True
     sc.cycles.max_bounces = 6
     sc.render.resolution_x = TAM; sc.render.resolution_y = TAM
@@ -198,8 +205,9 @@ def escena(madera=(0.32, 0.17, 0.08), madera2=(0.12, 0.06, 0.03)):
         # Luz de estudio real: reflejos creíbles en la cerámica, el café y las salsas; la ventana sigue siendo la luz principal
         wt = world.node_tree; env = wt.nodes.new('ShaderNodeTexEnvironment'); env.image = bpy.data.images.load(HDRI)
         wt.links.new(env.outputs['Color'], wt.nodes['Background'].inputs['Color'])
-        wt.nodes['Background'].inputs['Strength'].default_value = 0.55
-        l.data.energy = 900
+        wt.nodes['Background'].inputs['Strength'].default_value = 0.28
+        l.data.energy = 1150
+        sc.view_settings.exposure = -0.35
     # cámara a 50°, con desenfoque de fondo
     bpy.ops.object.camera_add(location=(0, -2.25, 2.35)); cam = bpy.context.object
     direc = Vector((0, 0.05, 0.05)) - cam.location; cam.rotation_euler = direc.to_track_quat('-Z', 'Y').to_euler()
@@ -222,7 +230,7 @@ def materiales():
         'quemado': mat('quemado', (0.12, 0.05, 0.02), rough=0.7),
         'hierba': mat('hierba', (0.05, 0.22, 0.03), rough=0.35, sss=0.2),
         'cafe': mat('cafe', (0.12, 0.05, 0.02), rough=0.06, coat=0.8),
-        'espuma': mat('espuma', (0.78, 0.6, 0.4), rough=0.45, sss=0.3, color2=(0.92, 0.84, 0.7), escala_ruido=4),
+        'espuma': mat('espuma', (0.52, 0.33, 0.18), rough=0.5, sss=0.12, color2=(0.7, 0.52, 0.33), escala_ruido=4),
         'leche': mat('leche', (0.97, 0.93, 0.85), rough=0.35, sss=0.4),
         'chocolate': mat('chocolate', (0.2, 0.08, 0.03), rough=0.12, coat=0.5),
         'bizcocho': mat('bizcocho', (0.17, 0.07, 0.03), rough=0.75, bump=0.6, escala_ruido=20),

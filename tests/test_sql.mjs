@@ -323,8 +323,9 @@ await caso('ninguna RPC pública crea monedas salvo la caja (con sesión); rese�
   await db.exec('reset role;');
   const filas = await q(`select p.proname from pg_proc p join pg_namespace s on s.oid = p.pronamespace
     where s.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
-      and p.prosrc ~* 'insert\\s+into\\s+(public\\.)?movimientos'`);
-  assert.deepEqual(filas.map((f) => f.proname).sort(), ['caja_canje', 'caja_visita']);
+      and p.prosrc ~* '(insert\\s+into\\s+(public\\.)?movimientos|_sumar_visita\\s*\\()'`);
+  // club_reclamar_compra solo canjea un QR que creó la caja (con sesión), una vez y por 10 minutos (ver DECISIONES)
+  assert.deepEqual(filas.map((f) => f.proname).sort(), ['caja_canje', 'caja_visita', 'club_reclamar_compra']);
   const antes = (await q(`select count(*)::int n from movimientos`))[0].n;
   await como('anon');
   await q(`select registrar_click('cafe-luna','resena',null)`);
@@ -799,6 +800,62 @@ await caso('solo el admin ve y registra mensualidades', async () => {
   await assert.rejects(q(`select _negocio_habilitado(gen_random_uuid())`), /permission denied/);
   await db.exec('reset role;');
 });
+
+console.log('QR de compra');
+{
+  await db.exec('reset role;');
+  await db.exec(`set nef.ahora = '2026-03-02 10:00-05'`);
+  const [nq] = await q(`insert into negocios (slug, nombre, modo_monedas, devolucion_pct, bienvenida, servicios) values ('qr-cafe', 'QR Café', 'valor', 8, 50, '{"base":true,"club":true,"catalogo":true}') returning id`);
+  const [otro] = await q(`insert into negocios (slug, nombre) values ('qr-otro', 'Otro') returning id`);
+  await como('authenticated', ADMIN);
+  await q(`select fijar_pin_caja($1, '2468')`, [nq.id]);
+  await db.exec('reset role;');
+  const [pa] = await q(`insert into productos (negocio_id, nombre, precio) values ($1, 'Tinto', 3000) returning id`, [nq.id]);
+  const [pb] = await q(`insert into productos (negocio_id, nombre, precio) values ($1, 'Croissant', 7000) returning id`, [nq.id]);
+  const [pz] = await q(`insert into productos (negocio_id, nombre, precio) values ($1, 'Ajeno', 999000) returning id`, [otro.id]);
+  await como('anon');
+  const ses = (await q(`select caja_entrar('qr-cafe', '2468') r`))[0].r.sesion;
+  const tokA = (await q(`select club_registrar('qr-cafe', 'Ana', '3005550001', true) r`))[0].r.token;
+  const tokB = (await q(`select club_registrar('qr-cafe', 'Beto', '3005550002', true) r`))[0].r.token;
+  const crear = async (items) => (await q(`select caja_crear_compra($1, $2::jsonb) r`, [ses, JSON.stringify(items)]))[0].r;
+
+  await caso('QR de compra: el valor sale de la carta (no del celular) e ignora productos de otro negocio', async () => {
+    const c = await crear([{ producto_id: pa.id, cantidad: 2, precio: 1 }, { producto_id: pb.id }, { producto_id: pz.id, cantidad: 5 }]);
+    assert.equal(c.valor, 13000, '2 tintos + 1 croissant; el ajeno no cuenta y el precio enviado se ignora');
+    assert.equal(c.monedas, 10, '8 % de $13.000 = $1.040 = 10 monedas');
+    assert.match(c.codigo, /^[0-9a-f]{32}$/);
+    assert.equal((await crear([{ producto_id: pz.id }])).error, 'items', 'solo productos ajenos: no crea nada');
+    assert.equal((await q(`select caja_crear_compra('sesion-falsa', '[]'::jsonb) r`))[0].r.error, 'sesion');
+  });
+  await caso('QR de compra: el cliente lo reclama una vez (bienvenida incluida); otro cliente no puede; repetir es idempotente', async () => {
+    const c = await crear([{ producto_id: pb.id, cantidad: 2 }]);
+    const r1 = (await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokA, c.codigo]))[0].r;
+    assert.equal(r1.ok, true, JSON.stringify(r1));
+    assert.equal(r1.monedas, 11, '8 % de $14.000');
+    assert.equal(r1.bienvenida, 50);
+    assert.equal(r1.saldo, 61);
+    const r2 = (await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokA, c.codigo]))[0].r;
+    assert.equal(r2.saldo, 61, 'reclamar otra vez no suma dos veces');
+    assert.equal((await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokB, c.codigo]))[0].r.error, 'usado');
+    assert.equal((await q(`select caja_estado_compra($1, $2) r`, [ses, c.codigo]))[0].r.usado, true, 'la caja ve que ya se usó');
+  });
+  await caso('QR de compra: vence a los 10 minutos; respeta las horas entre visitas; código o negocio equivocados no sirven', async () => {
+    const c = await crear([{ producto_id: pa.id }]);
+    await db.exec(`set nef.ahora = '2026-03-02 10:11-05'`);
+    assert.equal((await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokB, c.codigo]))[0].r.error, 'vencido');
+    const c2 = await crear([{ producto_id: pa.id }]);
+    assert.equal((await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokA, c2.codigo]))[0].r.error, 'muy_pronto', 'Ana ya sumó hace 11 minutos');
+    assert.equal((await q(`select club_reclamar_compra('qr-otro', $1, $2) r`, [tokB, c2.codigo]))[0].r.error, 'no_existe');
+    assert.equal((await q(`select club_reclamar_compra('qr-cafe', $1, 'nada') r`, [tokB]))[0].r.error, 'no_existe');
+    assert.equal((await q(`select club_reclamar_compra('qr-cafe', $1, $2) r`, [tokB, c2.codigo]))[0].r.ok, true, 'Beto sí puede');
+  });
+  await caso('QR de compra: la tabla no se lee desde afuera y la función interna no se puede llamar', async () => {
+    assert.equal((await q(`select count(*)::int n from compras_qr`))[0].n, 0);
+    await assert.rejects(q(`select _sumar_visita($1, $2, gen_random_uuid(), 1000)`, [nq.id, tokA]), /permission denied/);
+  });
+  await db.exec('reset role;');
+  await db.exec(`reset nef.ahora; delete from negocios where slug in ('qr-cafe', 'qr-otro')`);
+}
 
 console.log('Legal · responsable del tratamiento');
 await caso('datos legales del negocio: públicos en negocio_publico, solo el admin los escribe', async () => {
