@@ -173,3 +173,16 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
   /panel, con casilla obligatoria), página de datos de cada negocio completa (Decreto 1377 art. 13) y sin etiqueta "Plantilla",
   datos legales del negocio en Admin › Negocio, casilla del club explícita (club + WhatsApp). Contratos de `docs/legal` con los datos
   de Jacobo. Pruebas: sql 82 · e2e 39 · verificar ✓.
+
+### PENDIENTE PARA EL 24/11 (pedidos de Jacobo al cerrar la noche del 23)
+1. **AR "Verlo en tu mesa" falla en Android** ("Chrome está fallando", varias veces). Revisar: orden `ar-modes="scene-viewer webxr quick-look"`,
+   URL absoluta y tipo `model/gltf-binary` del .glb en Cloudflare, tamaño del modelo, Google Play Services para AR. Probar en celular real.
+2. **Vista 3D**: limitar el giro para que no se vea el plato por debajo (`min-camera-orbit`/`max-camera-orbit`, ángulo vertical ~35°–80°)
+   y que vuelva solo a su posición al soltarlo.
+3. **Gesto vertical en 3D mueve la hoja/página** en vez del plato: cambiar `touch-action` del visor (hoy `pan-y`).
+4. **Al abrir un plato con modelo, mostrar el 3D de una vez** (sin tocar "Girar en 3D"; la foto como póster mientras carga).
+5. **Renders más realistas** (lo máximo que permita este PC): Cycles con más muestras, HDRI de `D:/Herramientas/assets-polyhaven`,
+   mejores materiales; rehacer croissant, natas y changua. Volver a exportar fotos (.webp) y modelos (.glb).
+6. QR de compra desde la caja (productos → monedas).
+7. Jacobo debe cambiar la contraseña de la base de datos de Supabase.
+8. Pregunta de Jacobo: cómo se hace el 3D de platos reales → fotogrametría (ver respuesta en la conversación; documentar en docs/kit).
