@@ -214,7 +214,12 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 @keyframes parpadea { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
 .hero .punto .mira { animation: mira 7s cubic-bezier(.6, 0, .2, 1) 1.6s infinite; }
 .hero .punto .pupila { transform-box: fill-box; transform-origin: center; animation: parpadea 4.2s ease-in-out 2.4s infinite; }
-.hero .punto.sigue .mira { animation: none; transform: translate(var(--ox, 0px), var(--oy, 0px)); transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+.hero .punto.sigue .mira { animation: none; transform: translate(var(--ox, 0px), var(--oy, 0px)); transition: transform .18s cubic-bezier(.2, .8, .2, 1); }
+/* Todo el ojo naranja también se mueve dentro del círculo negro (como en su cuenca), más lento que la pupila: ese desfase lo hace ver vivo */
+@keyframes mira-globo { 0%, 14% { transform: translate(0, 0); } 20%, 34% { transform: translate(26px, -12px); } 40%, 52% { transform: translate(-24px, -16px); }
+  58%, 70% { transform: translate(-16px, 22px); } 76%, 88% { transform: translate(22px, 18px); } 94%, 100% { transform: translate(0, 0); } }
+.hero .punto .globo { animation: mira-globo 7s cubic-bezier(.6, 0, .2, 1) 1.75s infinite; }
+.hero .punto.sigue .globo { animation: none; transform: translate(var(--gx, 0px), var(--gy, 0px)); transition: transform .55s cubic-bezier(.2, .8, .2, 1); }
 .btn { transition: transform .18s cubic-bezier(.2, .8, .2, 1), background-color .15s ease, box-shadow .2s ease; }
 .btn:hover { transform: translateY(-2px); }
 .btn.p:hover { box-shadow: 0 10px 22px -12px var(--mandarina); }
@@ -254,7 +259,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     <!-- TODO(Jacobo): reemplazar por la foto real del sticker en una mesa (WebP, 1200×1400). Mientras tanto: la captura del portal. -->
     <div class="vis" aria-hidden="true">
       <div class="tel"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"></div>
-      <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><svg class="ojo" viewBox="0 0 100 100" width="60" height="60" aria-hidden="true"><circle cx="50" cy="50" r="42.32" fill="none" stroke="#FF6B35" stroke-width="7.36"/><g class="mira"><circle class="pupila" cx="50" cy="50" r="18.86" fill="#FF6B35"/></g></svg></div>
+      <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><svg class="ojo" viewBox="0 0 100 100" width="60" height="60" aria-hidden="true"><g class="globo"><circle cx="50" cy="50" r="42.32" fill="none" stroke="#FF6B35" stroke-width="7.36"/><g class="mira"><circle class="pupila" cx="50" cy="50" r="18.86" fill="#FF6B35"/></g></g></svg></div>
     </div>
   </header>
   <div class="cinta" aria-hidden="true"><div><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span></div></div>
@@ -440,9 +445,12 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
       var r = punto.getBoundingClientRect();
       var dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
       var d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260) * 13;   // máx. 13 unidades: la pupila no se sale del aro
+      var g = Math.min(1, d / 420) * 34;                                 // el ojo entero, hasta 34 unidades: no se sale del círculo negro
       punto.classList.add('sigue');
       punto.style.setProperty('--ox', (dx / d * k).toFixed(1) + 'px');
       punto.style.setProperty('--oy', (dy / d * k).toFixed(1) + 'px');
+      punto.style.setProperty('--gx', (dx / d * g).toFixed(1) + 'px');
+      punto.style.setProperty('--gy', (dy / d * g).toFixed(1) + 'px');
       clearTimeout(quieto);
       quieto = setTimeout(function () { punto.classList.remove('sigue'); }, 3000);   // si deja el mouse quieto, vuelve a mirar solo
     }, { passive: true });

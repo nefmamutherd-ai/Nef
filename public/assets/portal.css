@@ -470,10 +470,10 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .pt-pase { position: relative; isolation: isolate; border-radius: 28px; padding: 20px 22px 22px; background: var(--marca); color: var(--sobre-marca);
   box-shadow: 0 24px 40px -26px color-mix(in srgb, var(--marca) 85%, #000); }
 .pt-pase-fondo { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
-.pt-pase-fondo i { position: absolute; display: block; background: color-mix(in srgb, var(--sobre-marca) 13%, transparent); }
-.pt-pase-fondo i:nth-child(1) { width: 250px; height: 250px; right: -90px; top: -120px; border-radius: 42% 58% 63% 37% / 45% 38% 62% 55%; animation: pt-deriva 16s ease-in-out infinite alternate; }
-.pt-pase-fondo i:nth-child(2) { width: 160px; height: 160px; left: -60px; bottom: -80px; border-radius: 50%; background: color-mix(in srgb, var(--moneda) 30%, transparent); animation: pt-deriva 12s ease-in-out infinite alternate-reverse; }
-.pt-pase-fondo i:nth-child(3) { width: 64px; height: 64px; right: 64px; bottom: 44px; border-radius: 30%; animation: pt-gira 24s linear infinite; }
+.pt-pase-fondo > i { position: absolute; display: block; background: color-mix(in srgb, var(--sobre-marca) 13%, transparent); }
+.pt-pase-fondo > i:nth-child(1) { width: 250px; height: 250px; right: -90px; top: -120px; border-radius: 42% 58% 63% 37% / 45% 38% 62% 55%; animation: pt-deriva 16s ease-in-out infinite alternate; }
+.pt-pase-fondo > i:nth-child(2) { width: 160px; height: 160px; left: -60px; bottom: -80px; border-radius: 50%; background: color-mix(in srgb, var(--moneda) 30%, transparent); animation: pt-deriva 12s ease-in-out infinite alternate-reverse; }
+.pt-pase-fondo > i:nth-child(3) { width: 64px; height: 64px; right: 64px; bottom: 44px; border-radius: 30%; animation: pt-gira 24s linear infinite; }
 @keyframes pt-deriva { from { transform: translate(0, 0) rotate(0) scale(1); } to { transform: translate(-22px, 16px) rotate(25deg) scale(1.08); } }
 .pt-pase-hola { margin: 0; font: 600 17px var(--sans); opacity: .92; }
 .pt-pase-saldo { position: relative; display: flex; align-items: center; gap: 14px; margin-top: 12px; }
@@ -556,6 +556,30 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 #club .pt-premio.listo .pt-barrita i { background: var(--ok); }
 
 @media (prefers-reduced-motion: reduce) {
-  .pt-pase-fondo i, .pt-moneda-g, .pt-moneda-g::after, .pt-lazo, .pt-ola-lleno svg, .pt-ola-fantasma { animation: none; }
+  .pt-pase-fondo > i, .pt-moneda-g, .pt-moneda-g::after, .pt-lazo, .pt-ola-lleno svg, .pt-ola-fantasma { animation: none; }
   .pt-ola-lleno { transition: none; }
 }
+
+/* ── Club v3: menos "plantilla". Sin manchas ni sombras suaves: color plano con grano de impresión, moneda plana,
+   y el símbolo de Nef (anillo + punto) como un ojo que se asoma por el borde y te mira. ── */
+.pt-pase { box-shadow: none; }
+.pt-pase-fondo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.55'/%3E%3C/svg%3E");
+  background-blend-mode: normal; mix-blend-mode: normal; }
+.pt-pase-fondo::before { content: ""; position: absolute; inset: 0; background: var(--marca); opacity: .82; }
+.pt-pase-saldo b { font-size: 80px; }
+/* Moneda plana, como ficha impresa: canto marcado, sin brillo de plástico */
+.pt-moneda-g { box-shadow: none; background: radial-gradient(circle, var(--moneda) 0 56%, var(--moneda-borde) 57% 63%, var(--moneda) 64% 86%, var(--moneda-borde) 87%); }
+.pt-moneda-g::after { background: linear-gradient(115deg, transparent 44%, rgba(255, 255, 255, .55) 50%, transparent 56%); }
+.pt-moneda-p { box-shadow: none; }
+/* El ojo: proporciones del símbolo (anillo 7/100, punto 38/92 del diámetro) */
+.pt-ojo { position: absolute; right: -74px; top: 18px; width: 158px; height: 158px; box-sizing: border-box; border-radius: 50%;
+  border: 13px solid var(--sobre-marca); display: grid; place-items: center; }
+.pt-ojo i { width: 41%; height: 41%; border-radius: 50%; background: var(--sobre-marca); transition: transform .4s cubic-bezier(.2, .8, .2, 1), scale .3s var(--ease); }
+.pt-ojo.parpadea { animation: pt-parpadeo .24s ease-in-out; }
+.pt-ojo.feliz i { scale: 1.22; }
+@keyframes pt-parpadeo { 50% { transform: scaleY(.06); } }
+/* Tarjetas de abajo planas, sin borde fino de plantilla */
+.pt-meta, .pt-pr { border: 0; }
+.pt-pr.siguiente { border: 2px solid var(--marca); }
+.pt-pr.lograda { border: 0; }
+@media (prefers-reduced-motion: reduce) { .pt-ojo, .pt-ojo i { animation: none; transition: none; } }

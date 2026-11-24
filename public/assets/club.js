@@ -170,7 +170,7 @@ function pintarTarjeta(t, base = 0) {
     const ola = $('t-ola');
     const fr = (x) => String(Math.max(0, Math.min(1, x / meta.costo)));
     ola.style.setProperty('--p', fr(base));
-    ola.style.setProperty('--g', fr(t.saldo + regalo));
+    ola.style.setProperty('--g', regalo ? fr(t.saldo + regalo) : '0'); // tramo punteado solo si hay regalo
     requestAnimationFrame(() => requestAnimationFrame(() => ola.style.setProperty('--p', fr(t.saldo))));
     $('t-meta-nombre').textContent = meta.nombre;
     const cuesta = $('t-meta-cuesta');
@@ -265,6 +265,7 @@ function celebrar(t, antes) {
     setTimeout(() => {
       flotante('+' + numero(ganado));
       lluvia(Math.min(12, 5 + Math.floor(ganado / 15)));
+      ojoFeliz();
       setTimeout(onda, 900);
       vibrar([30, 50, 30]);
     }, 350);
@@ -285,6 +286,7 @@ function bienvenidaRecienInscrito(t) {
   setTimeout(() => {
     flotante('+' + numero(regalo));
     lluvia(10);
+    ojoFeliz();
     setTimeout(onda, 900);
     vibrar([30, 50, 30]);
   }, 450);
@@ -329,6 +331,40 @@ function vigilar() {
       }, 320);
     }
   }, 3000);
+}
+
+// ── El ojo de Nef (símbolo anillo + punto) asomado en el pase: sigue el dedo o el mouse; si nadie lo toca,
+//    mira por su cuenta (al número, a ti, a los premios) y parpadea. Recorrido fijo, nada al azar. ──
+const ojos = [...document.querySelectorAll('.pt-ojo')];
+function mirar(dx, dy) {
+  const m = Math.hypot(dx, dy);
+  if (m > 1) { dx /= m; dy /= m; }
+  for (const o of ojos) o.firstElementChild.style.transform = `translate(${dx * o.offsetWidth * 0.17}px, ${dy * o.offsetWidth * 0.17}px)`;
+}
+function ojoFeliz() {
+  for (const o of ojos) { o.classList.add('feliz'); setTimeout(() => o.classList.remove('feliz'), 1600); }
+  mirar(-1, 0.1); // mira al número que acaba de subir
+}
+if (ojos.length && !quieto()) {
+  let tocado = 0;
+  const hacia = (x, y) => {
+    tocado = Date.now();
+    const o = ojos.find((e) => e.offsetWidth) || ojos[0];
+    const r = o.getBoundingClientRect();
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1;
+    const k = Math.min(1, d / 160);
+    mirar((dx / d) * k, (dy / d) * k);
+  };
+  addEventListener('pointermove', (e) => hacia(e.clientX, e.clientY), { passive: true });
+  addEventListener('pointerdown', (e) => hacia(e.clientX, e.clientY), { passive: true });
+  const RUTINA = [[-1, 0.05], [-0.2, 0.1], [-0.7, 0.9], [-0.2, 0.1], [-0.5, -0.7], [-0.2, 0.1]];
+  let paso = 0;
+  setInterval(() => { if (Date.now() - tocado > 2500 && !document.hidden) { const [x, y] = RUTINA[paso++ % RUTINA.length]; mirar(x, y); } }, 2300);
+  setInterval(() => {
+    if (document.hidden) return;
+    for (const o of ojos) { o.classList.remove('parpadea'); void o.offsetWidth; o.classList.add('parpadea'); }
+  }, 5300);
 }
 
 // ── Registro ─────────────────────────────────────────────────────────
