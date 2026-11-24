@@ -100,7 +100,11 @@ async function abrir3d(p) {
     ar.addEventListener('click', () => evento('ver_ar', p.id));
     mv.append(ar);
   } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    ar.addEventListener('click', () => abrirCamara(p));
+    // Plato puesto sobre la mesa (giroscopio + cámara, three.js); si el módulo no carga, la vista sencilla
+    ar.addEventListener('click', () => {
+      evento('ver_ar', p.id);
+      import('/assets/mesa-ar.js').then((m) => m.abrirMesa(p)).catch(() => abrirCamara(p));
+    });
   }
   const caja = $('d-3d');
   caja.textContent = '';
@@ -116,7 +120,6 @@ let abierto = null;
 //    El plato se inclina con el celular (giroscopio): mirando hacia la mesa se ve desde arriba, como apoyado en ella.
 const ES_IPHONE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 async function abrirCamara(p) {
-  evento('ver_ar', p.id);
   const capa = document.createElement('div');
   capa.className = 'pt-camara';
   capa.setAttribute('role', 'dialog');
