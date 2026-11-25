@@ -721,7 +721,8 @@ await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Go
   await a.waitForSelector('#d-3d.listo', { timeout: 30000 });
   // Sin la realidad aumentada de Google (este navegador): aviso de la app de Google y su servicio, sin tarjetas de pasos
   await a.tap('#d-3d .pt-ar');
-  await a.waitForSelector('.pt-guia h2:has-text("cámara de Google")');
+  await a.waitForSelector('.pt-guia h2:has-text("Necesitas una app de Google")');
+  assert.match(await a.getAttribute('.pt-guia [data-instalar]', 'href'), /play\.google\.com\/store\/apps\/details\?id=com\.google\.ar\.core/);
   assert.match(await a.textContent('.pt-guia'), /Servicios de Google Play para RA/);
   await a.screenshot({ path: DIR + 'carta-aviso-google.png' });
   await a.tap('.pt-guia [data-salir]');
@@ -730,6 +731,18 @@ await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Go
   await a.waitForSelector('.pt-guia h2:has-text("No es compatible")');
   await a.screenshot({ path: DIR + 'carta-no-compatible.png' });
   await ctxA.close();
+
+  // iPhone (simulado, sin Quick Look en este navegador): aviso claro en vez de no hacer nada
+  const ctxI = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
+  const ip = await ctxI.newPage();
+  ip.on('pageerror', (e) => errores.push('carta iphone: ' + e.message));
+  await ip.goto(`${BASE}/n/${slug}/carta`);
+  await ip.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
+  await ip.waitForSelector('#d-3d.listo', { timeout: 30000 });
+  await ip.tap('#d-3d .pt-ar');
+  await ip.waitForSelector('.pt-guia h2:has-text("iPhone")');
+  await ctxI.close();
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
 });
 

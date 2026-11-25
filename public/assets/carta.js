@@ -114,6 +114,8 @@ let abierto = null;
 
 const ES_IPHONE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const ES_ANDROID = /Android/i.test(navigator.userAgent);
+// Revisión oficial de Apple: el navegador sabe abrir AR Quick Look (falso en iPhones viejos y en el navegador de Instagram/Facebook)
+const QUICK_LOOK = (() => { try { return document.createElement('a').relList.supports('ar'); } catch { return false; } })();
 // En algunos navegadores la pregunta nunca responde: a los 2 s se toma como "no"
 const soportaXR = async () => {
   if (!navigator.xr) return false;
@@ -138,23 +140,43 @@ function abrirGoogle(p) {
 // "Verlo en tu mesa": iPhone → Quick Look; Android → app de Google (si aún no tiene el servicio, antes un aviso de que puede pedirlo)
 async function verEnMesa(p, mv) {
   evento('ver_ar', p.id);
-  if (ES_IPHONE) { mv.activateAR(); return; } // Quick Look trae su propia guía en la cámara
+  // iPhone: Quick Look viene con el teléfono (trae su propia guía). Si no puede (iPhone viejo, o navegador de Instagram/Facebook), se dice claro.
+  if (ES_IPHONE) { if (QUICK_LOOK) mv.activateAR(); else avisoIphone(); return; }
   if (await xrListo) { abrirGoogle(p); return; }
-  avisoGoogle(() => abrirGoogle(p));
+  necesitaApp(() => abrirGoogle(p));
 }
 
-// Aviso antes de abrir la app de Google: puede pedir instalar un servicio (lo que confundió en la primera prueba)
-function avisoGoogle(seguir) {
+// Android sin "Servicios de Google Play para RA": se dice claro que hace falta y se ofrece instalarla.
+// (Sin el servicio, la app de Google abría una pantalla blanca y devolvía a la carta sin explicar nada.)
+const PLAY_ARCORE = 'https://play.google.com/store/apps/details?id=com.google.ar.core';
+function necesitaApp(intentar) {
   const capa = document.createElement('div');
   capa.className = 'pt-guia';
   capa.setAttribute('role', 'dialog');
   capa.innerHTML = `<div class="pt-guia-tarjeta"><div class="pt-guia-icono azul" aria-hidden="true">i</div>
-    <h2>Lo verás con la cámara de Google</h2>
-    <p class="pt-guia-texto">Puede pedirte instalar <b>"Servicios de Google Play para RA"</b>. Es gratis y solo se hace una vez.</p>
-    <button type="button" class="pt-accion" data-sig>Continuar</button>
+    <h2>Necesitas una app de Google</h2>
+    <p class="pt-guia-texto">Para ver el plato en tu mesa, tu celular necesita <b>"Servicios de Google Play para RA"</b>. Es gratis y se instala una sola vez. Si tu celular no es compatible, Google Play te lo dirá.</p>
+    <a class="pt-accion" data-instalar target="_blank" rel="noopener">Instalarla</a>
+    <button type="button" class="pt-link" data-sig>Ya la tengo, intentar</button>
     <button type="button" class="pt-link" data-salir>Ahora no</button></div>`;
-  capa.querySelector('[data-sig]').addEventListener('click', () => { capa.remove(); seguir(); });
+  capa.querySelector('[data-instalar]').href = PLAY_ARCORE;
+  capa.querySelector('[data-instalar]').addEventListener('click', () => capa.remove());
+  capa.querySelector('[data-sig]').addEventListener('click', () => { capa.remove(); intentar(); });
   capa.querySelector('[data-salir]').addEventListener('click', () => capa.remove());
+  document.body.append(capa);
+}
+
+function avisoIphone() {
+  const dentroDeApp = /Instagram|FBAN|FBAV|FB_IAB|Line/|TikTok/i.test(navigator.userAgent);
+  const capa = document.createElement('div');
+  capa.className = 'pt-guia';
+  capa.setAttribute('role', 'alertdialog');
+  capa.innerHTML = '<div class="pt-guia-tarjeta"><div class="pt-guia-icono azul" aria-hidden="true">i</div><h2></h2><p class="pt-guia-texto"></p><button type="button" class="pt-accion">Entendido</button></div>';
+  capa.querySelector('h2').textContent = dentroDeApp ? 'Ábrelo en Safari' : 'Tu iPhone no puede mostrarlo en la mesa';
+  capa.querySelector('.pt-guia-texto').textContent = dentroDeApp
+    ? 'Desde Instagram o Facebook no se puede ver el plato en tu mesa. Toca los tres puntos y elige "Abrir en Safari" (o "Abrir en el navegador").'
+    : 'Se necesita un iPhone 6s o más nuevo con iOS al día. Puedes seguir viéndolo en 3D: gíralo con el dedo.';
+  capa.querySelector('button').addEventListener('click', () => capa.remove());
   document.body.append(capa);
 }
 
