@@ -167,7 +167,7 @@ function necesitaApp(intentar) {
 }
 
 function avisoIphone() {
-  const dentroDeApp = /Instagram|FBAN|FBAV|FB_IAB|Line/|TikTok/i.test(navigator.userAgent);
+  const dentroDeApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok/i.test(navigator.userAgent);
   const capa = document.createElement('div');
   capa.className = 'pt-guia';
   capa.setAttribute('role', 'alertdialog');

@@ -51,6 +51,9 @@ Sitio de pruebas (rama `desarrollo`, publicado por Cloudflare): **https://nef-73
 - Seguridad: todas las tablas con permisos por fila (RLS); las páginas públicas solo usan funciones que exponen lo
   mínimo. **Nada que dé valor se gana visitando un link**: monedas y canjes solo los registra la caja (con PIN).
 - La **caja funciona sin internet** (guarda y reenvía; nunca suma doble).
+- Revisión de rutas (25/11): sin redirecciones abiertas, todo lo que se muestra está escapado, informes con link
+  firmado de 1 hora; se agregaron **cabeceras de seguridad** (nadie de afuera mete la caja o el admin en un marco,
+  los tokens de la dirección no se filtran a otros sitios). Falta una prueba de seguridad más estructurada.
 - Pruebas automáticas: 87 de base de datos + 41 recorridos en navegador. Todo cambio pasa por `npm run verificar`.
 - Flujo de publicación: se trabaja en `desarrollo`; **Jacobo** hace el merge a `main` para producción.
 - Documentos del repo: `docs/PRODUCTO.md` (fuente de verdad del producto), `docs/PLAN.md`, `docs/ARQUITECTURA.md`,
@@ -75,8 +78,11 @@ Sitio de pruebas (rama `desarrollo`, publicado por Cloudflare): **https://nef-73
 - **Platos en 3D**: el cliente lo gira con el dedo; pantalla de carga con fundido; fondo de "mesa de madera".
 - **"Verlo en tu mesa"** (realidad aumentada, el plato a tamaño real sobre la mesa):
   - iPhone: realidad aumentada propia del teléfono (Quick Look). Funciona sin instalar nada.
-  - Android: la app de Google (Scene Viewer). **Requiere "Servicios de Google Play para RA"**; si el celular es
-    compatible, Google lo instala gratis la primera vez (se avisa antes). Si no es compatible: aviso "No es compatible".
+  - Android: la app de Google (Scene Viewer). **Requiere "Servicios de Google Play para RA"**. Si el celular no la
+    tiene, sale "Necesitas una app de Google" con el botón **Instalarla** (Google Play) y "Ya la tengo, intentar"; si
+    aun así no abre, "No es compatible con tu celular".
+  - iPhone que no puede (iPhone viejo o navegador de Instagram/Facebook): "Ábrelo en Safari" o "Tu iPhone no puede
+    mostrarlo en la mesa" (se revisa con la prueba oficial de Apple, no se adivina).
   - Probado: funcionó en el celular de la mamá de Jacobo (tras instalar el servicio); en el de Jacobo no es compatible.
   - Se intentó hacerlo dentro de Chrome (WebXR): se trababa y cerraba Chrome → descartado por ahora.
   - Alternativas sin app evaluadas: **anclar el plato a un sticker impreso (MindAR, gratis)** — prototipo probado con
