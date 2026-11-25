@@ -37,7 +37,7 @@
   <main class="n-contenido">
     <div class="n-encabezado">
       <div><div class="n-etiqueta">Mamut Herd</div><h1 id="titulo-seccion">Negocios</h1><p id="sub-seccion">Tus clientes, sus portales y sus tags.</p></div>
-      <button class="n-btn principal" id="nuevo-negocio">Nuevo negocio</button>
+      <div class="n-fila-botones"><button class="n-btn fantasma chico" id="guia-admin" type="button">Guía</button><button class="n-btn principal" id="nuevo-negocio">Nuevo negocio</button></div>
     </div>
     <nav class="n-pestanas" role="tablist">
       <button class="tab" role="tab" data-tab="negocios" aria-selected="true">Negocios</button>
@@ -192,24 +192,25 @@
 <!-- ============ FORMULARIO NEGOCIO ============ -->
 <dialog id="dlg-negocio" class="n-dialogo">
   <form id="form-negocio" class="n-form" method="dialog">
-    <h2 id="n-titulo">Nuevo negocio</h2>
+    <div class="n-titulo-guia"><h2 id="n-titulo">Nuevo negocio</h2><button type="button" class="n-btn fantasma chico" id="guia-form">¿Qué es cada cosa?</button></div>
 
     <div class="n-etiqueta">Lo que ven los clientes</div>
     <div class="n-campo"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="nombre" required></div>
     <div class="n-campo"><label for="f-slug">Dirección web *</label><input id="f-slug" name="slug" required pattern="[a-z0-9\-]{2,60}"><div class="n-ayuda" id="n-slug-ayuda"></div></div>
     <div class="n-campo"><label>Sector</label>
       <div class="n-opciones" id="f-sector">
-        <label><input type="radio" name="sector" value="cafe" checked><span>Café</span></label>
-        <label><input type="radio" name="sector" value="gimnasio"><span>Gimnasio</span></label>
+        <label><input type="radio" name="sector" value="cafe" checked><span>Restaurante o café</span></label>
+        <label id="f-sector-gym" hidden><input type="radio" name="sector" value="gimnasio"><span>Gimnasio</span></label>
+        <button type="button" class="n-btn fantasma chico" id="f-mas-sectores">Ver más sectores</button>
       </div>
     </div>
     <div>
       <label class="n-interruptor"><div><b>Catálogo</b><span>Carta o clases y máquinas</span></div><input type="checkbox" name="srv_catalogo"></label>
       <label class="n-interruptor"><div><b>Club</b><span>Monedas desde la caja</span></div><input type="checkbox" name="srv_club"></label>
-      <label class="n-interruptor"><div><b>Estudio</b><span>Informe estadístico trimestral</span></div><input type="checkbox" name="srv_estudio"></label>
-      <label class="n-interruptor"><div><b>Entrada por NFC</b><span>Solo gimnasios SIN torniquete: el socio registra su entrada con el chip</span></div><input type="checkbox" name="srv_entrada_nfc"></label>
+      <label class="n-interruptor"><div><b>Estudio</b><span>Informe para el dueño cada 3 meses (extra pago)</span></div><input type="checkbox" name="srv_estudio"></label>
+      <label class="n-interruptor" id="f-nfc" hidden><div><b>Entrada por NFC</b><span>Solo gimnasios SIN torniquete: el socio registra su entrada con el chip</span></div><input type="checkbox" name="srv_entrada_nfc"></label>
     </div>
-    <div class="n-campo"><label for="f-tema">Estilo del portal</label><select id="f-tema" name="tema"><option value="">El de su sector</option><option value="calido">Café · papel y serif</option><option value="limpio">Limpio · blanco y aire</option><option value="noche">Noche · oscuro y cálido</option><option value="energia">Energía · oscuro y vibrante</option></select><div class="n-ayuda">Cambia la ropa del portal, la carta y el club; el color y el logo siguen siendo los del negocio.</div></div>
+    <div class="n-campo"><label for="f-tema">Estilo del portal</label><select id="f-tema" name="tema"><option value="">El de su sector (colorido)</option><option value="calido">Colorido · el diseño nuevo</option><option value="noche">Noche · oscuro y elegante</option><option value="limpio">Limpio · blanco y minimalista</option><option value="energia">Energía · para gimnasios</option></select><div class="n-ayuda">Cambia la ropa del portal, la carta y el club; el color y el logo siguen siendo los del negocio.</div></div>
     <div class="n-campo"><label for="f-ubic">Ubicación</label><input id="f-ubic" name="ubicacion_etiqueta" placeholder="Ej. Sede Chapinero"></div>
     <div class="n-campo"><label for="f-desc">Descripción corta</label><input id="f-desc" name="descripcion" placeholder="Café de especialidad · Chapinero"></div>
     <div class="n-fila">
@@ -373,6 +374,8 @@ import { montarCatalogo } from '/assets/admin-catalogo.js';
 import { exportarEstudio } from '/assets/exportar.js';
 import { pintarEnRiesgo } from '/assets/panel/en-riesgo.js';
 import { montarAccesos } from '/assets/panel/accesos-admin.js';
+import { montarTutorial } from '/assets/panel/tutorial.js';
+import { PASOS_PANEL, PASOS_FORMULARIO } from '/assets/admin-guia.js';
 
 const cfg = window.TOQUE;
 const sb = createClient(cfg.url, cfg.anon);
@@ -543,6 +546,11 @@ function abrirNegocio(n = null) {
     cargarPremios(n.id);
     cargarDoradas(n.id);
   }
+  // Por ahora solo restaurantes: "Gimnasio" y "Entrada por NFC" solo se ven en negocios que ya son gimnasio
+  const esGym = !!(n && n.sector === 'gimnasio');
+  $('#f-sector-gym').hidden = !esGym;
+  $('#f-mas-sectores').hidden = esGym;
+  $('#f-nfc').hidden = !esGym;
   $('#dlg-negocio').showModal();
 }
 
@@ -918,6 +926,20 @@ $('#k-negocio').addEventListener('change', () => catalogo.cargar());
 $('#i-negocio').addEventListener('change', () => importador.reiniciar());
 
 iniciar();
+
+// ---------------- Sector: "Ver más sectores" y NFC solo para gimnasios ----------------
+$('#f-mas-sectores').addEventListener('click', () => { $('#f-sector-gym').hidden = false; $('#f-mas-sectores').hidden = true; });
+document.querySelectorAll('#f-sector input[name=sector]').forEach((r) => r.addEventListener('change', () => {
+  $('#f-nfc').hidden = !document.querySelector('#f-sector input[value=gimnasio]').checked;
+}));
+
+// ---------------- Guías paso a paso ----------------
+const irTab = (t) => { const b = document.querySelector('.tab[data-tab="' + t + '"]'); if (b) b.click(); };
+const guiaPanel = montarTutorial({ ir: irTab, pasos: PASOS_PANEL, clave: 'nef.admin.guia.v1', alCerrar: () => { irTab('negocios'); window.scrollTo({ top: 0 }); } });
+$('#guia-admin').addEventListener('click', () => guiaPanel.abrir());
+// La del formulario vive dentro de la ventana (si no, la ventana la tapa)
+const guiaForm = montarTutorial({ ir: () => {}, pasos: PASOS_FORMULARIO, clave: 'nef.admin.guia-form.v1', raiz: $('#dlg-negocio'), alCerrar: () => $('#form-negocio').scrollTo?.({ top: 0 }) });
+$('#guia-form').addEventListener('click', () => guiaForm.abrir());
 </script>
 <script type="module" src="/assets/ver-clave.js"></script>
 </body>

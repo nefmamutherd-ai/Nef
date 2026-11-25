@@ -176,6 +176,7 @@ await caso('portal café: tema cálido, 1 a 3 botones de 76 px, nombre del tag',
   const alto = await p.$eval('.pt-boton', (b) => b.getBoundingClientRect().height);
   assert.ok(alto >= 76, 'alto del botón ' + alto);
   await sinScrollHorizontal(p);
+  await p.waitForTimeout(1200); // que terminen las animaciones de entrada
   await p.screenshot({ path: DIR + 'portal-cafe-movil.png', fullPage: true });
   await p.goto(`${BASE}/n/${slug}`);
   assert.equal(await p.textContent('.pt-cabeza p'), 'Sede Chapinero');
@@ -215,7 +216,11 @@ await caso('/inactivo con la marca Nef', async () => {
 await caso('admin: cambiar a Gimnasio + Club → el portal cambia de tema y muestra "Mis monedas"', async () => {
   await panel.click('.tab[data-tab=negocios]');
   await panel.click(`#lista-negocios tr:has(td.cod:text-is("/n/${slug}")) [data-editar]`);
+  // Por ahora solo restaurantes: Gimnasio está escondido tras "Ver más sectores"
+  assert.equal(await panel.isVisible('#f-sector-gym'), false);
+  await panel.click('#f-mas-sectores');
   await panel.click('#f-sector label:has(input[value=gimnasio])');
+  assert.equal(await panel.isVisible('#f-nfc'), true, 'NFC aparece al elegir gimnasio');
   await panel.check('#form-negocio [name=srv_club]');
   await panel.fill('#form-negocio [name=ubicacion_etiqueta]', 'Sede Chapinero');
   await panel.screenshot({ path: DIR + 'admin-negocio-form.png' });

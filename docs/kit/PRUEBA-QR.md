@@ -13,7 +13,8 @@ Necesitas **dos aparatos**: uno hace de **caja** (computador o tablet) y otro de
 4. Sale el QR, lo que gana el cliente y una cuenta regresiva de **10 minutos**.
 
 ## 3. Reclama las monedas (celular)
-1. Abre la **cámara** del celular y apunta al QR. Toca el enlace que aparece.
+1. **Si ya tienes tu tarjeta abierta** (Android): toca **"Escanear el QR de la caja"** y apunta al QR.
+   **Si no:** abre la **cámara** del celular, apunta al QR y toca el enlace que aparece (así también en iPhone).
 2. **Primera vez:** escribe tu nombre y celular, acepta las condiciones y toca **"Unirme"**.
    - Ganas la **bienvenida + la compra**, con la lluvia de monedas.
 3. **Ya eras socio:** las monedas se suman solas al abrir el enlace.

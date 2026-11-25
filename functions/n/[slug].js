@@ -1,6 +1,6 @@
 // /n/<slug> → portal del negocio (SSR). Se arma en el servidor para que cargue al instante después del toque.
 // Estructura: docs/UI.md §3 · Componentes: public/assets/portal.css · Textos y botones: lib/sectores/*.json
-import { rpc, esc, urlDeBoton, html, redirigir, paginaError, urlSegura } from '../../lib/util.js';
+import { rpc, esc, urlDeBoton, html, redirigir, paginaError, urlSegura, fotoSegura } from '../../lib/util.js';
 import { paquete, botonesPortal } from '../../lib/sectores.js';
 import { inicioPagina, firma, icono } from '../../lib/portal.js';
 
@@ -24,6 +24,9 @@ export async function onRequestGet({ params, request, env }) {
     return paginaError(env);
   }
   if (!n) return redirigir(new URL('/inactivo', url).href);
+  const conCarta = !!(n.servicios && n.servicios.catalogo && n.tiene_carta);
+  let pop = [];
+  if (conCarta) { try { pop = (await rpc(env, 'carta_populares', { p_slug: slug })) || []; } catch { pop = []; } }
 
   const pq = paquete(n.sector);
   const q = t ? `?t=${t}` : '';
@@ -63,11 +66,28 @@ export async function onRequestGet({ params, request, env }) {
     ? `<div class="pt-logo"><img src="${esc(urlSegura(n.logo_url))}" alt=""></div>`
     : `<div class="pt-logo" aria-hidden="true">${esc(iniciales(n.nombre))}</div>`;
   const lugar = nombreTag || n.ubicacion_etiqueta || '';
+  const carta = `/n/${encodeURIComponent(n.slug)}/carta${q}`;
+  // "Elige por mí" en la portada (pedido de Jacobo): abre la tragamonedas de la carta de una
+  const elige = conCarta ? `<a class="pt-baldosa pt-baldosa-elige" href="${esc(carta)}#elige"><i class="pt-dado">${icono('dado')}</i><span>Elige por mí</span><em>Que la suerte decida</em></a>` : '';
+  const fotos = (pop || []).filter((p) => fotoSegura(p.foto_url)).slice(0, 8);
+  const populares = fotos.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido"><h2 class="pt-versalitas">Lo más pedido</h2>
+    <div class="pt-carrusel">${fotos.map((p) => `<a class="pt-pop" href="${esc(carta)}"><img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b></a>`).join('')}</div></section>` : '';
+  // Fondo vivo (tema cálido): manchas de color que se mueven y dibujos de comida flotando. Solo decoración.
+  const DOODLES = ['<path d="M5 9h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5zM16 11h1.5a2.5 2.5 0 0 1 0 5H16M9 3c0 2 2 2 2 4"/>',
+    '<path d="M3 15c2-6 6-9 9-9s7 3 9 9c-3 2-6 2-9 2s-6 0-9-2zM8 8l2 8M16 8l-2 8M12 6v11"/>',
+    '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 13v8M17 3c-2 0-3 3-3 7h3v11"/>',
+    '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
+    '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/>',
+    '<path d="M4 14a8 8 0 0 0 16 0zM8 10c0-2 1-3 2-4M12 10c0-2 1-4 3-5"/>'];
+  const deco = `<div class="pt-deco" aria-hidden="true"><i class="pt-mancha uno"></i><i class="pt-mancha dos"></i><i class="pt-mancha tres"></i>${
+    DOODLES.map((d, k) => `<svg class="pt-doodle d${k}" viewBox="0 0 24 24">${d}</svg>`).join('')}</div>`;
 
   return html(`${inicioPagina(n, { extraHead: n.descripcion ? `<meta name="description" content="${esc(n.descripcion)}">` : '' })}
-<main class="pt-pagina">
+${deco}
+<main class="pt-pagina pt-inicio">
   <header class="pt-cabeza pt-portada pt-entra">${logo}<h1>${esc(n.nombre)}</h1>${lugar ? `<p class="pt-versalitas pt-lugar">${esc(lugar)}</p>` : ''}<div class="pt-filete" aria-hidden="true"><i></i></div>${n.descripcion ? `<p class="pt-versalitas">${esc(n.descripcion)}</p>` : ''}</header>
-  ${botones.length ? `<div class="pt-botones pt-entra">${botones.join('')}</div>` : ''}
+  ${botones.length || elige ? `<div class="pt-botones pt-entra">${botones.join('')}${elige}</div>` : ''}
+  ${populares}
   ${enlaces.length ? `<nav class="pt-enlaces pt-puntos">${enlaces.join('')}</nav>` : ''}
   ${firma()}
 </main>

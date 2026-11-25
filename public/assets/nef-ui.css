@@ -219,3 +219,8 @@ p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 .n-casilla { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--n-texto-2); cursor: pointer; }
 .n-casilla input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--n-tinta); }
 .n-casilla a { color: var(--n-tinta); text-underline-offset: 3px; }
+
+/* Admin: botón "Guía" junto a "Nuevo negocio" y "¿Qué es cada cosa?" junto al título del formulario */
+.n-fila-botones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.n-titulo-guia { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.n-titulo-guia h2 { margin-bottom: 0; }

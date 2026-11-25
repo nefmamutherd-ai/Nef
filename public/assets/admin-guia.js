@@ -1,0 +1,46 @@
+// Guías paso a paso del panel de Jacobo (/admin), con el mismo motor que la del dueño (panel/tutorial.js):
+// 1) el panel (pestañas y "Nuevo negocio"); 2) el formulario del negocio, campo por campo (botón "¿Qué es cada cosa?").
+// tab: pestaña que se abre antes del paso · sel: lo que se resalta (si no está visible, el paso se salta)
+export const PASOS_PANEL = [
+  { titulo: 'Tu panel de Nef', texto: 'Desde aquí manejas todos los negocios: sus portales, sus tags, sus cobros y quién entra a su panel. Te muestro todo en un minuto.' },
+  { sel: '#nuevo-negocio', titulo: 'Nuevo negocio', texto: 'Cada cliente nuevo empieza aquí. Llenas su nombre, su dirección web y qué servicios compró; lo demás lo puedes completar después.' },
+  { tab: 'negocios', sel: '#tab-negocios', titulo: 'Negocios', texto: 'La lista de tus clientes. "Editar" cambia sus datos, "Ver portal" abre lo que ven sus clientes y "Link estadísticas" es el enlace viejo de estadísticas.' },
+  { tab: 'tags', sel: '#tab-tags', titulo: 'Tags', texto: 'Los chips NFC y QR de las mesas. Creas un lote, lo asignas a un negocio y lo imprimes. Cada tag sabe en qué mesa está.' },
+  { tab: 'stats', sel: '#tab-stats', titulo: 'Estadísticas', texto: 'Cuántos toques, clientes y visitas tiene cada negocio. Útil para mostrarle resultados al dueño cuando renueve.' },
+  { tab: 'entradas', sel: '#tab-entradas', titulo: 'Entradas e informes', texto: 'Aquí subes el informe trimestral en PDF de los negocios con Estudio, y las entradas del torniquete de los gimnasios.' },
+  { tab: 'catalogo', sel: '#tab-catalogo', titulo: 'Catálogo', texto: 'La carta de cada negocio: platos, precios, fotos, modelo 3D y "Agotado hoy". El dueño también la puede cambiar desde su panel.' },
+  { tab: 'cobros', sel: '#tab-cobros', titulo: 'Mensualidades', texto: 'Hasta cuándo pagó cada negocio y los días de gracia. Si vence, su portal y sus tags se apagan solos; "Registrar pago" los prende al instante.' },
+  { tab: 'duenos', sel: '#tab-duenos', titulo: 'Dueños', texto: 'Le das acceso al panel a un dueño o gerente por su correo. Primero la persona crea su cuenta en /panel; luego la autorizas aquí.' },
+  { sel: '#guia-admin', titulo: '¿Quieres verla otra vez?', texto: 'Toca "Guía" cuando quieras repetir este recorrido. Dentro de "Editar negocio" hay otra guía, campo por campo.', fin: true },
+];
+
+export const PASOS_FORMULARIO = [
+  { titulo: 'El formulario del negocio', texto: 'Te explico cada campo. Lo marcado con * es obligatorio; lo demás lo puedes llenar después.' },
+  { sel: '#f-nombre', titulo: 'Nombre', texto: 'Como se llama el restaurante. Sale grande en su portal, en la carta y en la tarjeta del club.' },
+  { sel: '#f-slug', titulo: 'Dirección web', texto: 'La parte final del link: nef…/n/ESTO. Solo minúsculas, números y guiones (ej. la-brasa-chapinero). Solo tú la cambias; si la cambias, los QR impresos siguen funcionando porque van por el tag.' },
+  { sel: '#f-sector', titulo: 'Sector', texto: 'Define el paquete: textos, botones de la portada, diseño y funciones (la carta, "Elige por mí"…). Por ahora, restaurantes y cafés.' },
+  { sel: '[name=srv_catalogo]', titulo: 'Catálogo', texto: 'Prende la carta digital: platos con foto, 3D, "Verlo en tu mesa", buscador y "Elige por mí".' },
+  { sel: '[name=srv_club]', titulo: 'Club', texto: 'Prende las monedas y premios: la caja con PIN, la tarjeta del cliente y el QR de compra.' },
+  { sel: '[name=srv_estudio]', titulo: 'Estudio', texto: 'El informe para el dueño cada 3 meses: qué piden, a qué hora vienen y quién no ha vuelto. Es un extra que se cobra aparte.' },
+  { sel: '#f-tema', titulo: 'Estilo del portal', texto: 'La "ropa" del portal. "El de su sector" es el diseño colorido. "Noche" es oscuro y elegante (bueno para restaurantes de noche o bares). El color y el logo siguen siendo los del negocio.' },
+  { sel: '#f-ubic', titulo: 'Ubicación', texto: 'Un texto corto que sale bajo el nombre, por ejemplo "Sede Chapinero". Si el cliente entra por el tag de una mesa, sale el nombre de esa mesa.' },
+  { sel: '#f-desc', titulo: 'Descripción corta', texto: 'Una frase de lo que es el negocio: "Cocina colombiana · Usaquén". También la usa Google al compartir el link.' },
+  { sel: '#f-logo', titulo: 'Logo', texto: 'El link a la imagen del logo (cuadrada, ideal 512×512). Si lo dejas vacío, salen las iniciales del negocio en un círculo de su color.' },
+  { sel: '#f-color', titulo: 'Color de la marca', texto: 'El color principal del negocio: lo usan la tarjeta de monedas, el botón principal y los detalles. Nef elige solo si el texto encima va en blanco o en oscuro.' },
+  { sel: '#f-menu', titulo: 'Link de la carta', texto: 'Solo si el negocio NO usa la carta de Nef: un PDF en Drive o su página. Si tiene platos en el Catálogo, se usa la carta de Nef y esto se ignora.' },
+  { sel: '#f-resena', titulo: 'Reseña en Google', texto: 'El link de "Escribir una reseña" de su ficha de Google. Prende el botón "Déjanos tu reseña". Nunca se premia una reseña con monedas (es ley).' },
+  { sel: '#f-wa', titulo: 'WhatsApp e Instagram', texto: 'Su WhatsApp (solo números) y su Instagram. Salen como botones pequeños en la portada.' },
+  { sel: '#f-wifi', titulo: 'WiFi', texto: 'Nombre y clave de la red. El cliente la ve y la copia con un toque desde la portada.' },
+  { sel: '#f-links', titulo: 'Otros enlaces', texto: 'Cualquier otro botón: uno por línea, "Título | link". Por ejemplo "Domicilios | https://…".' },
+  { sel: '[name=modo_monedas]', titulo: 'Cómo se ganan las monedas', texto: 'Por visita: cada compra da las mismas monedas. Por valor: da un porcentaje de lo que gastó (3, 5 u 8 %). En restaurantes, "por valor" suele ser más justo.' },
+  { sel: '#f-porvisita', titulo: 'Monedas por visita', texto: 'Cuántas monedas da cada visita (en el modo por visita). 10 es un buen comienzo.' },
+  { sel: '#f-bienvenida', titulo: 'Bienvenida', texto: 'Monedas de regalo al inscribirse; se activan en su primera compra. Hace que se inscriban más.' },
+  { sel: '#f-bono-racha', titulo: 'Bono por racha', texto: 'Monedas extra por venir 4 semanas seguidas. Premia a los clientes fieles.' },
+  { sel: '#f-pin', titulo: 'PIN de la caja', texto: 'Con este PIN el cajero entra a nef…/caja/<dirección> para sumar y canjear. 4 a 6 números. El dueño también lo puede cambiar desde su panel.' },
+  { sel: '#p-nombre', titulo: 'Premios', texto: 'Escribe el premio y cuánto vale en pesos. Nef calcula cuántas monedas cuesta, siempre con la misma regla para todos.' },
+  { sel: '#hd-dia', titulo: 'Horas doradas', texto: 'Franjas en que cada visita vale el doble o el triple, para llenar las horas flojas (ej. martes de 3 a 5 p. m.). La tarjeta del cliente lo anuncia.' },
+  { sel: '#f-lnom', titulo: 'Datos legales', texto: 'Nombre legal, NIT, dirección y correo del responsable de los datos (Ley 1581). Salen en las condiciones del club. Sin esto no se debería abrir el club.' },
+  { sel: '#f-plan', titulo: 'Plan y contacto', texto: 'Qué plan pagó y con quién hablas en el negocio. Solo lo ves tú.' },
+  { sel: '[name=activo]', titulo: 'Activo', texto: 'Si lo apagas, su portal y sus tags dejan de funcionar al instante (por ejemplo, si cancela).' },
+  { sel: '#f-notas', titulo: 'Notas', texto: 'Notas privadas tuyas: acuerdos, fechas de cobro, lo que sea. El dueño nunca las ve.', fin: true },
+];

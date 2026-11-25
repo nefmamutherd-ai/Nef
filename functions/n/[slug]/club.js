@@ -2,7 +2,6 @@
 // La tarjeta se abre con el token propio del cliente guardado en su celular (localStorage), nunca con el slug.
 import { rpc, esc, html, redirigir, paginaError } from '../../../lib/util.js';
 import { inicioPagina, firma, icono } from '../../../lib/portal.js';
-import { paquete } from '../../../lib/sectores.js';
 
 export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
@@ -20,12 +19,6 @@ export async function onRequestGet({ params, request, env }) {
   const plural = esc(c.moneda_plural);
   const datos = `/n/${encodeURIComponent(n.slug)}/datos`;
   const portal = `/n/${encodeURIComponent(n.slug)}`;
-  // Diseño C: dos baldosas grandes a la carta y a "Elige por mí" (solo negocios con carta de comida)
-  const conCarta = n.servicios && n.servicios.catalogo && paquete(n.sector).palabras.catalogo === 'carta';
-  const baldosas = conCarta ? `<div class="pt-baldosas">
-      <a class="pt-baldosa" href="${portal}/carta">${icono('carta')}<span>Ver la carta</span></a>
-      <a class="pt-baldosa oscura" href="${portal}/carta#elige">${icono('dado')}<span>Elige por mí</span></a>
-    </div>` : '';
 
   return html(`${inicioPagina(n, { titulo: `Club · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
 <main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}">
@@ -74,7 +67,7 @@ export async function onRequestGet({ params, request, env }) {
     </div>
     <div class="pt-premios-fila" id="t-camino" hidden></div>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>
-    ${baldosas}
+    <button type="button" class="pt-accion marca" id="t-escanear" hidden>${icono('qr')}Escanear el QR de la caja</button>
     <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
     <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>
     <a class="pt-link" href="${datos}">Condiciones del club</a>
@@ -92,6 +85,13 @@ export async function onRequestGet({ params, request, env }) {
   <div class="pt-hoja" id="hoja-premios" role="dialog" aria-label="Premios" hidden>
     <h2>Premios</h2>
     <div id="lista-premios"></div>
+    <button type="button" class="pt-link" data-cerrar>Cerrar</button>
+  </div>
+  <div class="pt-fondo" hidden></div>
+  <div class="pt-hoja" id="hoja-lector" role="dialog" aria-label="Escanear el QR de la caja" hidden>
+    <h2>Escanea el QR de la caja</h2>
+    <video id="lector-video" playsinline muted class="pt-foto-grande"></video>
+    <p>Pídele al cajero el QR de tu compra y apúntale con la cámara.</p>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <div class="pt-toast" id="toast" role="status"></div>

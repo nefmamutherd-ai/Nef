@@ -19,7 +19,7 @@ const PASOS = [
   { sel: '#guia', titulo: '¿Quieres verla otra vez?', texto: 'Toca "Guía" cuando quieras repetir este recorrido.', fin: true },
 ];
 
-export function montarTutorial({ ir, pestanaVisible }) {
+export function montarTutorial({ ir, pestanaVisible = () => true, pasos: lista = PASOS, clave = VISTA, raiz = document.body, alCerrar = null }) {
   let i = 0;
   let pasos = [];
   const capa = document.createElement('div');
@@ -42,7 +42,7 @@ export function montarTutorial({ ir, pestanaVisible }) {
       <button type="button" class="n-btn chico" id="guia-siguiente">Siguiente</button>
     </div>`;
   capa.append(foco, caja);
-  document.body.append(capa);
+  raiz.append(capa);
   const $ = (id) => caja.querySelector('#' + id);
 
   const visible = (el) => el && el.getClientRects().length > 0 && !el.closest('[hidden]');
@@ -103,16 +103,16 @@ export function montarTutorial({ ir, pestanaVisible }) {
   function cerrar() {
     capa.hidden = true;
     document.body.classList.remove('n-guiando');
-    try { localStorage.setItem(VISTA, '1'); } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem(clave, '1'); } catch { /* sin almacenamiento */ }
     window.removeEventListener('resize', ubicar);
     window.removeEventListener('scroll', ubicar, true);
-    ir('resumen');
-    window.scrollTo({ top: 0 });
+    if (alCerrar) alCerrar();
+    else { ir('resumen'); window.scrollTo({ top: 0 }); }
   }
 
   function abrir() {
     // Solo los pasos que aplican a este negocio (sin sedes, sin gimnasio, sin club… se saltan)
-    pasos = PASOS.filter((p) => (!p.tab || pestanaVisible(p.tab)) && (!p.sel || p.fin || p.tab || visible(document.querySelector(p.sel))) && !(p.sel === '#i-subir' && !pestanaVisible('entradas')));
+    pasos = lista.filter((p) => (!p.tab || pestanaVisible(p.tab)) && (!p.sel || p.fin || p.tab || visible(document.querySelector(p.sel))) && !(p.sel === '#i-subir' && !pestanaVisible('entradas')));
     i = 0;
     capa.hidden = false;
     document.body.classList.add('n-guiando');
@@ -131,6 +131,6 @@ export function montarTutorial({ ir, pestanaVisible }) {
     if (e.key === 'ArrowLeft' && i > 0) $('guia-atras').click();
   });
 
-  const yaVista = () => { try { return localStorage.getItem(VISTA) === '1'; } catch { return true; } };
+  const yaVista = () => { try { return localStorage.getItem(clave) === '1'; } catch { return true; } };
   return { abrir, primeraVez: () => { if (!yaVista()) setTimeout(abrir, 700); } };
 }

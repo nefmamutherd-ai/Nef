@@ -457,3 +457,46 @@ if (token) {
   mostrar('registro');
   if (compraPendiente) toast('Únete al club y esta compra se suma a tus monedas');
 }
+
+// ── Lector del QR de la caja (pedido de Jacobo: la caja MUESTRA un QR, así que el cliente LEE, no muestra) ──
+// Solo donde el navegador sabe leer QR dentro de la página (Chrome en Android). En iPhone se usa la cámara del teléfono.
+if ('BarcodeDetector' in window && navigator.mediaDevices) {
+  $('t-escanear').hidden = false;
+  $('t-codigo').className = 'pt-link'; // "Mostrar mi código" queda como alternativa
+  const hojaLector = hoja($('hoja-lector'));
+  let flujo = null;
+  const parar = () => { if (flujo) flujo.getTracks().forEach((t) => t.stop()); flujo = null; };
+  $('hoja-lector').querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', parar));
+  $('t-escanear').addEventListener('click', async () => {
+    try {
+      flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      toast('No pudimos abrir la cámara. Escanea el QR con la cámara de tu celular.');
+      return;
+    }
+    const video = $('lector-video');
+    video.srcObject = flujo;
+    await video.play();
+    hojaLector.abrir();
+    const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    const mirar = async () => {
+      if (!flujo) return;
+      try {
+        const [c] = await detector.detect(video);
+        let u = null;
+        try { u = c && new URL(c.rawValue); } catch { u = null; }
+        const codigo = u && u.searchParams.get('c');
+        if (codigo && /^[0-9a-f]{32}$/.test(codigo)) {
+          parar();
+          hojaLector.cerrar();
+          if (u.pathname !== '/n/' + slug + '/club') { toast('Ese QR es de otro negocio'); return; }
+          compraPendiente = codigo;
+          reclamarCompra();
+          return;
+        }
+      } catch { /* sigue intentando */ }
+      setTimeout(mirar, 250);
+    };
+    mirar();
+  });
+}

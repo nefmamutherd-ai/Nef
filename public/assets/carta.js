@@ -122,25 +122,25 @@ const soportaXR = async () => {
   } catch { return false; }
 };
 
-// ¿Tiene la realidad aumentada de Google? Se pregunta una vez al cargar (y se baja el módulo de la cámara) para que el toque sea inmediato
+// ¿Ya tiene la realidad aumentada de Google instalada? Se pregunta una vez al cargar para que el toque sea inmediato
 const xrListo = ES_ANDROID ? soportaXR() : Promise.resolve(false);
-xrListo.then((si) => si && import('/assets/mesa-xr.js')).catch(() => {});
 
-// "Verlo en tu mesa": 1) ¿el celular puede? 2) se abre la cámara y la guía va DENTRO (celular en 3D → círculo → Listo → plato)
+// La app de Google (Scene Viewer): estable, con su propia guía en la cámara; el plato se arrastra y se gira con los dedos.
+// (La cámara dentro de Chrome con WebXR — mesa-xr.js — se trababa y cerraba Chrome en el celular de prueba: se deja sin usar.)
+// Si el celular no puede, Chrome vuelve aquí con #ra-no-compatible-<id> y sale el aviso.
+function abrirGoogle(p) {
+  const glb = new URL(p.modelo_url, location.href).href;
+  const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
+  location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_only&resizable=false&title=${encodeURIComponent(p.nombre)}`
+    + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(regreso)};end;`;
+}
+
+// "Verlo en tu mesa": iPhone → Quick Look; Android → app de Google (si aún no tiene el servicio, antes un aviso de que puede pedirlo)
 async function verEnMesa(p, mv) {
   evento('ver_ar', p.id);
   if (ES_IPHONE) { mv.activateAR(); return; } // Quick Look trae su propia guía en la cámara
-  if (await xrListo) {
-    import('/assets/mesa-xr.js').then((m) => m.ponerEnMesa(p)).catch(() => avisoNoCompatible());
-    return;
-  }
-  // Sin la realidad aumentada de Google instalada: la app de Google (guía propia); si el celular no puede, vuelve aquí
-  avisoGoogle(() => {
-    const glb = new URL(p.modelo_url, location.href).href;
-    const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
-    location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_only&title=${encodeURIComponent(p.nombre)}`
-      + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(regreso)};end;`;
-  });
+  if (await xrListo) { abrirGoogle(p); return; }
+  avisoGoogle(() => abrirGoogle(p));
 }
 
 // Aviso antes de abrir la app de Google: puede pedir instalar un servicio (lo que confundió en la primera prueba)
