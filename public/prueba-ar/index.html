@@ -24,10 +24,10 @@
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
   <a-light type="hemisphere" color="#fff" ground-color="#8a6a50" intensity="1.6"></a-light>
   <a-light type="directional" position="0.5 1 1" intensity="1.4"></a-light>
-  <!-- 1 unidad = ancho de la carta (~6,3 cm). El .glb viene en metros: 1 / 0,063 ≈ 16 → tamaño real.
+  <!-- 1 unidad = ancho de la carta (~6,3 cm). El .glb viene en metros: 16 sería tamaño real (plato de 19 cm = 3 cartas); 10 para la prueba.
        Girado 90° para que el plato quede de pie sobre la carta (no pegado a ella como una foto). -->
   <a-entity id="ancla" mindar-image-target="targetIndex: 0">
-    <a-gltf-model src="#plato" rotation="90 0 0" position="0 0 0" scale="16 16 16"></a-gltf-model>
+    <a-gltf-model src="#plato" rotation="90 0 0" position="0 0 0" scale="10 10 10"></a-gltf-model>
   </a-entity>
 </a-scene>
 <script>
@@ -35,6 +35,11 @@
   const ancla = document.getElementById('ancla');
   ancla.addEventListener('targetFound', () => { aviso.textContent = 'Muévete alrededor: el plato se queda en la carta'; });
   ancla.addEventListener('targetLost', () => { aviso.textContent = 'Apunta la cámara a la carta'; });
+  // MindAR no se reacomoda si el celular gira (queda fondo negro): al cambiar de vertical a horizontal, vuelve a arrancar
+  let vertical = innerHeight > innerWidth;
+  const reacomodar = () => { const v = innerHeight > innerWidth; if (v !== vertical) location.reload(); };
+  addEventListener('resize', () => setTimeout(reacomodar, 300));
+  if (screen.orientation) screen.orientation.addEventListener('change', () => setTimeout(reacomodar, 300));
   document.querySelector('a-scene').addEventListener('arError', () => { aviso.textContent = 'Permite el uso de la cámara y recarga'; });
 </script>
 </body>
