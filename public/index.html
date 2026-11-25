@@ -66,6 +66,31 @@ nav .entrar:hover { text-decoration: underline; text-underline-offset: 4px; }
 .hero .vis { position: relative; height: 440px; border-radius: 28px; background: var(--arena); overflow: hidden; }
 .hero .tel { position: absolute; right: 8%; top: 32px; width: 210px; border-radius: 30px; border: 7px solid var(--tinta); background: var(--tinta); transform: rotate(4deg); box-shadow: 0 30px 40px -20px rgba(29,27,24,.45); }
 .hero .tel img { border-radius: 23px; width: 100%; height: auto; }
+.hero .pantallas { position: relative; aspect-ratio: 416 / 870; border-radius: 23px; overflow: hidden; }
+.hero .pantallas img { position: absolute; inset: 0; opacity: 0; animation: pantalla 12s infinite; }
+.hero .pantallas img:nth-child(1) { animation-delay: 0s; }
+.hero .pantallas img:nth-child(2) { animation-delay: 4s; }
+.hero .pantallas img:nth-child(3) { animation-delay: 8s; }
+@keyframes pantalla { 0% { opacity: 0; transform: scale(1.03); } 4%, 30% { opacity: 1; transform: none; } 36%, 100% { opacity: 0; } }
+.hero .flota { position: absolute; width: 110px; height: 110px; border-radius: 50%; object-fit: cover; box-shadow: 0 18px 30px -16px rgba(29,27,24,.55); border: 4px solid var(--blanco); animation: flota 6s ease-in-out infinite; }
+.hero .flota.f1 { left: 6%; top: 28px; }
+.hero .flota.f2 { left: 34%; top: 150px; width: 84px; height: 84px; animation-delay: -2s; }
+.hero .flota.f3 { right: 3%; bottom: 22px; width: 92px; height: 92px; animation-delay: -4s; }
+@keyframes flota { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(4deg); } }
+.lead-sec { max-width: 640px; margin-top: 14px; font-size: 18px; line-height: 1.5; color: var(--texto-2); }
+.vitrina { display: grid; gap: 16px; margin-top: 32px; }
+.vt { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 28px; background: var(--blanco); overflow: hidden; }
+.vt img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 20px; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+.vt:hover img { transform: scale(1.04) rotate(-1deg); }
+.vt h3 { font-family: var(--titulos); font-size: 22px; font-weight: 800; line-height: 1.15; }
+.vt p { margin-top: 6px; color: var(--texto-2); line-height: 1.45; }
+.vt .sello { position: absolute; top: 32px; left: 32px; padding: 5px 12px; border-radius: 99px; background: var(--tinta); color: #FFC93C; font: 800 13px var(--titulos); }
+.vt.oscura { background: var(--tinta); color: var(--blanco); }
+.vt.oscura p { color: #D8D2C8; }
+.vt.amarilla { background: #FFC93C; }
+.vt .dado { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 34px; background: rgba(255,255,255,.14); animation: sacude 3s ease-in-out infinite; }
+.vt.amarilla .dado { background: rgba(29,27,24,.08); font-weight: 800; }
+@keyframes sacude { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(-12deg); } 84% { transform: rotate(10deg); } 92% { transform: rotate(-6deg); } }
 .hero .punto { position: absolute; left: 8%; bottom: 36px; width: 128px; height: 128px; border-radius: 50%; background: var(--tinta); display: grid; place-items: center; transform: rotate(-8deg); }
 .hero .punto .ojo { width: 56px; height: 56px; overflow: visible; animation: late 1.2s ease .4s 1 both; }
 @keyframes late { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 70% { transform: scale(.98); } 100% { transform: scale(1); } }
@@ -143,6 +168,9 @@ footer a { color: inherit; text-underline-offset: 3px; }
 footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 14px; color: var(--gris); }
 
 @media (min-width: 900px) {
+  .vitrina { grid-template-columns: 1.3fr 1fr 1fr; grid-template-rows: auto auto; }
+  .vt.grande { grid-row: 1 / 3; }
+  .vt.grande img { aspect-ratio: 4 / 5; }
   :root { --lado: 24px; --entre-secciones: 128px; }
   body { font-size: 17px; }
   .et { font-size: 13px; }
@@ -241,7 +269,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 <div class="w">
   <nav aria-label="Principal">
     <a class="logo" href="/" aria-label="Nef, inicio"><img src="/assets/marca/logo-nef.svg" alt="nef" width="96" height="36"></a>
-    <div class="links"><a href="#como-funciona">Cómo funciona</a><a href="#cafes">Cafés</a><a href="#gimnasios">Gimnasios</a><a href="#precios">Precios</a></div>
+    <div class="links"><a href="#como-funciona">Cómo funciona</a><a href="#carta-3d">Tu carta en 3D</a><a href="#cafes">Restaurantes</a><a href="#precios">Precios</a></div>
     <div class="acc"><a class="entrar" href="/panel">Entrar</a><a class="btn s js-wa" href="#cierre">Escríbenos</a></div>
   </nav>
 
@@ -258,11 +286,14 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     </div>
     <!-- TODO(Jacobo): reemplazar por la foto real del sticker en una mesa (WebP, 1200×1400). Mientras tanto: la captura del portal. -->
     <div class="vis" aria-hidden="true">
-      <div class="tel"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"></div>
+      <div class="tel"><div class="pantallas"><img src="/assets/img/portal-cafe.webp" alt="" width="416" height="870" fetchpriority="high"><img src="/assets/img/carta.webp" alt="" width="416" height="870" loading="lazy"><img src="/assets/img/monedas.webp" alt="" width="416" height="870" loading="lazy"></div></div>
+      <img class="flota f1" src="/assets/demo/huevos-rancheros.webp" alt="" width="600" height="600" loading="lazy">
+      <img class="flota f2" src="/assets/demo/chocolate.webp" alt="" width="600" height="600" loading="lazy">
+      <img class="flota f3" src="/assets/demo/torta-chocolate.webp" alt="" width="600" height="600" loading="lazy">
       <div class="punto"><span class="ondas"><i></i><i></i><i></i></span><svg class="ojo" viewBox="0 0 100 100" width="60" height="60" aria-hidden="true"><g class="globo"><circle cx="50" cy="50" r="42.32" fill="none" stroke="#FF6B35" stroke-width="7.36"/><g class="mira"><circle class="pupila" cx="50" cy="50" r="18.86" fill="#FF6B35"/></g></g></svg></div>
     </div>
   </header>
-  <div class="cinta" aria-hidden="true"><div><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Cafés</span><span>Gimnasios</span><span>Panaderías</span><span>Restaurantes</span><span>Barberías</span><span>Heladerías</span><span>Salones</span></div></div>
+  <div class="cinta" aria-hidden="true"><div><span>Restaurantes</span><span>Asaderos</span><span>Comida típica</span><span>Pizzerías</span><span>Cafés</span><span>Brunch</span><span>Panaderías</span><span>Heladerías</span><span>Cevicherías</span><span>Parrillas</span><span>Restaurantes</span><span>Asaderos</span><span>Comida típica</span><span>Pizzerías</span><span>Cafés</span><span>Brunch</span><span>Panaderías</span><span>Heladerías</span><span>Cevicherías</span><span>Parrillas</span></div></div>
 
   <!-- 2. Cómo funciona -->
   <section class="sec" id="como-funciona">
@@ -278,13 +309,30 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     </div>
   </section>
 
+  <!-- 2b. La carta en 3D -->
+  <section class="sec" id="carta-3d">
+    <div class="et">Tu carta, como nunca la han visto</div>
+    <h2 class="t1">El plato en 3D, y sobre su mesa.</h2>
+    <p class="lead-sec">Tus clientes giran el plato con el dedo antes de pedirlo y lo ven a tamaño real sobre su mesa. Sin apps.</p>
+    <div class="vitrina">
+      <article class="vt grande"><img src="/assets/demo/calentado.webp" alt="Calentado en 3D" width="600" height="600" loading="lazy"><span class="sello">3D</span>
+        <div><h3>Gíralo con el dedo</h3><p>Cada plato de tu carta en 3D, con sus colores reales. Así se antojan antes de pedir.</p></div></article>
+      <article class="vt"><img src="/assets/demo/chocolate.webp" alt="" width="600" height="600" loading="lazy">
+        <div><h3>"Verlo en tu mesa"</h3><p>Con la cámara, el plato aparece sobre su mesa a tamaño real. Saben cuánto es antes de pedirlo.</p></div></article>
+      <article class="vt oscura"><div class="dado" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01"/></svg></div>
+        <div><h3>"Elige por mí"</h3><p>¿No saben qué pedir? Una tragamonedas con sonido gira tu carta y les sugiere un plato. Siempre algo disponible.</p></div></article>
+      <article class="vt amarilla"><div class="dado" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2z"/></svg></div>
+        <div><h3>Monedas con un QR</h3><p>El cajero marca lo que compró, el cliente escanea y gana monedas por el valor real. Sin digitar nada.</p></div></article>
+    </div>
+  </section>
+
   <!-- 3. Para cafés / Para gimnasios -->
   <section class="sec" id="cafes">
     <div class="et">Para quién</div>
-    <h2 class="t1">Para el café de la esquina y para el gimnasio de tres pisos.</h2>
+    <h2 class="t1">Para el restaurante del barrio y para la cadena con sedes.</h2>
     <div class="nichos">
       <article class="nicho cafe">
-        <div class="et">Cafés y restaurantes</div>
+        <div class="et">Restaurantes y cafés</div>
         <h3>La reseña llega justo después del postre.</h3>
         <ul>
           <li>Tu carta siempre al día: marcas "agotado" desde el celular y todas las mesas cambian.</li>
@@ -294,7 +342,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
         </ul>
         <div class="frase">"Este mes volvieron 184 clientes."<small>Así te lo dice el panel (ejemplo).</small></div>
       </article>
-      <article class="nicho gym" id="gimnasios">
+      <article class="nicho gym" id="gimnasios" hidden>
         <div class="et">Gimnasios</div>
         <h3>Sabe quién se va antes de que cancele.</h3>
         <ul>

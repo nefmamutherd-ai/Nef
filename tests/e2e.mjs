@@ -127,7 +127,7 @@ await caso('landing: 8 secciones, WhatsApp y sin scroll horizontal', async () =>
     await p.setViewportSize({ width: w, height: h });
     await p.goto(BASE + '/');
     await p.waitForLoadState('networkidle');
-    for (const sel of ['.hero', '#como-funciona', '#cafes', '#gimnasios', '.estudio', '#precios', '#preguntas', '#cierre']) assert.ok(await p.$(sel), 'falta ' + sel);
+    for (const sel of ['.hero', '#como-funciona', '#carta-3d', '#cafes', '#gimnasios', '.estudio', '#precios', '#preguntas', '#cierre']) assert.ok(await p.$(sel), 'falta ' + sel);
     assert.match(await p.getAttribute('#cta', 'href'), /^https:\/\/wa\.me\/57\d{10}\?text=/);
     assert.equal(await p.locator('.faq details').count(), 5);
     assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'scroll horizontal a ' + w);

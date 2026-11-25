@@ -762,3 +762,4 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 [data-tema="calido"] .pt-inicio .pt-enlaces.pt-puntos { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
 [data-tema="calido"] .pt-inicio .pt-puntos > a, [data-tema="calido"] .pt-inicio .pt-puntos > details > summary { padding: 9px 16px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); font-weight: 600; text-decoration: none; }
 [data-tema="calido"] .pt-inicio .pt-puntos > :not(:last-child)::after { content: none; }
+[data-tema="calido"] .pt-inicio .pt-boton:not(.principal) > * { align-self: flex-start; grid-column: auto; grid-row: auto; }
