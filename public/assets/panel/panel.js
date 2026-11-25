@@ -95,6 +95,16 @@ async function iniciar() {
   const recordada = leer();
   elegir(negocios.find((n) => n.id === recordada) || negocios[0]);
   mostrar('app');
+  // Admin (Jacobo) revisando: aviso arriba; puede elegir cualquier negocio en el selector
+  if (negocios.some((n) => n.rol === 'admin') && !document.getElementById('aviso-admin')) {
+    const a = document.createElement('div');
+    a.className = 'n-aviso n-aviso-admin';
+    a.id = 'aviso-admin';
+    a.textContent = 'Estás viendo el panel tal como lo ve el dueño del negocio. Cambia de negocio arriba.';
+    const barra = document.querySelector('#app .n-barra');
+    barra.after(a);
+    $('#sede-caja').hidden = false;
+  }
   guia.primeraVez();
 }
 $('#sede').addEventListener('change', () => elegir(negocios.find((n) => n.id === $('#sede').value)));

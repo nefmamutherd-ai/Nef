@@ -224,3 +224,16 @@ p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 .n-fila-botones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .n-titulo-guia { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .n-titulo-guia h2 { margin-bottom: 0; }
+
+/* Admin: vista previa del estilo del portal (celular en miniatura, 390×760 al 43 %) */
+.n-previa { position: relative; width: 168px; height: 327px; margin: 12px auto 4px; overflow: hidden; border-radius: 22px; border: 6px solid var(--n-tinta); background: #fff; }
+.n-previa iframe { position: absolute; left: 0; top: 0; width: 390px; height: 760px; border: 0; transform: scale(.43); transform-origin: 0 0; pointer-events: none; }
+
+/* Botón dentro de un aviso (ej. "Ir a mi panel" en /stats): el color de los enlaces lo dejaba invisible */
+.n-aviso a.n-btn { color: var(--n-papel); flex: none; }
+.n-aviso a.n-btn.principal { color: var(--n-tinta); }
+
+/* Enlaces con forma de botón: el color de los enlaces dejaba el texto casi invisible ("Ir al admin") */
+a.n-btn:not(.principal):not(.secundario):not(.fantasma) { color: var(--n-papel); }
+/* Panel visto por el admin */
+.n-aviso-admin { max-width: 1100px; margin: 12px auto 0; background: var(--n-mandarina-suave, #FFE3D6); font-weight: 600; }

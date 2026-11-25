@@ -19,7 +19,7 @@ const DEF = {
   abandono: 'Activos al inicio del mes que no registran entradas en todo el mes ÷ activos al inicio.',
   en_riesgo: (d) => `Clientes con ≥ 4 visitas históricas y sin venir hace ≥ ${d} días.`,
   horas_pico: 'Visitas por hora y día de la semana (hora Bogotá).',
-  conversion_resena: 'Clics en "Déjanos tu reseña" ÷ visitas al portal.',
+  conversion_resena: 'De cada 100 visitas que llegan por el chip o el QR de la mesa, cuántas tocan "Déjanos tu reseña" (máximo 100 %).',
   devolucion_real: 'Valor de premios canjeados ÷ ventas registradas en caja.',
   uso_maquinas: 'Escaneos por máquina.',
 };

@@ -210,7 +210,9 @@
       <label class="n-interruptor"><div><b>Estudio</b><span>Informe para el dueño cada 3 meses (extra pago)</span></div><input type="checkbox" name="srv_estudio"></label>
       <label class="n-interruptor" id="f-nfc" hidden><div><b>Entrada por NFC</b><span>Solo gimnasios SIN torniquete: el socio registra su entrada con el chip</span></div><input type="checkbox" name="srv_entrada_nfc"></label>
     </div>
-    <div class="n-campo"><label for="f-tema">Estilo del portal</label><select id="f-tema" name="tema"><option value="">El de su sector (colorido)</option><option value="calido">Colorido · el diseño nuevo</option><option value="noche">Noche · oscuro y elegante</option><option value="limpio">Limpio · blanco y minimalista</option><option value="energia">Energía · para gimnasios</option></select><div class="n-ayuda">Cambia la ropa del portal, la carta y el club; el color y el logo siguen siendo los del negocio.</div></div>
+    <div class="n-campo"><label for="f-tema">Estilo del portal</label><select id="f-tema" name="tema"><option value="">El de su sector (colorido)</option><option value="calido">Colorido · el diseño nuevo</option><option value="noche">Noche · oscuro y elegante</option><option value="limpio">Limpio · blanco y minimalista</option><option value="energia">Energía · para gimnasios</option></select><div class="n-ayuda">Cambia la ropa del portal, la carta y el club; el color y el logo siguen siendo los del negocio.</div>
+      <div class="n-previa"><iframe id="f-previa" title="Vista previa de la portada" tabindex="-1"></iframe></div>
+      <div class="n-ayuda">Vista previa: así se ve la portada con este estilo y este color (antes de guardar).</div></div>
     <div class="n-campo"><label for="f-ubic">Ubicación</label><input id="f-ubic" name="ubicacion_etiqueta" placeholder="Ej. Sede Chapinero"></div>
     <div class="n-campo"><label for="f-desc">Descripción corta</label><input id="f-desc" name="descripcion" placeholder="Café de especialidad · Chapinero"></div>
     <div class="n-fila">
@@ -932,6 +934,23 @@ $('#f-mas-sectores').addEventListener('click', () => { $('#f-sector-gym').hidden
 document.querySelectorAll('#f-sector input[name=sector]').forEach((r) => r.addEventListener('change', () => {
   $('#f-nfc').hidden = !document.querySelector('#f-sector input[value=gimnasio]').checked;
 }));
+
+// ---------------- Vista previa del estilo (celular en miniatura) ----------------
+let previaEspera = null;
+function pintarPrevia() {
+  clearTimeout(previaEspera);
+  previaEspera = setTimeout(() => {
+    const slug = (/^[a-z0-9-]{2,60}$/.test($('#f-slug').value) && $('#n-titulo').textContent !== 'Nuevo negocio') ? $('#f-slug').value : 'demo-cafe';
+    const q = new URLSearchParams();
+    if ($('#f-tema').value) q.set('vista', $('#f-tema').value);
+    q.set('color', $('#f-color').value);
+    $('#f-previa').src = '/n/' + slug + '?' + q.toString();
+  }, 250);
+}
+$('#f-tema').addEventListener('change', pintarPrevia);
+$('#f-color').addEventListener('input', pintarPrevia);
+$('#dlg-negocio').addEventListener('toggle', () => { if ($('#dlg-negocio').open) pintarPrevia(); });
+new MutationObserver(() => { if ($('#dlg-negocio').open) pintarPrevia(); }).observe($('#dlg-negocio'), { attributes: true, attributeFilter: ['open'] });
 
 // ---------------- Guías paso a paso ----------------
 const irTab = (t) => { const b = document.querySelector('.tab[data-tab="' + t + '"]'); if (b) b.click(); };

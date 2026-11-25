@@ -24,6 +24,11 @@ export async function onRequestGet({ params, request, env }) {
     return paginaError(env);
   }
   if (!n) return redirigir(new URL('/inactivo', url).href);
+  // Vista previa del admin: cambia solo la ropa (tema) y el color, nunca datos
+  const vista = url.searchParams.get('vista');
+  const colorVista = url.searchParams.get('color');
+  if (['calido', 'noche', 'limpio', 'energia'].includes(vista)) n = { ...n, tema: vista };
+  if (/^#[0-9a-f]{6}$/i.test(colorVista || '')) n = { ...n, color: colorVista };
   const conCarta = !!(n.servicios && n.servicios.catalogo && n.tiene_carta);
   let pop = [];
   if (conCarta) { try { pop = (await rpc(env, 'carta_populares', { p_slug: slug })) || []; } catch { pop = []; } }

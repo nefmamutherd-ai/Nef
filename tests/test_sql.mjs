@@ -891,6 +891,14 @@ await q(`select dar_acceso('beto@gym-b.co', $1, 'gerente')`, [nb.empresa_id]);
 assert.equal((await q(`select accesos_admin() r`))[0].r.filter((a) => [DUENO_A, DUENO_B].includes(a.user_id)).length, 2);
 
 const cuenta = async (tabla, negocio) => (await q(`select count(*)::int n from ${tabla} where negocio_id = $1`, [negocio]))[0].n;
+await caso('el admin abre /panel y ve todos los negocios como su dueño (rol admin)', async () => {
+  await como('authenticated', ADMIN);
+  const todos = (await q(`select panel_negocios() r`))[0].r;
+  assert.ok(todos.some((n) => n.slug === 'cafe-a') && todos.some((n) => n.id === nb.id), 've A y B');
+  assert.ok(todos.every((n) => n.rol === 'admin' || n.rol === 'dueno' || n.rol === 'gerente'));
+  assert.equal((await q(`select es_mi_negocio($1) r`, [nb.id]))[0].r, true);
+  await db.exec('reset role;');
+});
 await caso('negocios: el dueño A solo ve SU sede, por RPC y sin nada privado; la tabla directa no se abre', async () => {
   await como('authenticated', DUENO_A);
   const mios = (await q(`select panel_negocios() r`))[0].r;

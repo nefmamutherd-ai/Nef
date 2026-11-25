@@ -1559,7 +1559,8 @@ returns json language sql stable as $$
     'visitas_portal', coalesce((select total from s where metrica = 'visitas_portal'), 0),
     'clics_resena', coalesce((select total from s where metrica = 'clics_resena'), 0),
     'conversion_resena', case when coalesce((select total from s where metrica = 'visitas_portal'), 0) = 0 then null
-      else round((select total from s where metrica = 'clics_resena') / (select total from s where metrica = 'visitas_portal'), 4) end,
+      -- tope de 100 %: quien entra por el link directo (sin tag) también puede tocar "reseña" y no cuenta como visita
+      else least(1, round((select total from s where metrica = 'clics_resena') / (select total from s where metrica = 'visitas_portal'), 4)) end,
     'visitas', coalesce((select total from s where metrica = 'visitas'), 0),
     'inscritos_total', (select valor from hoy where metrica = 'inscritos_total'),
     'inscritos_nuevos', coalesce((select total from s where metrica = 'inscritos_nuevos'), 0),
@@ -2035,11 +2036,12 @@ returns boolean language sql stable security definer set search_path = public as
   select auth.uid() is not null
      and exists (select 1 from public.accesos where user_id = auth.uid() and empresa_id = p_empresa)
 $$;
+-- El admin (Jacobo) también: así abre /panel y ve cualquier negocio tal como lo ve su dueño (ya lo puede todo por admin_todo)
 create or replace function public.es_mi_negocio(p_negocio uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select auth.uid() is not null and exists (
+  select auth.uid() is not null and (public.es_admin() or exists (
     select 1 from public.negocios n join public.accesos a on a.empresa_id = n.empresa_id
-    where n.id = p_negocio and a.user_id = auth.uid())
+    where n.id = p_negocio and a.user_id = auth.uid()))
 $$;
 revoke execute on function public.es_dueno(uuid)      from public, anon;
 revoke execute on function public.es_mi_negocio(uuid) from public, anon;
@@ -2076,13 +2078,13 @@ create or replace function public.panel_negocios()
 returns json language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(json_build_object(
       'id', n.id, 'slug', n.slug, 'nombre', n.nombre, 'sector', n.sector, 'servicios', n.servicios, 'color', n.color,
-      'ubicacion', n.ubicacion_etiqueta, 'empresa', e.nombre, 'rol', a.rol,
+      'ubicacion', n.ubicacion_etiqueta, 'empresa', e.nombre, 'rol', coalesce(a.rol, 'admin'),
       'mapeo_csv', n.mapeo_csv, 'tiene_pin', n.pin_caja_hash is not null, 'habilitado', n.activo and public._negocio_habilitado(n.id))
     order by e.nombre, n.nombre), '[]'::json)
-  from public.accesos a
-  join public.empresas e on e.id = a.empresa_id
-  join public.negocios n on n.empresa_id = e.id
-  where a.user_id = auth.uid()
+  from public.negocios n
+  join public.empresas e on e.id = n.empresa_id
+  left join public.accesos a on a.empresa_id = e.id and a.user_id = auth.uid()
+  where a.user_id is not null or public.es_admin()   -- el admin ve todos (para revisar el panel como el dueño)
 $$;
 revoke execute on function public.panel_negocios() from public, anon;
 grant  execute on function public.panel_negocios() to authenticated;
