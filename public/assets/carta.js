@@ -106,14 +106,15 @@ async function abrir3d(p) {
     for (const [k, v] of Object.entries({ ar: '', 'ar-modes': modos, 'ar-scale': 'fixed', 'ar-placement': 'floor' })) mv.setAttribute(k, v);
     mv.append(ar);
   }
-  if (conArcore) {
-    // Alternativa para probar: la app de realidad aumentada de Google (Scene Viewer); si falla, vuelve a esta página
+  if (/Android/i.test(navigator.userAgent)) {
+    // PRUEBA (25/11): en todos los Android, la realidad aumentada de Google (Scene Viewer, de la app Google). Con ARCore se ve en la mesa;
+    // sin ARCore, Scene Viewer muestra solo el 3D. Si nada abre, vuelve a esta página. Quitar o dejar según el resultado.
     const g = document.createElement('a');
     g.className = 'pt-ar-google';
-    g.textContent = 'Con la app de Google';
+    g.textContent = 'Verlo en tu mesa con Google (prueba)';
     const glb = new URL(p.modelo_url, location.href).href;
     g.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred&title=${encodeURIComponent(p.nombre)}`
-      + `#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(location.href)};end;`;
+      + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(location.href)};end;`;
     g.addEventListener('click', () => evento('ver_ar', p.id));
     $('d-vista').append(g);
   }
