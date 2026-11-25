@@ -2,7 +2,7 @@
 // Datos → textContent. Girar NO da monedas ni premios (regla 2): solo sugiere un plato.
 // El resultado se decide ANTES de animar; la animación solo lo muestra.
 import { rpc, hoja } from '/assets/nef-rpc.js';
-import { ANTOJOS, elegir, candidatos } from '/assets/elegir.js';
+import { elegir, candidatos } from '/assets/elegir.js';
 
 document.documentElement.classList.add('con-js');
 const raiz = document.getElementById('carta');
@@ -13,13 +13,6 @@ const productos = JSON.parse($('datos-carta').textContent || '[]');
 const porId = new Map(productos.map((p) => [p.id, p]));
 const pesos = (n) => '$' + new Intl.NumberFormat('es-CO').format(n || 0);
 const evento = (tipo, producto = null) => rpc('registrar_evento_carta', { p_slug: slug, p_tipo: tipo, p_producto: producto, p_tag: tag }).catch(() => {});
-const SVG = (d) => `<svg class="pt-icono" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-const ICONO_ANTOJO = {
-  dulce: '<path d="M4 13h16l-2 7H6z"/><path d="M6 13a6 6 0 0 1 12 0"/><path d="M12 4v3"/>',
-  salado: '<path d="M3 12h18"/><path d="M5 12a7 7 0 0 0 14 0"/><path d="M9 8c0-2 1-3 3-4M14 8c0-1.5.6-2.5 2-3"/>',
-  bebida: '<path d="M5 8h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M9 3v2M13 3v2"/>',
-  sorpresa: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01"/>',
-};
 
 evento('ver_carta');
 
@@ -216,29 +209,49 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('hoja
 
 // ── Elige por mí ─────────────────────────────────────────────────────────────────
 const elige = hoja($('hoja-elige'));
-let antojo = 'sorpresa';
+const antojo = 'sorpresa'; // gira sobre toda la carta disponible: el negocio no tiene que etiquetar nada
 let elegido = null;
-for (const a of ANTOJOS) {
-  if (a.id !== 'sorpresa' && !candidatos(productos, a.id).length) continue; // solo antojos con opciones
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.className = 'pt-boton';
-  b.dataset.antojo = a.id;
-  const i = document.createElement('i');
-  i.innerHTML = SVG(ICONO_ANTOJO[a.id]); // ícono fijo del código, no datos
-  const s = document.createElement('span');
-  s.textContent = a.texto;
-  b.append(i, s);
-  b.addEventListener('click', () => { antojo = a.id; girar(); });
-  $('antojos').append(b);
+
+// Sonido de tragamonedas (WebAudio, sin archivos): palanca, clics que se frenan y melodía de premio.
+// Se puede apagar con el botón de la hoja; el celular recuerda la elección.
+const CLAVE_SONIDO = 'nef_sonido';
+let conSonido = (() => { try { return localStorage.getItem(CLAVE_SONIDO) !== 'no'; } catch { return true; } })();
+let audio = null;
+function tono(frec, dur, tipo = 'square', vol = 0.06, despues = 0) {
+  if (!conSonido) return;
+  try {
+    const A = window.AudioContext || window.webkitAudioContext;
+    if (!A) return;
+    audio ||= new A();
+    if (audio.state === 'suspended') audio.resume();
+    const t = audio.currentTime + despues;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = tipo;
+    o.frequency.setValueAtTime(frec, t);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(audio.destination);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  } catch { /* sin audio: sigue en silencio */ }
 }
-function mostrarAntojos() {
-  $('e-titulo').textContent = '¿Qué se te antoja?';
-  $('antojos').hidden = false;
-  $('giro').hidden = true;
-  $('g-vacio').hidden = true;
+const sonidoPalanca = () => { tono(220, 0.12, 'sawtooth', 0.05); tono(140, 0.2, 'sawtooth', 0.045, 0.07); };
+const sonidoClic = () => tono(1300 + Math.random() * 250, 0.03, 'square', 0.035);
+const sonidoPremio = () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tono(f, i === 5 ? 0.55 : 0.13, 'triangle', 0.09, i * 0.11));
+function pintarSonido() {
+  const b = $('e-sonido');
+  b.setAttribute('aria-pressed', String(conSonido));
+  b.querySelector('span').textContent = conSonido ? 'Con sonido' : 'Sin sonido';
+  b.classList.toggle('apagado', !conSonido);
 }
-$('elige').addEventListener('click', () => { mostrarAntojos(); elige.abrir(); });
+$('e-sonido').addEventListener('click', () => {
+  conSonido = !conSonido;
+  try { localStorage.setItem(CLAVE_SONIDO, conSonido ? 'si' : 'no'); } catch { /* nada */ }
+  pintarSonido();
+});
+pintarSonido();
+$('elige').addEventListener('click', () => { elige.abrir(); girar(); });
 
 function fila(p) {
   const d = document.createElement('div');
@@ -270,11 +283,10 @@ function confeti() {
 
 function girar() {
   elegido = elegir(productos, antojo); // ← decidido aquí, antes de animar
-  $('antojos').hidden = true;
   $('g-acciones').hidden = true;
   $('g-resultado').hidden = true;
   $('g-frase').hidden = true;
-  if (!elegido) { $('g-vacio').hidden = false; $('antojos').hidden = false; return; }
+  if (!elegido) { $('g-vacio').hidden = false; $('giro').hidden = true; return; }
   $('g-vacio').hidden = true;
   $('giro').hidden = false;
   $('e-titulo').textContent = 'Girando…';
@@ -310,10 +322,11 @@ function girar() {
   const tic = (ahora) => {
     const x = Math.min(1, (ahora - inicio) / DURA);
     const fila = Math.floor((facil(x) * destino) / ALTO);
-    if (fila !== ultimo) { ultimo = fila; if (x > 0.45 && navigator.vibrate) navigator.vibrate(8); }
+    if (fila !== ultimo) { ultimo = fila; sonidoClic(); if (x > 0.45 && navigator.vibrate) navigator.vibrate(8); }
     if (x > 0.62) maquina.classList.add('frenando'); // sin desenfoque al frenar, para leer los platos
     if (x < 1) requestAnimationFrame(tic);
   };
+  sonidoPalanca();
   requestAnimationFrame(() => requestAnimationFrame(() => {
     rollo.style.transition = `transform ${DURA}ms cubic-bezier(.12,.75,.15,1)`;
     rollo.style.transform = `translateY(-${destino}px)`;
@@ -323,6 +336,7 @@ function girar() {
     maquina.classList.remove('girando');
     maquina.classList.add('gano');
     confeti();
+    sonidoPremio();
     if (navigator.vibrate) navigator.vibrate([20, 40, 30]);
     $('e-titulo').textContent = '¡Esta es para ti!';
     $('g-precio').textContent = pesos(elegido.precio);
@@ -342,3 +356,27 @@ $('lo-pido').addEventListener('click', () => {
 });
 
 revisarCompatible();
+
+// Desde la baldosa del club: /carta#elige gira de una
+if (location.hash === '#elige') { history.replaceState(history.state, '', location.pathname + location.search); $('elige').click(); }
+
+// ── Buscador: filtra por nombre y descripción, sin tildes; esconde categorías vacías ──
+const sinTildes = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const buscador = $('buscar');
+if (buscador) buscador.addEventListener('input', () => {
+  const q = sinTildes(buscador.value.trim());
+  let hay = 0;
+  document.querySelectorAll('.pt-seccion').forEach((sec) => {
+    let n = 0;
+    sec.querySelectorAll('.pt-prod[data-id]').forEach((b) => {
+      const p = porId.get(b.dataset.id);
+      const ok = !q || (p && sinTildes(p.nombre + ' ' + (p.descripcion || '')).includes(q));
+      b.hidden = !ok;
+      if (ok) { n++; b.classList.add('visible'); }
+    });
+    sec.hidden = !n;
+    hay += n;
+  });
+  document.querySelectorAll('.pt-populares, .pt-fija').forEach((x) => { x.hidden = !!q; });
+  $('sin-resultados').hidden = hay > 0;
+});

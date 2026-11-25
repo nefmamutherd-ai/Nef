@@ -196,3 +196,9 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
   pidiendo geometría y texturas nuevas.
 - **QR de compra**: la caja marca productos → QR de un solo uso (10 min) → el cliente lo abre y gana (con inscripción si es nuevo);
   la caja dice "¡Listo!". Pruebas: sql 86 · e2e 41 · verificar ✓.
+
+### 2026-11-25 · Realidad aumentada guiada y diseño C "Fiesta"
+- "Verlo en tu mesa": revisa compatibilidad → cámara con guía dentro (celular 3D de líneas azules) → círculo para elegir el sitio → "Listo" → plato quieto a tamaño real (WebXR + ARCore). Sin ARCore: app de Google avisando "Servicios de Google Play para RA"; si no puede: "No es compatible con tu celular". La carta de atrás ya no se mueve al girar el plato; el 3D entra con pantalla de carga y fundido. **Falta confirmar en un Android real la cámara con el círculo.**
+- Diseño C (elegido por Jacobo) en el tema cálido (restaurantes y cafés): blanco/lila/azul noche/amarillo, títulos Bricolage; club con racha 🔥 y baldosas (Ver la carta / Elige por mí); carta con buscador, rejilla 2 columnas y sello 3D; "Elige por mí" gira de una sobre toda la carta, con sonido (se puede apagar). Demo café en coral #ff5a36 (aplicado en Supabase).
+- QR de compra probado en la base real (caja con PIN 1234 → QR con el valor de la carta). Guía: `docs/kit/PRUEBA-QR.md`.
+- Pendiente: información/receta del plato bajo el 3D; renders de platos de restaurante; croissant nuevo sin subir (espera visto bueno).

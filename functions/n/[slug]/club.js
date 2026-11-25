@@ -2,6 +2,7 @@
 // La tarjeta se abre con el token propio del cliente guardado en su celular (localStorage), nunca con el slug.
 import { rpc, esc, html, redirigir, paginaError } from '../../../lib/util.js';
 import { inicioPagina, firma, icono } from '../../../lib/portal.js';
+import { paquete } from '../../../lib/sectores.js';
 
 export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
@@ -19,6 +20,12 @@ export async function onRequestGet({ params, request, env }) {
   const plural = esc(c.moneda_plural);
   const datos = `/n/${encodeURIComponent(n.slug)}/datos`;
   const portal = `/n/${encodeURIComponent(n.slug)}`;
+  // Diseño C: dos baldosas grandes a la carta y a "Elige por mí" (solo negocios con carta de comida)
+  const conCarta = n.servicios && n.servicios.catalogo && paquete(n.sector).palabras.catalogo === 'carta';
+  const baldosas = conCarta ? `<div class="pt-baldosas">
+      <a class="pt-baldosa" href="${portal}/carta">${icono('carta')}<span>Ver la carta</span></a>
+      <a class="pt-baldosa oscura" href="${portal}/carta#elige">${icono('dado')}<span>Elige por mí</span></a>
+    </div>` : '';
 
   return html(`${inicioPagina(n, { titulo: `Club · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
 <main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}">
@@ -49,7 +56,7 @@ export async function onRequestGet({ params, request, env }) {
   </section>
 
   <section id="tarjeta" class="pt-club pt-club2 pt-entra" hidden>
-    <div class="pt-club-top"><a class="pt-volver" href="${portal}">${icono('volver')}${esc(n.nombre)}</a><span class="pt-nivel" id="t-neg"></span></div>
+    <div class="pt-club-top"><a class="pt-volver" href="${portal}">${icono('volver')}${esc(n.nombre)}</a><span class="pt-nivel" id="t-neg"></span><span class="pt-chip-racha" id="t-racha" hidden>${icono('racha')}<b id="t-racha-n"></b></span></div>
     <div class="pt-pase" id="t-saldo">
       <div class="pt-pase-fondo" aria-hidden="true"><span class="pt-ojo"><i></i></span></div>
       <p class="pt-pase-hola" id="t-hola">Hola</p>
@@ -67,6 +74,7 @@ export async function onRequestGet({ params, request, env }) {
     </div>
     <div class="pt-premios-fila" id="t-camino" hidden></div>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>
+    ${baldosas}
     <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
     <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>
     <a class="pt-link" href="${datos}">Condiciones del club</a>

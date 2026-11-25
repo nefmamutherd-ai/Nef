@@ -597,6 +597,8 @@ await caso('carta en el celular: 30 productos, agotado en gris, hoja que cierra 
   assert.equal(await p.textContent('#cat-' + (await p.getAttribute('.pt-seccion >> nth=0', 'data-cat')) + ' .pt-prod >> nth=0 >> b'), 'Desayuno 3', 'el destacado sale primero');
   await sinScrollHorizontal(p);
   await p.screenshot({ path: DIR + 'carta-movil.png' });
+  await p.evaluate(() => document.querySelectorAll('.pt-revela').forEach((x) => x.classList.add('visible'))); // la captura no baja por la página
+  await p.waitForTimeout(700);
   await p.screenshot({ path: DIR + 'carta-movil-completa.png', fullPage: true });
   await p.click('.pt-prod:has-text("Calentado de la casa")');
   await p.waitForSelector('#hoja-detalle.abierta');
@@ -616,7 +618,7 @@ await caso('carta en el celular: 30 productos, agotado en gris, hoja que cierra 
   const ev = await api(`eventos_carta?negocio_id=eq.${negocioId}`);
   assert.ok(ev.some((e) => e.tipo === 'ver_carta') && ev.some((e) => e.tipo === 'ver_producto'));
 });
-await caso('"Elige por mí": sugiere un postre disponible, "Lo pido" se registra y no da monedas', async () => {
+await caso('"Elige por mí": gira de una con sonido, sugiere un plato disponible, "Lo pido" se registra y no da monedas', async () => {
   const movAntes = (await api('movimientos')).length;
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push('elige: ' + e.message));
@@ -624,11 +626,13 @@ await caso('"Elige por mí": sugiere un postre disponible, "Lo pido" se registra
   await p.goto(`${BASE}/n/${slug}/carta`);
   await p.click('#elige');
   await p.waitForSelector('#hoja-elige.abierta');
-  assert.deepEqual(await p.$$eval('#antojos .pt-boton span', (s) => s.map((x) => x.textContent)), ['Algo dulce', 'Algo salado', 'Una bebida', 'Sorpréndeme']);
-  await p.click('#antojos [data-antojo=dulce]');
-  await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 6000 });
+  // Gira de una sobre toda la carta (sin elegir antojo), con botón de sonido
+  assert.equal(await p.getAttribute('#e-sonido', 'aria-pressed'), 'true');
+  await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 8000 });
   const elegido = await p.$eval('#rollo [data-elegido]', (d) => d.textContent);
-  assert.match(elegido, /^Postre \d+$/); assert.notEqual(elegido, 'Postre 2', 'sugirió un agotado');
+  assert.ok(elegido.length > 0); assert.notEqual(elegido, 'Postre 2', 'sugirió un agotado');
+  await p.click('#e-sonido');
+  assert.equal(await p.getAttribute('#e-sonido', 'aria-pressed'), 'false', 'se puede apagar el sonido');
   await p.screenshot({ path: DIR + 'elige-por-mi.png' });
   await p.click('#lo-pido');
   await p.waitForSelector('#g-frase:not([hidden])');

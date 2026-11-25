@@ -6,11 +6,13 @@ import { paquete } from '../../../lib/sectores.js';
 import { inicioPagina, firma, icono } from '../../../lib/portal.js';
 
 const pesos = (n) => '$' + new Intl.NumberFormat('es-CO').format(n || 0);
+// Sello "3D" en los platos que se pueden ver en 3D (y en tu mesa)
+const sello3d = (p) => (modeloSeguro(p.modelo_url) ? '<span class="pt-sello3d">3D</span>' : '');
 const mayuscula = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 
 function estrella(p) {
   const foto = fotoSegura(p.foto_url);
-  return `<button type="button" class="pt-prod pt-estrella pt-revela${p.agotado ? ' agotado' : ''}" data-id="${esc(p.id)}">
+  return `<button type="button" class="pt-prod pt-estrella pt-revela${p.agotado ? ' agotado' : ''}" data-id="${esc(p.id)}">${sello3d(p)}
     ${foto ? `<img src="${esc(foto)}" alt="${esc(p.nombre)}" width="600" height="375" loading="lazy" decoding="async">` : '<span class="pt-sin-foto"></span>'}
     <div class="pt-tx"><span class="pt-sello">La de la casa</span><b>${esc(p.nombre)}</b>
     ${p.agotado ? '<span class="pt-agotado">Agotado hoy</span>' : p.descripcion ? `<small>${esc(p.descripcion)}</small>` : ''}
@@ -19,7 +21,7 @@ function estrella(p) {
 
 function plato(p) {
   const foto = fotoSegura(p.foto_url);
-  return `<button type="button" class="pt-prod pt-revela${p.agotado ? ' agotado' : ''}" data-id="${esc(p.id)}">
+  return `<button type="button" class="pt-prod pt-revela${p.agotado ? ' agotado' : ''}" data-id="${esc(p.id)}">${sello3d(p)}
     ${foto ? `<img class="pt-foto" src="${esc(foto)}" alt="" width="84" height="84" loading="lazy" decoding="async">` : '<span class="pt-foto"></span>'}
     <div class="pt-tx"><div class="pt-linea"><b>${esc(p.nombre)}</b><i></i><span class="pt-precio">${pesos(p.precio)}</span></div>
     ${p.agotado ? '<span class="pt-agotado">Agotado hoy</span>' : p.descripcion ? `<small>${esc(p.descripcion)}</small>` : ''}</div></button>`;
@@ -68,7 +70,9 @@ export async function onRequestGet({ params, request, env }) {
     <h1>${esc(titulo)}</h1>
     <div class="pt-filete" aria-hidden="true"><i></i></div>
     <button type="button" class="pt-elige" id="elige">${icono('dado')}Elige por mí</button>
+    <label class="pt-buscar">${icono('buscar')}<input id="buscar" type="search" placeholder="Busca un plato" aria-label="Busca un plato" autocomplete="off"></label>
   </header>
+  <div class="pt-vacio" id="sin-resultados" hidden><b>No encontramos ese plato</b>Prueba con otra palabra.</div>
   ${carrusel}
   ${secciones.length > 1 ? `<div class="pt-fija"><nav class="pt-pestanas" role="tablist">${secciones.map((s, i) =>
     `<button type="button" role="tab" data-cat="${esc(s.id)}" aria-selected="${i === 0}">${esc(s.nombre)}</button>`).join('')}</nav></div>` : ''}
@@ -90,8 +94,8 @@ export async function onRequestGet({ params, request, env }) {
 
   <div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-elige" role="dialog" aria-label="Elige por mí" hidden>
-    <h2 id="e-titulo">¿Qué se te antoja?</h2>
-    <div class="pt-antojos" id="antojos"></div>
+    <div class="pt-elige-cabeza"><h2 id="e-titulo">Girando…</h2>
+      <button type="button" class="pt-sonido" id="e-sonido" aria-pressed="true">${icono('sonido')}<span>Con sonido</span></button></div>
     <div id="giro" hidden>
       <div class="pt-maquina" id="maquina">
         <div class="pt-marquesina" aria-hidden="true">La suerte de la casa</div>
@@ -115,7 +119,7 @@ export async function onRequestGet({ params, request, env }) {
         <button type="button" class="pt-accion" id="otra-vez">Otra vez</button>
       </div>
     </div>
-    <div class="pt-vacio" id="g-vacio" hidden><b>Hoy no hay opciones para ese antojo</b>Prueba con otro.</div>
+    <div class="pt-vacio" id="g-vacio" hidden><b>Hoy no hay platos disponibles</b>Vuelve a intentarlo más tarde.</div>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <script type="application/json" id="datos-carta">${datos}</script>

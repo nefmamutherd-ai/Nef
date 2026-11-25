@@ -58,7 +58,17 @@
    TEMAS POR SECTOR — se activan con data-tema en <html>.
    Misma estructura y componentes; cambia la "ropa". --marca la pone cada negocio.
    ===================================================================== */
-[data-tema="calido"] { }  /* por defecto: cafés, panaderías, restaurantes (valores de arriba) */
+/* Cafés, panaderías, restaurantes: diseño C "Fiesta" (elegido por Jacobo, 2026-11-25). Colorido y juguetón, como una
+   app de domicilios: blanco, lila de fondo secundario, azul noche de tinta, amarillo de monedas; títulos en Bricolage. */
+[data-tema="calido"] {
+  --papel: #FFFFFF; --papel-hondo: #F4F1FF; --tarjeta: #FFFFFF; --linea: #E6E1F4;
+  --tinta: #14213D; --tinta-2: #4A5470; --tinta-3: #6E7690;
+  --oro: #F5B400; --oro-suave: #FFF3C4; --oro-tinta: #5C4300;
+  --ok: #18A058; --ok-suave: #DDF5E7; --alerta: #D93D1A; --alerta-suave: #FFE9E3;
+  --serif: "Bricolage", system-ui, sans-serif;
+  --peso-titulo: 800;
+  --r-medio: 20px; --r-grande: 28px;
+}
 
 [data-tema="energia"] {   /* gimnasios, deportes, academias */
   --papel: #121314; --papel-hondo: #1E2022; --tarjeta: #1A1C1E; --linea: #2C2F32;

@@ -192,6 +192,11 @@ function pintarTarjeta(t, base = 0) {
 
   // Nivel discreto arriba a la derecha
   $('t-neg').textContent = t.nivel && t.nivel.nombre ? t.nivel.nombre : '';
+  // Racha semanal arriba, con llama (si la hay, reemplaza al nivel para que haya un solo sello)
+  const semanas = t.racha && t.racha.semanas > 0 ? t.racha.semanas : 0;
+  $('t-racha').hidden = !semanas;
+  $('t-neg').hidden = !!semanas;
+  if (semanas) $('t-racha-n').textContent = `${numero(semanas)} ${semanas === 1 ? 'semana' : 'semanas'}`;
 
   // Un solo aviso: el servidor ya eligió cuál (bienvenida → hora dorada → premio → racha → te faltan).
   // Bienvenida, premio alcanzado y "te faltan" ya los dicen el pase y la barra: aquí solo hora dorada y racha.

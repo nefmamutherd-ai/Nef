@@ -657,3 +657,45 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
   50% { transform: rotateX(58deg) rotateY(18deg) translateX(46px); }
 }
 @media (prefers-reduced-motion: reduce) { .pt-xr-cel { animation: none; transform: rotateX(58deg); } }
+
+/* ===== Diseño C "Fiesta" (2026-11-25): racha, baldosas, buscador, sello 3D, rejilla de la carta, sonido ===== */
+.pt-chip-racha { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pildora); background: var(--alerta-suave); color: var(--alerta); font: 700 14px var(--sans); }
+.pt-chip-racha svg { width: 16px; height: 16px; }
+.pt-chip-racha b { font: inherit; line-height: 1; letter-spacing: 0; white-space: nowrap; }
+.pt-club-top { gap: 12px; }
+.pt-baldosas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pt-baldosa { min-height: 112px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 16px; box-sizing: border-box;
+  border-radius: var(--r-grande); background: var(--oro); color: var(--tinta); font: var(--peso-titulo, 700) 18px/1.15 var(--serif); text-decoration: none; transition: transform var(--dur-1) var(--ease); }
+.pt-baldosa.oscura { background: var(--tinta); color: var(--tarjeta); }
+.pt-baldosa:active { transform: scale(.97); }
+.pt-baldosa svg { width: 28px; height: 28px; }
+
+.pt-buscar { display: flex; align-items: center; gap: 10px; height: 48px; margin: 14px 0 0; padding: 0 14px; border-radius: 14px; background: var(--papel-hondo); color: var(--tinta-2); text-align: left; }
+.pt-buscar svg { width: 18px; height: 18px; flex: none; }
+.pt-buscar input { flex: 1; min-width: 0; border: 0; background: transparent; font: 500 16px var(--sans); color: var(--tinta); outline: none; }
+.pt-buscar:focus-within { box-shadow: 0 0 0 2px var(--marca); }
+.pt-prod { position: relative; }
+.pt-sello3d { position: absolute; z-index: 1; top: 10px; right: 4px; padding: 3px 8px; border-radius: var(--r-pildora); background: var(--tinta); color: var(--oro); font: 800 11px var(--sans); letter-spacing: .04em; }
+.pt-prod[hidden], .pt-seccion[hidden], .pt-populares[hidden], .pt-fija[hidden] { display: none !important; }
+#sin-resultados { margin-top: 24px; }
+
+[data-tema="calido"] .pt-carta-cabeza { text-align: left; padding-top: 52px; }
+[data-tema="calido"] .pt-carta-cabeza h1 { font-size: 38px; }
+[data-tema="calido"] .pt-carta-cabeza .pt-filete { display: none; }
+[data-tema="calido"] .pt-seccion { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; align-items: start; }
+[data-tema="calido"] .pt-seccion > .pt-categoria, [data-tema="calido"] .pt-seccion > .pt-estrella { grid-column: 1 / -1; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) { flex-direction: column; align-items: stretch; gap: 8px; padding: 0; border: 0; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) .pt-foto { order: 0; width: 100%; height: auto; aspect-ratio: 1; border-radius: 20px; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) .pt-linea { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) .pt-linea i { display: none; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) b { font-size: 15px; line-height: 1.25; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) .pt-precio { color: var(--alerta); font-weight: 800; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) small { display: none; }
+[data-tema="calido"] .pt-seccion .pt-prod:not(.pt-estrella) .pt-sello3d { top: 8px; left: 8px; right: auto; }
+[data-tema="calido"] .pt-estrella .pt-sello3d { top: 12px; left: 12px; right: auto; }
+
+.pt-elige-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pt-elige-cabeza h2 { margin: 0; }
+.pt-sonido { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); font: 600 13px var(--sans); cursor: pointer; }
+.pt-sonido svg { width: 16px; height: 16px; }
+.pt-sonido.apagado { color: var(--tinta-3); text-decoration: line-through; }
