@@ -131,7 +131,7 @@ const xrListo = ES_ANDROID ? soportaXR() : Promise.resolve(false);
 function abrirGoogle(p) {
   const glb = new URL(p.modelo_url, location.href).href;
   const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
-  location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_only&resizable=false&title=${encodeURIComponent(p.nombre)}`
+  location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred&title=${encodeURIComponent(p.nombre)}`
     + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(regreso)};end;`;
 }
 
@@ -238,7 +238,17 @@ function tono(frec, dur, tipo = 'square', vol = 0.06, despues = 0) {
 }
 const sonidoPalanca = () => { tono(220, 0.12, 'sawtooth', 0.05); tono(140, 0.2, 'sawtooth', 0.045, 0.07); };
 const sonidoClic = () => tono(1300 + Math.random() * 250, 0.03, 'square', 0.035);
-const sonidoPremio = () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tono(f, i === 5 ? 0.55 : 0.13, 'triangle', 0.09, i * 0.11));
+// Premio: el sonido que eligió Jacobo (docs/kit, 8-bit blast de Pixabay/Freesound, uso libre); si no carga, la melodía sintetizada
+let audioPremio = null;
+const sonidoPremio = () => {
+  if (!conSonido) return;
+  try {
+    audioPremio ||= new Audio('/assets/sonidos/premio.mp3');
+    audioPremio.currentTime = 0;
+    audioPremio.volume = 0.7;
+    audioPremio.play().catch(() => [523, 659, 784, 1047].forEach((f, i) => tono(f, 0.14, 'triangle', 0.09, i * 0.11)));
+  } catch { /* sin audio */ }
+};
 function pintarSonido() {
   const b = $('e-sonido');
   b.setAttribute('aria-pressed', String(conSonido));
@@ -251,7 +261,7 @@ $('e-sonido').addEventListener('click', () => {
   pintarSonido();
 });
 pintarSonido();
-$('elige').addEventListener('click', () => { elige.abrir(); girar(); });
+$('elige').addEventListener('click', () => { if (conSonido && !audioPremio) { audioPremio = new Audio('/assets/sonidos/premio.mp3'); audioPremio.preload = 'auto'; } elige.abrir(); girar(); });
 
 function fila(p) {
   const d = document.createElement('div');

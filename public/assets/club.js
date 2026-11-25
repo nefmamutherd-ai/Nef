@@ -458,15 +458,19 @@ if (token) {
   if (compraPendiente) toast('Únete al club y esta compra se suma a tus monedas');
 }
 
-// ── Lector del QR de la caja (pedido de Jacobo: la caja MUESTRA un QR, así que el cliente LEE, no muestra) ──
-// Solo donde el navegador sabe leer QR dentro de la página (Chrome en Android). En iPhone se usa la cámara del teléfono.
-if ('BarcodeDetector' in window && navigator.mediaDevices) {
+// ── Lector del QR de la caja (la caja MUESTRA un QR; el cliente LEE) ──
+// Lee con el lector del navegador si existe (Chrome Android) y si no con jsQR (iPhone, computador), que se baja solo al tocar.
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
   $('t-escanear').hidden = false;
-  $('t-codigo').className = 'pt-link'; // "Mostrar mi código" queda como alternativa
+  $('t-codigo').className = 'pt-link pt-link-chico'; // alternativa: que el cajero escanee al cliente
+  $('t-codigo').textContent = 'o muestra tu código al cajero';
   const hojaLector = hoja($('hoja-lector'));
   let flujo = null;
   const parar = () => { if (flujo) flujo.getTracks().forEach((t) => t.stop()); flujo = null; };
   $('hoja-lector').querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', parar));
+  const cargarJsQR = () => (window.jsQR ? Promise.resolve() : new Promise((ok, mal) => {
+    const sc = document.createElement('script'); sc.src = '/assets/vendor/jsqr/jsQR.js'; sc.onload = ok; sc.onerror = mal; document.head.append(sc);
+  }));
   $('t-escanear').addEventListener('click', async () => {
     try {
       flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
@@ -478,13 +482,29 @@ if ('BarcodeDetector' in window && navigator.mediaDevices) {
     video.srcObject = flujo;
     await video.play();
     hojaLector.abrir();
-    const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    let leer;
+    if ('BarcodeDetector' in window) {
+      const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      leer = async () => { const [c] = await detector.detect(video); return c && c.rawValue; };
+    } else {
+      try { await cargarJsQR(); } catch { parar(); hojaLector.cerrar(); toast('Sin conexión: escanea el QR con la cámara de tu celular.'); return; }
+      const lienzo = document.createElement('canvas');
+      const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+      leer = async () => {
+        if (!video.videoWidth) return null;
+        const w = 480, h = Math.round((480 * video.videoHeight) / video.videoWidth);
+        lienzo.width = w; lienzo.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        const r = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+        return r && r.data;
+      };
+    }
     const mirar = async () => {
       if (!flujo) return;
       try {
-        const [c] = await detector.detect(video);
+        const texto = await leer();
         let u = null;
-        try { u = c && new URL(c.rawValue); } catch { u = null; }
+        try { u = texto && new URL(texto); } catch { u = null; }
         const codigo = u && u.searchParams.get('c');
         if (codigo && /^[0-9a-f]{32}$/.test(codigo)) {
           parar();

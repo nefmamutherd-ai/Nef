@@ -763,3 +763,40 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 [data-tema="calido"] .pt-inicio .pt-puntos > a, [data-tema="calido"] .pt-inicio .pt-puntos > details > summary { padding: 9px 16px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); font-weight: 600; text-decoration: none; }
 [data-tema="calido"] .pt-inicio .pt-puntos > :not(:last-child)::after { content: none; }
 [data-tema="calido"] .pt-inicio .pt-boton:not(.principal) > * { align-self: flex-start; grid-column: auto; grid-row: auto; }
+
+/* Fondo vivo también en la carta y el club (el contenido va encima) */
+[data-tema="calido"] .pt-deco ~ main { position: relative; z-index: 1; }
+[data-tema="calido"] .pt-fija { background: color-mix(in srgb, var(--papel) 88%, transparent); backdrop-filter: blur(8px); }
+
+/* Buscador: un solo borde (el del campo de texto sobraba) */
+.pt-buscar input, .pt-buscar input:focus, .pt-buscar input:focus-visible { height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: none; }
+
+/* "¿Cómo gano monedas?" en tres pasos */
+.pt-como { margin: 4px 0 6px; }
+.pt-como h2 { margin: 0 0 10px; }
+.pt-como ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: paso; }
+.pt-como li { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 18px; background: var(--papel-hondo); counter-increment: paso; }
+.pt-como li i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--tarjeta); color: var(--tinta); }
+.pt-como li i svg { width: 20px; height: 20px; }
+.pt-como li b { font: var(--peso-titulo, 700) 15px var(--serif); }
+.pt-como li b::before { content: counter(paso) ". "; color: var(--marca); }
+.pt-como li span { font-size: 12.5px; line-height: 1.3; color: var(--tinta-2); }
+
+/* Visor 3D sobre una "mesa de madera" cálida (como en las fotos): el plato blanco resalta y se ve servido */
+[data-tema="calido"] .pt-3d { background:
+  radial-gradient(ellipse at 50% 42%, rgba(255, 244, 228, .85), transparent 62%),
+  repeating-linear-gradient(96deg, rgba(110, 70, 35, .07) 0 2px, transparent 2px 13px),
+  linear-gradient(160deg, #E7C9A2, #C99B6B 70%, #B7885A); }
+[data-tema="calido"] .pt-3d-carga { color: #3B2A1A; }
+
+/* Club rediseñado: la acción de sumar justo bajo la tarjeta, títulos que ordenan, menos texto suelto */
+.pt-sumar-bloque { display: flex; flex-direction: column; align-items: stretch; gap: 2px; margin: 2px 0 4px; }
+.pt-accion-doble { min-height: 72px; justify-content: flex-start; padding: 0 20px; gap: 14px; text-align: left; }
+.pt-accion-doble svg { width: 30px; height: 30px; flex: none; }
+.pt-accion-doble span { display: flex; flex-direction: column; gap: 2px; }
+.pt-accion-doble b { font: var(--peso-titulo, 700) 19px/1.15 var(--serif); }
+.pt-accion-doble small { font: 500 13.5px/1.3 var(--sans); opacity: .85; }
+.pt-link-chico { font-size: 14px; min-height: 40px; }
+.pt-sub { margin: 14px 0 0; }
+.pt-sub:has(+ #t-camino[hidden]) { display: none; }
+.pt-club2 .pt-meta { margin-top: 6px; }

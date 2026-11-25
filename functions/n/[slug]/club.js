@@ -1,7 +1,7 @@
 // /n/<slug>/club → inscripción al club y tarjeta "Mis monedas" (SSR + public/assets/club.js).
 // La tarjeta se abre con el token propio del cliente guardado en su celular (localStorage), nunca con el slug.
 import { rpc, esc, html, redirigir, paginaError } from '../../../lib/util.js';
-import { inicioPagina, firma, icono } from '../../../lib/portal.js';
+import { inicioPagina, firma, icono, fondoVivo } from '../../../lib/portal.js';
 
 export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
@@ -21,6 +21,7 @@ export async function onRequestGet({ params, request, env }) {
   const portal = `/n/${encodeURIComponent(n.slug)}`;
 
   return html(`${inicioPagina(n, { titulo: `Club · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
+${fondoVivo()}
 <main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}">
 
   <div id="cargando"><div class="pt-cargando"></div><div class="pt-cargando"></div></div>
@@ -60,16 +61,26 @@ export async function onRequestGet({ params, request, env }) {
         <div><b id="t-regalo"></b><small>Se activan en tu primera compra</small></div>
       </div>
     </div>
+    <span class="pt-aviso neutro" id="t-aviso" hidden></span>
+    <!-- Lo primero después de la tarjeta: cómo sumar (la acción de todos los días) -->
+    <div class="pt-sumar-bloque">
+      <button type="button" class="pt-accion marca pt-accion-doble" id="t-escanear" hidden>${icono('qr')}<span><b>Sumar mis ${plural}</b><small>Escanea el QR que te muestra la caja</small></span></button>
+      <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
+    </div>
     <div class="pt-meta" id="t-meta" hidden>
       <div class="pt-meta-fila"><div><small id="t-meta-titulo">Tu próximo premio</small><b id="t-meta-nombre"></b></div><span class="pt-meta-cuesta" id="t-meta-cuesta"></span></div>
       <div class="pt-ola" id="t-ola" aria-hidden="true"><div class="pt-ola-fantasma"></div><div class="pt-ola-lleno"><svg viewBox="0 0 960 16" preserveAspectRatio="none"><path d="M0 8 Q 12 5.5 24 8 T 48 8 T 72 8 T 96 8 T 120 8 T 144 8 T 168 8 T 192 8 T 216 8 T 240 8 T 264 8 T 288 8 T 312 8 T 336 8 T 360 8 T 384 8 T 408 8 T 432 8 T 456 8 T 480 8 T 504 8 T 528 8 T 552 8 T 576 8 T 600 8 T 624 8 T 648 8 T 672 8 T 696 8 T 720 8 T 744 8 T 768 8 T 792 8 T 816 8 T 840 8 T 864 8 T 888 8 T 912 8 T 936 8 T 960 8"/></svg></div></div>
       <p class="pt-frase" id="t-frase"></p>
     </div>
+    <h2 class="pt-versalitas pt-sub">Tus premios</h2>
     <div class="pt-premios-fila" id="t-camino" hidden></div>
-    <span class="pt-aviso neutro" id="t-aviso" hidden></span>
-    <button type="button" class="pt-accion marca" id="t-escanear" hidden>${icono('qr')}Escanear el QR de la caja</button>
-    <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
     <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>
+    <section class="pt-como" aria-label="Cómo ganar">
+      <h2 class="pt-versalitas">¿Cómo gano ${plural}?</h2>
+      <ol><li><i>${icono('carta')}</i><b>Compra</b><span>Pide lo que quieras</span></li>
+      <li><i>${icono('qr')}</i><b>Escanea</b><span>el QR que te muestra la caja</span></li>
+      <li><i>${icono('estrella')}</i><b>Canjea</b><span>tu premio cuando te alcance</span></li></ol>
+    </section>
     <a class="pt-link" href="${datos}">Condiciones del club</a>
   </section>
 
