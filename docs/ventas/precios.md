@@ -1,4 +1,38 @@
-# Precios — punto de partida para probar
+# Precios de Nef — fuente de verdad (25/11/2026)
+
+> **Esta tabla es la única fuente de verdad.** La página de ventas (`public/index.html`, sección "6. Precios") muestra
+> exactamente esto. Si cambias un precio, cámbialo en los dos lugares.
+
+## Instalación (pago único) — $250.000
+Hasta 10 puntos NFC + QR (mesas, consultorios, máquinas…), placa de caja y tu catálogo montado.
+
+## Planes
+| Plan | Mensual | Anual (pagas 10 meses) | Qué incluye |
+|---|---|---|---|
+| **Portal** | $55.000 | $550.000 | Portal del negocio, catálogo o carta, "Agotado hoy", botón de reseña de Google, WiFi, WhatsApp e Instagram |
+| **Club** (recomendado) | $95.000 | $950.000 | Todo lo del Portal + club de monedas, caja con PIN, cobro con QR, panel con clientes en riesgo y WhatsApp listo para escribirles |
+
+## Extras
+- Punto adicional: **$15.000**
+- Estudio estadístico trimestral: **$150.000**. El primero es gratis con el plan Club.
+
+## Fundadores — solo 3 cupos
+Instalación a **$120.000** y mensualidad congelada por 12 meses.
+
+## Condiciones
+- Plan mensual sin permanencia. El plan anual se paga por adelantado.
+- Garantía de 30 días: si no te sirve, te devolvemos la plata.
+- Precios en pesos colombianos.
+
+## Lo que NO va en los planes (todavía)
+- **Platos en 3D y "Verlo en tu mesa"**: nuevo; los primeros clientes lo prueban sin costo. No se promete en los planes.
+- Nef **no toma pedidos** desde la mesa.
+
+---
+
+## Versión anterior (REEMPLAZADA el 25/11/2026 — solo como historia)
+
+### Precios — punto de partida para probar
 
 > **Esto es una hipótesis, no una tarifa definitiva.** Úsala en las primeras visitas, mira cómo
 > reaccionan y ajústala. Si casi nadie se queja del precio, está barato.

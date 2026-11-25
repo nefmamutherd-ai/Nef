@@ -16,7 +16,23 @@ se saca con **fotogrametría**: muchas fotos alrededor del plato que una app con
 3. No muevas el plato ni la comida durante la captura (si giras la base, gira solo la base, sin tocar el plato).
 4. Procesa en la app y recorta lo que no es el plato (la mesa, la base).
 5. Exporta en **.glb**. Que pese máximo 3 MB (si la app deja elegir, "calidad media" y textura de 2048 px).
-6. En el admin, en el producto, pega el link del archivo en "Modelo 3D" (o súbelo a la carpeta de fotos del negocio).
+6. Pásalo al computador (por WhatsApp a ti mismo como documento, Drive o cable).
+
+## Publicarlo en Nef (5 minutos)
+1. Entra a tu **/admin › Catálogo** (o el dueño en **/panel › Catálogo**) y elige el negocio.
+2. Toca **Editar** en el plato (o **Agregar** si es nuevo).
+3. En **Modelo 3D**, toca **"Subir modelo 3D (.glb)"** y elige el archivo. Debe decir "Modelo listo (x MB)". Máximo 5 MB.
+4. Toca **Guardar**. Nef lo sube y llena el link solo.
+5. **Pruébalo:** abre la carta del negocio en el celular, toca el plato: debe salir "Cargando tu plato…" y luego el 3D.
+   Luego "Verlo en tu mesa" en un iPhone (Safari) y en un Android con "Servicios de Google Play para RA".
+6. Si se ve muy grande o muy pequeño en la mesa: el modelo no está en metros. En la app de fotogrametría, ajusta la
+   escala (un plato mide ~26 cm) y exporta otra vez.
+
+## Si algo sale mal
+- **"Pesa más de 5 MB":** exporta en calidad media y textura de 2048 px.
+- **El plato sale negro o sin color:** exporta en .glb (no .obj ni .usdz) con texturas incluidas.
+- **Sale torcido o de lado:** gíralo en la app antes de exportar (que el plato quede plano sobre el piso).
+- **Sin tiempo para fotogrametría:** sube solo la foto; el plato funciona igual, sin 3D.
 
 ## Qué sale bien y qué no
 - **Bien**: lo mate y con textura: pan, arepas, tortas, postres, galletas, carnes, ensaladas.

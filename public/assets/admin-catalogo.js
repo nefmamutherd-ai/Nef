@@ -22,6 +22,7 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
   let categorias = [];
   let editando = null;
   let fotoNueva = null; // Blob WebP listo para subir
+  let modeloNuevo = null; // archivo .glb listo para subir
 
   const detalle = (p) => {
     if (p.tipo === 'maquina') return `${(p.pasos || []).length} pasos${p.video_url ? ' · con video' : ' · sin video'}`;
@@ -108,12 +109,14 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
   function abrir(p = null) {
     editando = p;
     fotoNueva = null;
+    modeloNuevo = null;
     f.reset();
     $('#k-error').hidden = true;
     $('#k-titulo').textContent = p ? `Editar · ${p.nombre}` : 'Agregar';
     $('#k-eliminar').hidden = !p;
     $('#k-horario').textContent = '';
     $('#k-foto-txt').textContent = p && p.foto_url ? 'Cambiar foto' : 'Subir foto';
+    $('#k-modelo-txt').textContent = p && p.modelo_url ? 'Cambiar modelo 3D (.glb)' : 'Subir modelo 3D (.glb)';
     f.querySelectorAll('#k-etiquetas input').forEach((c) => (c.checked = false));
     if (p) {
       f.querySelectorAll('input[name=tipo]').forEach((r) => (r.checked = r.value === p.tipo));
@@ -134,6 +137,15 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
     dlg.showModal();
   }
 
+  $('#k-modelo-archivo').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    modeloNuevo = null;
+    if (!file) return;
+    if (!/\.glb$/i.test(file.name)) { $('#k-modelo-txt').textContent = 'Debe ser un archivo .glb'; return; }
+    if (file.size > 5 * 1024 * 1024) { $('#k-modelo-txt').textContent = 'Pesa más de 5 MB: expórtalo en calidad media'; return; }
+    modeloNuevo = file;
+    $('#k-modelo-txt').textContent = `Modelo listo (${(file.size / 1048576).toFixed(1)} MB)`;
+  });
   $('#k-foto').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
@@ -189,6 +201,12 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       horario: tipo === 'clase' ? horario : [],
       activo: f.activo.checked,
     };
+    if (modeloNuevo && esCarta) {
+      const rutaM = `${negocioActual()}/${crypto.randomUUID()}.glb`;
+      const { error: errM } = await sb.storage.from('modelos').upload(rutaM, modeloNuevo, { contentType: 'model/gltf-binary' });
+      if (errM) return err('No se subió el modelo 3D: ' + errM.message);
+      datos.modelo_url = sb.storage.from('modelos').getPublicUrl(rutaM).data.publicUrl;
+    }
     if (fotoNueva && esCarta) {
       const ruta = `${negocioActual()}/${crypto.randomUUID()}.webp`;
       const { error: errFoto } = await sb.storage.from('fotos').upload(ruta, fotoNueva, { contentType: 'image/webp' });

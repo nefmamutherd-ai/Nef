@@ -61,3 +61,31 @@ create policy "fotos: dueño cambia" on storage.objects for update to authentica
 drop policy if exists "fotos: dueño borra" on storage.objects;
 create policy "fotos: dueño borra" on storage.objects for delete to authenticated
   using (bucket_id = 'fotos' and public.foto_es_mia(storage.objects.name));
+
+-- ---------------------------------------------------------------------
+--  Bucket PÚBLICO "modelos": platos en 3D (.glb, máx. 5 MB) para el visor y "Verlo en tu mesa" (2026-11-25).
+--  Mismas reglas que "fotos": lectura pública; subir/cambiar/borrar el admin, y el dueño solo en <negocio_id>/…
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('modelos', 'modelos', true, 5242880, array['model/gltf-binary', 'application/octet-stream'])
+on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['model/gltf-binary', 'application/octet-stream'];
+
+drop policy if exists "modelos: admin sube" on storage.objects;
+create policy "modelos: admin sube" on storage.objects for insert to authenticated
+  with check (bucket_id = 'modelos' and public.es_admin());
+drop policy if exists "modelos: admin cambia" on storage.objects;
+create policy "modelos: admin cambia" on storage.objects for update to authenticated
+  using (bucket_id = 'modelos' and public.es_admin()) with check (bucket_id = 'modelos' and public.es_admin());
+drop policy if exists "modelos: admin borra" on storage.objects;
+create policy "modelos: admin borra" on storage.objects for delete to authenticated
+  using (bucket_id = 'modelos' and public.es_admin());
+drop policy if exists "modelos: dueño sube" on storage.objects;
+create policy "modelos: dueño sube" on storage.objects for insert to authenticated
+  with check (bucket_id = 'modelos' and public.foto_es_mia(storage.objects.name));
+drop policy if exists "modelos: dueño cambia" on storage.objects;
+create policy "modelos: dueño cambia" on storage.objects for update to authenticated
+  using (bucket_id = 'modelos' and public.foto_es_mia(storage.objects.name))
+  with check (bucket_id = 'modelos' and public.foto_es_mia(storage.objects.name));
+drop policy if exists "modelos: dueño borra" on storage.objects;
+create policy "modelos: dueño borra" on storage.objects for delete to authenticated
+  using (bucket_id = 'modelos' and public.foto_es_mia(storage.objects.name));

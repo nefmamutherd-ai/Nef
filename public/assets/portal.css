@@ -800,3 +800,16 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 .pt-sub { margin: 14px 0 0; }
 .pt-sub:has(+ #t-camino[hidden]) { display: none; }
 .pt-club2 .pt-meta { margin-top: 6px; }
+
+/* Menos saturado (Jacobo, en el celular de su papá): el fondo vivo más suave, y aún más en el club y la carta */
+.pt-deco { opacity: .7; }
+body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
+/* Club de un vistazo: saldo, "Sumar", próximo premio; la fila de premios repetía lo mismo (queda "Ver todos") */
+#club .pt-sub, #club #t-camino { display: none !important; }
+.pt-como { margin: 6px 0 0; border-radius: 16px; background: var(--papel-hondo); }
+.pt-como summary { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; font: 600 15px var(--sans); color: var(--tinta); cursor: pointer; list-style: none; }
+.pt-como summary::-webkit-details-marker { display: none; }
+.pt-como summary::after { content: "+"; font: 700 20px var(--sans); color: var(--tinta-2); }
+.pt-como[open] summary::after { content: "–"; }
+.pt-como ol { padding: 0 10px 12px; }
+.pt-como li { background: var(--tarjeta); }

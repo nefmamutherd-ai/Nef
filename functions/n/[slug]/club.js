@@ -75,12 +75,12 @@ ${fondoVivo()}
     <h2 class="pt-versalitas pt-sub">Tus premios</h2>
     <div class="pt-premios-fila" id="t-camino" hidden></div>
     <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>
-    <section class="pt-como" aria-label="Cómo ganar">
-      <h2 class="pt-versalitas">¿Cómo gano ${plural}?</h2>
+    <details class="pt-como">
+      <summary>¿Cómo gano ${plural}?</summary>
       <ol><li><i>${icono('carta')}</i><b>Compra</b><span>Pide lo que quieras</span></li>
       <li><i>${icono('qr')}</i><b>Escanea</b><span>el QR que te muestra la caja</span></li>
       <li><i>${icono('estrella')}</i><b>Canjea</b><span>tu premio cuando te alcance</span></li></ol>
-    </section>
+    </details>
     <a class="pt-link" href="${datos}">Condiciones del club</a>
   </section>
 

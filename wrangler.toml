@@ -11,4 +11,4 @@ compatibility_date = "2025-01-01"
 SUPABASE_URL = "https://dzcrgfenrwtmuwojmgfl.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_O6YL4p44eX5QijkzY4RNDw_xLxmQ0R7"
 MARCA = "Nef"
-CONTACTO_WHATSAPP = "3204871882"   # WhatsApp de ventas (10 dígitos): aparece en la landing y en /inactivo
+CONTACTO_WHATSAPP = "3224731560"   # WhatsApp de ventas (10 dígitos): aparece en la landing y en /inactivo
