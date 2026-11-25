@@ -129,88 +129,39 @@ const soportaXR = async () => {
   } catch { return false; }
 };
 
-// "Verlo en tu mesa": 1) ¿el celular puede? (si no, aviso) 2) paso a paso con dibujos 3) cámara con el círculo para elegir el sitio
+// ¿Tiene la realidad aumentada de Google? Se pregunta una vez al cargar (y se baja el módulo de la cámara) para que el toque sea inmediato
+const xrListo = ES_ANDROID ? soportaXR() : Promise.resolve(false);
+xrListo.then((si) => si && import('/assets/mesa-xr.js')).catch(() => {});
+
+// "Verlo en tu mesa": 1) ¿el celular puede? 2) se abre la cámara y la guía va DENTRO (celular en 3D → círculo → Listo → plato)
 async function verEnMesa(p, mv) {
   evento('ver_ar', p.id);
-  if (ES_IPHONE) { guiaMesa(() => mv.activateAR()); return; }
-  if (await soportaXR()) {
-    const modulo = import('/assets/mesa-xr.js'); // se descarga mientras leen la guía
-    guiaMesa(() => modulo.then((m) => m.ponerEnMesa(p)).catch(() => avisoNoCompatible()));
+  if (ES_IPHONE) { mv.activateAR(); return; } // Quick Look trae su propia guía en la cámara
+  if (await xrListo) {
+    import('/assets/mesa-xr.js').then((m) => m.ponerEnMesa(p)).catch(() => avisoNoCompatible());
     return;
   }
-  // Sin la realidad aumentada de Google instalada: la app de Google la ofrece (gratis); si el celular no puede, vuelve aquí
-  guiaMesa(() => {
+  // Sin la realidad aumentada de Google instalada: la app de Google (guía propia); si el celular no puede, vuelve aquí
+  avisoGoogle(() => {
     const glb = new URL(p.modelo_url, location.href).href;
     const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
     location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_only&title=${encodeURIComponent(p.nombre)}`
       + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(regreso)};end;`;
-  }, true);
+  });
 }
 
-// Dibujos del paso a paso: líneas azules, sencillos (no realistas). Fijos del código, no datos.
-const DIBUJOS = {
-  sostener: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
-    <path d="M14 112 H206 M40 112 V146 M180 112 V146"/>
-    <path d="M36 70 V112 M36 112 H70 V146"/>
-    <circle cx="52" cy="30" r="12"/><path d="M52 42 L50 92 L74 96 L74 146"/>
-    <path d="M51 56 L86 72"/>
-    <g class="pt-guia-cel"><rect x="84" y="56" width="14" height="26" rx="3" transform="rotate(-50 91 69)"/></g>
-    <path class="pt-guia-rayo" d="M98 72 L140 110 M96 78 L118 110"/>
-    <ellipse cx="132" cy="110" rx="20" ry="4"/>
-  </svg>`,
-  mover: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
-    <path d="M20 140 L200 140 L166 96 L54 96 Z"/>
-    <g class="pt-guia-puntos-mesa"><circle cx="80" cy="118" r="1.5"/><circle cx="104" cy="108" r="1.5"/><circle cx="128" cy="124" r="1.5"/><circle cx="150" cy="112" r="1.5"/><circle cx="96" cy="130" r="1.5"/><circle cx="140" cy="132" r="1.5"/></g>
-    <g class="pt-guia-vaiven"><rect x="94" y="14" width="32" height="56" rx="6"/><path d="M104 64 H116"/></g>
-    <path d="M58 42 H30 M30 42 l9-8 M30 42 l9 8 M162 42 H190 M190 42 l-9-8 M190 42 l-9 8"/>
-  </svg>`,
-  elegir: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
-    <rect x="70" y="4" width="80" height="142" rx="12"/><path d="M74 60 L146 60 M74 60 L70 146 M146 60 L150 146"/>
-    <ellipse class="pt-guia-circulo" cx="110" cy="100" rx="24" ry="9"/>
-    <rect x="88" y="124" width="44" height="12" rx="6"/><text x="110" y="133" text-anchor="middle">Listo</text>
-  </svg>`,
-};
-const PASOS = [
-  { d: 'sostener', t: 'Siéntate y apunta a tu mesa', x: 'Sostén el celular frente a ti, inclinado hacia la mesa, como si fueras a tomarle una foto a un plato. No apuntes al techo.' },
-  { d: 'mover', t: 'Muévelo despacio de lado a lado', x: 'Así la cámara reconoce la mesa. Ayuda tener buena luz y una mesa con algo de textura.' },
-  { d: 'elegir', t: 'Elige dónde va el plato', x: 'Aparece un círculo sobre la mesa. Mueve el celular hasta donde lo quieres y toca Listo: el plato aparece ahí, a tamaño real.' },
-];
-const CLAVE_GUIA = 'nef_guia_mesa';
-function guiaMesa(abrirCamara, conGoogle = false) {
-  try { if (localStorage.getItem(CLAVE_GUIA)) { abrirCamara(); return; } } catch { /* sin almacenamiento: mostrar la guía */ }
+// Aviso antes de abrir la app de Google: puede pedir instalar un servicio (lo que confundió en la primera prueba)
+function avisoGoogle(seguir) {
   const capa = document.createElement('div');
   capa.className = 'pt-guia';
   capa.setAttribute('role', 'dialog');
-  capa.setAttribute('aria-label', 'Cómo ver el plato en tu mesa');
-  let i = 0;
-  const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto) e.textContent = texto; return e; };
-  const pintar = () => {
-    const p = PASOS[i];
-    const ultimo = i === PASOS.length - 1;
-    const t = el('div', 'pt-guia-tarjeta');
-    const dibujo = el('div', 'pt-guia-dibujo');
-    dibujo.innerHTML = DIBUJOS[p.d]; // SVG fijo del código, no datos
-    const puntos = el('div', 'pt-guia-puntos');
-    PASOS.forEach((_, k) => puntos.append(el('i', k === i ? 'activo' : '')));
-    const sig = el('button', 'pt-accion', ultimo ? 'Abrir la cámara' : 'Siguiente'); sig.type = 'button'; sig.dataset.sig = '';
-    const salir = el('button', 'pt-link', 'Ahora no'); salir.type = 'button'; salir.dataset.salir = '';
-    t.append(el('small', 'pt-guia-paso', `Paso ${i + 1} de ${PASOS.length}`), dibujo, el('h2', '', p.t), el('p', 'pt-guia-texto', p.x));
-    if (ultimo && conGoogle) {
-      const nota = el('p', 'pt-guia-nota', 'Google puede pedirte instalar ');
-      nota.append(el('b', '', '"Servicios de Google Play para RA"'), '. Es gratis y solo se hace una vez.');
-      t.append(nota);
-    }
-    t.append(puntos, sig, salir);
-    capa.replaceChildren(t);
-    capa.querySelector('[data-sig]').addEventListener('click', () => {
-      if (!ultimo) { i++; pintar(); return; }
-      try { localStorage.setItem(CLAVE_GUIA, '1'); } catch { /* nada */ }
-      capa.remove();
-      abrirCamara();
-    });
-    capa.querySelector('[data-salir]').addEventListener('click', () => capa.remove());
-  };
-  pintar();
+  capa.innerHTML = `<div class="pt-guia-tarjeta"><div class="pt-guia-icono azul" aria-hidden="true">i</div>
+    <h2>Lo verás con la cámara de Google</h2>
+    <p class="pt-guia-texto">Puede pedirte instalar <b>"Servicios de Google Play para RA"</b>. Es gratis y solo se hace una vez.</p>
+    <button type="button" class="pt-accion" data-sig>Continuar</button>
+    <button type="button" class="pt-link" data-salir>Ahora no</button></div>`;
+  capa.querySelector('[data-sig]').addEventListener('click', () => { capa.remove(); seguir(); });
+  capa.querySelector('[data-salir]').addEventListener('click', () => capa.remove());
   document.body.append(capa);
 }
 

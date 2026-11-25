@@ -673,7 +673,7 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.close();
 });
 
-await caso('plato en 3D: carga con fundido, giro limitado, guía paso a paso y aviso de no compatible; sin modelo, solo la foto', async () => {
+await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Google y de no compatible; sin modelo, solo la foto', async () => {
   const [n] = await api(`negocios?slug=eq.${slug}`);
   const prods = await api(`productos?negocio_id=eq.${n.id}&tipo=eq.plato&activo=eq.true&select=id,nombre&order=nombre&limit=2`);
   assert.ok(prods.length >= 2, 'hay platos para probar');
@@ -710,13 +710,11 @@ await caso('plato en 3D: carga con fundido, giro limitado, guía paso a paso y a
   await a.waitForSelector('#d-3d .pt-3d-carga');
   assert.match(await a.textContent('#d-3d .pt-3d-carga'), /Cargando tu plato/);
   await a.waitForSelector('#d-3d.listo', { timeout: 30000 });
+  // Sin la realidad aumentada de Google (este navegador): aviso de la app de Google y su servicio, sin tarjetas de pasos
   await a.tap('#d-3d .pt-ar');
-  await a.waitForSelector('.pt-guia .pt-guia-svg');
-  assert.match(await a.textContent('.pt-guia-paso'), /Paso 1 de 3/);
-  await a.screenshot({ path: DIR + 'carta-guia-mesa.png' });
-  await a.tap('.pt-guia [data-sig]');
-  await a.tap('.pt-guia [data-sig]');
-  assert.match(await a.textContent('.pt-guia h2'), /Elige dónde va el plato/);
+  await a.waitForSelector('.pt-guia h2:has-text("cámara de Google")');
+  assert.match(await a.textContent('.pt-guia'), /Servicios de Google Play para RA/);
+  await a.screenshot({ path: DIR + 'carta-aviso-google.png' });
   await a.tap('.pt-guia [data-salir]');
   // Si la app de Google no puede, vuelve con #ra-no-compatible-<id> → aviso claro
   await a.evaluate((id) => { location.hash = 'ra-no-compatible-' + id; }, prods[0].id);

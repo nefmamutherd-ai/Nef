@@ -21,12 +21,18 @@ export async function ponerEnMesa(p) {
   // Capa de botones encima de la cámara (dom-overlay de WebXR)
   const capa = document.createElement('div');
   capa.className = 'pt-xr';
-  capa.innerHTML = `<p class="pt-xr-msg">Apunta a tu mesa y mueve el celular despacio</p>
+  // Guía dentro de la cámara: un celular en 3D (líneas azules) inclinado hacia una mesa, moviéndose de lado a lado
+  capa.innerHTML = `<p class="pt-xr-msg">Sostén el celular inclinado hacia tu mesa y muévelo despacio de lado a lado</p>
+    <div class="pt-xr-guia" aria-hidden="true"><div class="pt-xr-escena">
+      <div class="pt-xr-mesa"></div>
+      <div class="pt-xr-cel"><i class="pt-xr-cara"></i><i class="pt-xr-cara atras"></i><i class="pt-xr-borde"></i></div>
+    </div></div>
     <button type="button" class="pt-xr-cerrar" aria-label="Cerrar">✕</button>
-    <button type="button" class="pt-xr-listo" disabled>Listo, ponerlo aquí</button>`;
+    <button type="button" class="pt-xr-listo" hidden>Listo, ponerlo aquí</button>`;
   document.body.append(capa);
   const msg = capa.querySelector('.pt-xr-msg');
   const listo = capa.querySelector('.pt-xr-listo');
+  const guia = capa.querySelector('.pt-xr-guia');
 
   let sesion;
   try {
@@ -116,8 +122,10 @@ export async function ponerEnMesa(p) {
       if (pose) {
         matriz.fromArray(pose.transform.matrix);
         matriz.decompose(circulo.position, circulo.quaternion, new THREE.Vector3());
-        if (!circulo.visible) msg.textContent = 'Mueve el celular hasta donde quieres el plato y toca Listo';
+        if (!circulo.visible) msg.textContent = '¡Encontré tu mesa! Mueve el círculo hasta donde quieres el plato y toca Listo';
         circulo.visible = true;
+        guia.hidden = true;
+        listo.hidden = false;
         listo.disabled = false;
       } else {
         circulo.visible = false;
