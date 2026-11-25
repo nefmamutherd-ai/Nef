@@ -673,7 +673,7 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.close();
 });
 
-await caso('plato en 3D: abre directo en 3D si tiene modelo (giro limitado, AR con Scene Viewer); si no, solo la foto', async () => {
+await caso('plato en 3D: carga con fundido, giro limitado, guía paso a paso y aviso de no compatible; sin modelo, solo la foto', async () => {
   const [n] = await api(`negocios?slug=eq.${slug}`);
   const prods = await api(`productos?negocio_id=eq.${n.id}&tipo=eq.plato&activo=eq.true&select=id,nombre&order=nombre&limit=2`);
   assert.ok(prods.length >= 2, 'hay platos para probar');
@@ -693,13 +693,36 @@ await caso('plato en 3D: abre directo en 3D si tiene modelo (giro limitado, AR c
   const mv = (k) => p.getAttribute('#d-3d model-viewer', k);
   assert.equal(await mv('src'), '/assets/demo/3d/capuchino.glb');
   await p.waitForTimeout(800);
-  // Sin iPhone ni realidad aumentada de Google (como este navegador), "Verlo en tu mesa" no se ofrece: solo el 3D que se gira
-  assert.equal(await mv('ar'), null, 'sin ARCore no hay realidad aumentada');
-  assert.equal(await p.$('#d-3d .pt-ar'), null, 'no se muestra un botón que no funcionaría bien');
-  assert.equal(await p.$('.pt-ar-google'), null);
+  // En computador no hay "Verlo en tu mesa": solo el 3D que se gira
+  assert.equal(await p.$('#d-3d .pt-ar'), null, 'sin celular no se ofrece la realidad aumentada');
   assert.equal(await mv('touch-action'), 'none', 'deslizar gira el plato, no la página');
   assert.match(await mv('max-camera-orbit'), /80deg/, 'no se ve el plato por debajo');
+  assert.equal(await p.evaluate(() => document.documentElement.classList.contains('n-hoja-abierta')), true, 'con la hoja abierta, la carta de atrás no se mueve');
   await p.close();
+
+  // Android (simulado): carga → 3D con fundido; "Verlo en tu mesa" muestra el paso a paso (3 pasos, dibujos azules)
+  const ctxA = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
+    userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36' });
+  const a = await ctxA.newPage();
+  a.on('pageerror', (e) => errores.push('carta android: ' + e.message));
+  await a.goto(`${BASE}/n/${slug}/carta`);
+  await a.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
+  await a.waitForSelector('#d-3d .pt-3d-carga');
+  assert.match(await a.textContent('#d-3d .pt-3d-carga'), /Cargando tu plato/);
+  await a.waitForSelector('#d-3d.listo', { timeout: 30000 });
+  await a.tap('#d-3d .pt-ar');
+  await a.waitForSelector('.pt-guia .pt-guia-svg');
+  assert.match(await a.textContent('.pt-guia-paso'), /Paso 1 de 3/);
+  await a.screenshot({ path: DIR + 'carta-guia-mesa.png' });
+  await a.tap('.pt-guia [data-sig]');
+  await a.tap('.pt-guia [data-sig]');
+  assert.match(await a.textContent('.pt-guia h2'), /Elige dónde va el plato/);
+  await a.tap('.pt-guia [data-salir]');
+  // Si la app de Google no puede, vuelve con #ra-no-compatible-<id> → aviso claro
+  await a.evaluate((id) => { location.hash = 'ra-no-compatible-' + id; }, prods[0].id);
+  await a.waitForSelector('.pt-guia h2:has-text("No es compatible")');
+  await a.screenshot({ path: DIR + 'carta-no-compatible.png' });
+  await ctxA.close();
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
 });
 

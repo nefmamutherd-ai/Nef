@@ -67,17 +67,35 @@ let visor = null;
 const cargarVisor = () => (visor ||= import('/assets/vendor/model-viewer/model-viewer.min.js'));
 const VISTA = { inclinacion: 62, min: 35, max: 80 }; // grados desde arriba: nunca se ve el plato por debajo
 async function abrir3d(p) {
-  try { await cargarVisor(); } catch { return; } // sin red: se queda la foto
+  const caja = $('d-3d');
+  // Pantalla de carga: la foto borrosa de fondo + "Cargando tu plato"; el 3D entra con un fundido cuando está listo
+  caja.textContent = '';
+  caja.classList.remove('listo');
+  const carga = document.createElement('div');
+  carga.className = 'pt-3d-carga';
+  if (p.foto_url) carga.style.setProperty('--fondo', `url("${encodeURI(p.foto_url)}")`);
+  const anim = document.createElement('i'); anim.className = 'pt-3d-giro';
+  const txt = document.createElement('span'); txt.textContent = 'Cargando tu plato…';
+  carga.append(anim, txt);
+  caja.append(carga);
+  caja.hidden = false;
+  $('d-foto').hidden = true;
+  const volverAFoto = () => { if (abierto !== p) return; caja.hidden = true; caja.textContent = ''; $('d-foto').hidden = !p.foto_url; };
+  try { await cargarVisor(); } catch { volverAFoto(); return; } // sin red: se queda la foto
   if (abierto !== p) return; // cambiaron de plato mientras cargaba
   const mv = document.createElement('model-viewer');
   const attrs = {
-    src: p.modelo_url, poster: p.foto_url || '', alt: `${p.nombre} en 3D`, 'camera-controls': '', 'auto-rotate': '',
+    src: p.modelo_url, alt: `${p.nombre} en 3D`, 'camera-controls': '', 'auto-rotate': '',
     'auto-rotate-delay': '2500', 'rotation-per-second': '20deg', 'camera-orbit': `20deg ${VISTA.inclinacion}deg auto`,
     'min-camera-orbit': `auto ${VISTA.min}deg auto`, 'max-camera-orbit': `auto ${VISTA.max}deg auto`,
     'touch-action': 'none', 'disable-pan': '', 'interpolation-decay': '120',
     'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
   };
+  // iPhone: realidad aumentada propia del teléfono (Quick Look), la abre el mismo visor
+  if (ES_IPHONE) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
+  mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
+  mv.addEventListener('error', volverAFoto, { once: true });
   // Al soltarlo, vuelve solo a la inclinación de siempre (conserva hacia dónde lo giraron de lado)
   let vuelta = null;
   const volver = () => {
@@ -90,43 +108,133 @@ async function abrir3d(p) {
   mv.addEventListener('pointerup', volver);
   mv.addEventListener('pointercancel', volver);
   mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
-  const caja = $('d-3d');
-  caja.textContent = '';
-  caja.append(mv);
-  // "Verlo en tu mesa" SOLO donde se ve bien de verdad (decisión de Jacobo): iPhone (Quick Look) y Android con la
-  // realidad aumentada de Google (ARCore → WebXR, el plato queda pegado a la mesa). En los demás, solo el 3D que se gira.
-  const conArcore = !ES_IPHONE && await tieneArcore();
-  if (abierto !== p) return;
-  if (ES_IPHONE || conArcore) {
+  caja.prepend(mv);
+  if (ES_IPHONE || ES_ANDROID) {
     const ar = document.createElement('button');
     ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
-    ar.slot = 'ar-button';
-    ar.addEventListener('click', () => evento('ver_ar', p.id));
-    const modos = ES_IPHONE ? 'quick-look' : 'webxr';
-    for (const [k, v] of Object.entries({ ar: '', 'ar-modes': modos, 'ar-scale': 'fixed', 'ar-placement': 'floor' })) mv.setAttribute(k, v);
-    mv.append(ar);
+    ar.addEventListener('click', () => verEnMesa(p, mv));
+    caja.append(ar);
   }
-  if (/Android/i.test(navigator.userAgent)) {
-    // PRUEBA (25/11): en todos los Android, la realidad aumentada de Google (Scene Viewer, de la app Google). Con ARCore se ve en la mesa;
-    // sin ARCore, Scene Viewer muestra solo el 3D. Si nada abre, vuelve a esta página. Quitar o dejar según el resultado.
-    const g = document.createElement('a');
-    g.className = 'pt-ar-google';
-    g.textContent = 'Verlo en tu mesa con Google (prueba)';
-    const glb = new URL(p.modelo_url, location.href).href;
-    g.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred&title=${encodeURIComponent(p.nombre)}`
-      + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(location.href)};end;`;
-    g.addEventListener('click', () => evento('ver_ar', p.id));
-    $('d-vista').append(g);
-  }
-  caja.hidden = false;
-  $('d-foto').hidden = true;
   evento('ver_3d', p.id);
 }
 let abierto = null;
 
 const ES_IPHONE = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-// ¿Tiene la realidad aumentada de Google (ARCore)? Solo entonces WebXR puede abrir una sesión de realidad aumentada
-const tieneArcore = async () => { try { return !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); } catch { return false; } };
+const ES_ANDROID = /Android/i.test(navigator.userAgent);
+// En algunos navegadores la pregunta nunca responde: a los 2 s se toma como "no"
+const soportaXR = async () => {
+  if (!navigator.xr) return false;
+  try {
+    return !!(await Promise.race([navigator.xr.isSessionSupported('immersive-ar'), new Promise((r) => setTimeout(() => r(false), 2000))]));
+  } catch { return false; }
+};
+
+// "Verlo en tu mesa": 1) ¿el celular puede? (si no, aviso) 2) paso a paso con dibujos 3) cámara con el círculo para elegir el sitio
+async function verEnMesa(p, mv) {
+  evento('ver_ar', p.id);
+  if (ES_IPHONE) { guiaMesa(() => mv.activateAR()); return; }
+  if (await soportaXR()) {
+    const modulo = import('/assets/mesa-xr.js'); // se descarga mientras leen la guía
+    guiaMesa(() => modulo.then((m) => m.ponerEnMesa(p)).catch(() => avisoNoCompatible()));
+    return;
+  }
+  // Sin la realidad aumentada de Google instalada: la app de Google la ofrece (gratis); si el celular no puede, vuelve aquí
+  guiaMesa(() => {
+    const glb = new URL(p.modelo_url, location.href).href;
+    const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
+    location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_only&title=${encodeURIComponent(p.nombre)}`
+      + `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(regreso)};end;`;
+  }, true);
+}
+
+// Dibujos del paso a paso: líneas azules, sencillos (no realistas). Fijos del código, no datos.
+const DIBUJOS = {
+  sostener: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
+    <path d="M14 112 H206 M40 112 V146 M180 112 V146"/>
+    <path d="M36 70 V112 M36 112 H70 V146"/>
+    <circle cx="52" cy="30" r="12"/><path d="M52 42 L50 92 L74 96 L74 146"/>
+    <path d="M51 56 L86 72"/>
+    <g class="pt-guia-cel"><rect x="84" y="56" width="14" height="26" rx="3" transform="rotate(-50 91 69)"/></g>
+    <path class="pt-guia-rayo" d="M98 72 L140 110 M96 78 L118 110"/>
+    <ellipse cx="132" cy="110" rx="20" ry="4"/>
+  </svg>`,
+  mover: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
+    <path d="M20 140 L200 140 L166 96 L54 96 Z"/>
+    <g class="pt-guia-puntos-mesa"><circle cx="80" cy="118" r="1.5"/><circle cx="104" cy="108" r="1.5"/><circle cx="128" cy="124" r="1.5"/><circle cx="150" cy="112" r="1.5"/><circle cx="96" cy="130" r="1.5"/><circle cx="140" cy="132" r="1.5"/></g>
+    <g class="pt-guia-vaiven"><rect x="94" y="14" width="32" height="56" rx="6"/><path d="M104 64 H116"/></g>
+    <path d="M58 42 H30 M30 42 l9-8 M30 42 l9 8 M162 42 H190 M190 42 l-9-8 M190 42 l-9 8"/>
+  </svg>`,
+  elegir: `<svg viewBox="0 0 220 150" aria-hidden="true" class="pt-guia-svg">
+    <rect x="70" y="4" width="80" height="142" rx="12"/><path d="M74 60 L146 60 M74 60 L70 146 M146 60 L150 146"/>
+    <ellipse class="pt-guia-circulo" cx="110" cy="100" rx="24" ry="9"/>
+    <rect x="88" y="124" width="44" height="12" rx="6"/><text x="110" y="133" text-anchor="middle">Listo</text>
+  </svg>`,
+};
+const PASOS = [
+  { d: 'sostener', t: 'Siéntate y apunta a tu mesa', x: 'Sostén el celular frente a ti, inclinado hacia la mesa, como si fueras a tomarle una foto a un plato. No apuntes al techo.' },
+  { d: 'mover', t: 'Muévelo despacio de lado a lado', x: 'Así la cámara reconoce la mesa. Ayuda tener buena luz y una mesa con algo de textura.' },
+  { d: 'elegir', t: 'Elige dónde va el plato', x: 'Aparece un círculo sobre la mesa. Mueve el celular hasta donde lo quieres y toca Listo: el plato aparece ahí, a tamaño real.' },
+];
+const CLAVE_GUIA = 'nef_guia_mesa';
+function guiaMesa(abrirCamara, conGoogle = false) {
+  try { if (localStorage.getItem(CLAVE_GUIA)) { abrirCamara(); return; } } catch { /* sin almacenamiento: mostrar la guía */ }
+  const capa = document.createElement('div');
+  capa.className = 'pt-guia';
+  capa.setAttribute('role', 'dialog');
+  capa.setAttribute('aria-label', 'Cómo ver el plato en tu mesa');
+  let i = 0;
+  const el = (tag, clase, texto) => { const e = document.createElement(tag); if (clase) e.className = clase; if (texto) e.textContent = texto; return e; };
+  const pintar = () => {
+    const p = PASOS[i];
+    const ultimo = i === PASOS.length - 1;
+    const t = el('div', 'pt-guia-tarjeta');
+    const dibujo = el('div', 'pt-guia-dibujo');
+    dibujo.innerHTML = DIBUJOS[p.d]; // SVG fijo del código, no datos
+    const puntos = el('div', 'pt-guia-puntos');
+    PASOS.forEach((_, k) => puntos.append(el('i', k === i ? 'activo' : '')));
+    const sig = el('button', 'pt-accion', ultimo ? 'Abrir la cámara' : 'Siguiente'); sig.type = 'button'; sig.dataset.sig = '';
+    const salir = el('button', 'pt-link', 'Ahora no'); salir.type = 'button'; salir.dataset.salir = '';
+    t.append(el('small', 'pt-guia-paso', `Paso ${i + 1} de ${PASOS.length}`), dibujo, el('h2', '', p.t), el('p', 'pt-guia-texto', p.x));
+    if (ultimo && conGoogle) {
+      const nota = el('p', 'pt-guia-nota', 'Google puede pedirte instalar ');
+      nota.append(el('b', '', '"Servicios de Google Play para RA"'), '. Es gratis y solo se hace una vez.');
+      t.append(nota);
+    }
+    t.append(puntos, sig, salir);
+    capa.replaceChildren(t);
+    capa.querySelector('[data-sig]').addEventListener('click', () => {
+      if (!ultimo) { i++; pintar(); return; }
+      try { localStorage.setItem(CLAVE_GUIA, '1'); } catch { /* nada */ }
+      capa.remove();
+      abrirCamara();
+    });
+    capa.querySelector('[data-salir]').addEventListener('click', () => capa.remove());
+  };
+  pintar();
+  document.body.append(capa);
+}
+
+function avisoNoCompatible() {
+  const capa = document.createElement('div');
+  capa.className = 'pt-guia';
+  capa.setAttribute('role', 'alertdialog');
+  capa.innerHTML = `<div class="pt-guia-tarjeta"><div class="pt-guia-icono" aria-hidden="true">!</div>
+    <h2>No es compatible con tu celular</h2>
+    <p class="pt-guia-texto">Tu celular no puede mostrar platos en tu mesa. Puedes seguir viéndolo en 3D: gíralo con el dedo.</p>
+    <button type="button" class="pt-accion">Entendido</button></div>`;
+  capa.querySelector('button').addEventListener('click', () => capa.remove());
+  document.body.append(capa);
+}
+// Volvió de la app de Google porque el celular no puede → aviso claro, con el plato abierto en 3D
+function revisarCompatible() {
+  const m = /^#ra-no-compatible-(.+)$/.exec(location.hash);
+  if (!m) return;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  const p = porId.get(m[1]);
+  if (p && $('hoja-detalle').hidden) abrirDetalle(p);
+  avisoNoCompatible();
+}
+window.addEventListener('hashchange', revisarCompatible);
 
 function abrirDetalle(p) {
   abierto = p;
@@ -135,7 +243,6 @@ function abrirDetalle(p) {
   if (p.foto_url) { foto.src = p.foto_url; foto.alt = p.nombre; }
   $('d-3d').hidden = true;
   $('d-3d').textContent = '';
-  $('d-vista').querySelectorAll('.pt-ar-google').forEach((x) => x.remove());
   if (p.modelo_url) abrir3d(p);
   $('d-nombre').textContent = p.nombre;
   $('d-precio').textContent = pesos(p.precio);
@@ -282,3 +389,5 @@ $('lo-pido').addEventListener('click', () => {
   f.hidden = false;
   confeti();
 });
+
+revisarCompatible();

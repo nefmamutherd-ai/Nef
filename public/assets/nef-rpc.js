@@ -43,6 +43,7 @@ export function hoja(el) {
   let pendiente = null; // cierre programado: abrir lo cancela (si no, un cierre viejo escondía la hoja recién abierta)
   const cerrar = () => {
     el.classList.remove('abierta');
+    document.documentElement.classList.remove('n-hoja-abierta');
     if (fondo) fondo.classList.remove('abierta');
     clearTimeout(pendiente);
     pendiente = setTimeout(() => { el.hidden = true; if (fondo) fondo.hidden = true; }, 300);
@@ -50,6 +51,7 @@ export function hoja(el) {
   const abrir = () => {
     clearTimeout(pendiente);
     el.hidden = false;
+    document.documentElement.classList.add('n-hoja-abierta');
     if (fondo) fondo.hidden = false;
     requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('abierta'); if (fondo) fondo.classList.add('abierta'); }));
   };
