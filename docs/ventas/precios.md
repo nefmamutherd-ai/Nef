@@ -24,7 +24,8 @@ Instalación a **$120.000** y mensualidad congelada por 12 meses.
 - **Cada sede adicional:** $70.000 al mes.
 - **Instalación por sede:** $250.000, incluye hasta 25 máquinas con NFC + QR, la placa de recepción y el plano del gimnasio
   ("Encuentra tu máquina"). **Sin cobro mensual por máquina.**
-- **Máquinas en 3D animado:** las 5 más usadas, incluidas; cada máquina extra en 3D, $35.000 (pago único).
+- **Cómo se usa cada máquina:** el video de una persona usándola (lo graba el gimnasio o se acuerda grabarlo).
+  Las máquinas en 3D de la demo son solo para mostrar; en 3D irán en el **plano 3D de cada piso: próximamente** (Jacobo, 27/11).
 - Fundadores: instalación a $120.000 por sede y mensualidad congelada 12 meses.
 - Ejemplo REPS (3 sedes): $95.000 + $70.000 + $70.000 = **$235.000 al mes**; instalación de fundador 3 × $120.000 = $360.000.
 
