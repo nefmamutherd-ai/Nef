@@ -2,6 +2,7 @@
 // La tarjeta se abre con el token propio del cliente guardado en su celular (localStorage), nunca con el slug.
 import { rpc, esc, html, redirigir, paginaError } from '../../../lib/util.js';
 import { inicioPagina, firma, icono, fondoVivo } from '../../../lib/portal.js';
+import { paquete } from '../../../lib/sectores.js';
 
 export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
@@ -20,10 +21,12 @@ export async function onRequestGet({ params, request, env }) {
   const datos = `/n/${encodeURIComponent(n.slug)}/datos`;
   const portal = `/n/${encodeURIComponent(n.slug)}`;
   const gym = n.sector === 'gimnasio';
+  // "tu primera compra" (cafés) o "tu primera llegada" (gimnasios): lo dice el paquete del sector
+  const primera = esc((paquete(n.sector).palabras || {}).primera || 'tu primera compra');
 
   return html(`${inicioPagina(n, { titulo: `Club · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
 ${fondoVivo(n.sector)}
-<main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}">
+<main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}" data-primera="${primera}">
 
   <div id="cargando"><div class="pt-cargando"></div><div class="pt-cargando"></div></div>
 
@@ -36,7 +39,7 @@ ${fondoVivo(n.sector)}
       <p class="pt-pase-unidad">${c.bienvenida > 0 ? `${plural} de regalo al unirte` : `${plural} en cada visita`}</p>
     </div>
     <h1>Únete y gana en cada visita</h1>
-    <p class="pt-frase">${c.bienvenida > 0 ? `Tus <b>${esc(c.bienvenida)} ${plural}</b> de regalo se activan en tu primera compra.` : `Gana ${plural} cada vez que vengas y cámbialas por premios.`}</p>
+    <p class="pt-frase">${c.bienvenida > 0 ? `Tus <b>${esc(c.bienvenida)} ${plural}</b> de regalo se activan en ${primera}.` : `Gana ${plural} cada vez que vengas y cámbialas por premios.`}</p>
     <form class="pt-form" id="form-registro" novalidate>
       <div class="pt-campo" id="campo-nombre"><label for="r-nombre">Tu nombre</label>
         <input id="r-nombre" name="nombre" autocomplete="given-name" maxlength="60" required>
@@ -59,7 +62,7 @@ ${fondoVivo(n.sector)}
       <p class="pt-pase-unidad">${plural}</p>
       <div class="pt-boleto" id="t-boleto" hidden>
         <span class="pt-lazo" aria-hidden="true"><i></i><i></i></span>
-        <div><b id="t-regalo"></b><small>Se activan en tu primera compra</small></div>
+        <div><b id="t-regalo"></b><small>Se activan en ${primera}</small></div>
       </div>
     </div>
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>

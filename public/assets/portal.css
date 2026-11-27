@@ -1079,3 +1079,7 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 /* Neón: escenario claro para que la máquina (gris oscuro) resalte; el neón queda en la línea del piso */
 [data-tema="neon"] .pt-3d.pt-3d-maquina { background: #FBF3F8; box-shadow: inset 0 -3px 0 var(--neon), inset 0 -16px 22px -16px var(--neon), 0 0 0 1.5px var(--linea) inset; }
 [data-tema="neon"] .pt-3d-maquina .pt-3d-carga, [data-tema="neon"] .pt-3d-maquina .pt-3d-ayuda { color: var(--tinta-2); }
+/* Club en las pieles de gimnasio: títulos y números con la letra de la piel (no la de restaurantes) */
+:is([data-tema="neon"], [data-tema="industrial"]) :is(.pt-club2 h1, .pt-pase-saldo b, .pt-boleto b, .pt-meta-cuesta, .pt-pr-cuesta) { font-family: var(--serif); letter-spacing: 0; }
+:is([data-tema="neon"], [data-tema="industrial"]) .pt-club2 h1 { text-transform: uppercase; }
+[data-tema="industrial"] .pt-pase-saldo b { font-style: italic; }

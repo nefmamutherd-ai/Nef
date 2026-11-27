@@ -7,6 +7,7 @@ const raiz = document.getElementById('club');
 const slug = raiz.dataset.slug;
 const plural = raiz.dataset.plural;
 const singular = raiz.dataset.singular || plural;
+const primera = raiz.dataset.primera || 'tu primera compra';
 const CLAVE = 'nef_club_' + slug;
 const $ = (id) => document.getElementById(id);
 const quieto = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -181,7 +182,7 @@ function pintarTarjeta(t, base = 0) {
     $('t-meta-titulo').textContent = faltan <= 0 ? 'Ya puedes canjear' : 'Tu próximo premio';
     const conRegalo = premios.filter((p) => p.costo <= t.saldo + regalo).pop();
     if (faltan <= 0) frase($('t-frase'), ['¡Ya te alcanza! Muéstrale tu código al cajero y ', { b: 'canjéalo' }, '.']);
-    else if (regalo && conRegalo) frase($('t-frase'), ['Con tus ', { b: `${numero(regalo)} ${plural} de regalo` }, ' ya te alcanza para ', { b: conRegalo.nombre }, '. Se activan en tu primera compra.']);
+    else if (regalo && conRegalo) frase($('t-frase'), ['Con tus ', { b: `${numero(regalo)} ${plural} de regalo` }, ' ya te alcanza para ', { b: conRegalo.nombre }, `. Se activan en ${primera}.`]);
     else if (POR_VISITA) {
       const v = Math.ceil(Math.max(0, faltan - regalo) / POR_VISITA);
       frase($('t-frase'), ['Te faltan ', { b: visitas(v) }, ' para ', { b: meta.nombre }, '.']);
@@ -307,7 +308,7 @@ function bienvenidaRecienInscrito(t) {
     setTimeout(onda, 900);
     vibrar([30, 50, 30]);
   }, 450);
-  toast(`¡Bienvenida! Tus ${monedas(regalo)} te esperan en tu primera compra`);
+  toast(`¡Bienvenida! Tus ${monedas(regalo)} te esperan en ${primera}`);
 }
 
 async function cargarTarjeta(token, origen = '') {
