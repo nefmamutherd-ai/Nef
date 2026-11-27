@@ -1286,7 +1286,7 @@ $$;
 -- Máquinas activas del negocio (para "Ver otras máquinas")
 create or replace function public.maquinas_publicas(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'modelo_url', p.modelo_url) order by p.orden, p.nombre), '[]'::json)
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'modelo_url', p.modelo_url, 'foto_url', p.foto_url) order by p.orden, p.nombre), '[]'::json)
   from public.productos p join public.negocios n on n.id = p.negocio_id
   where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'maquina'
 $$;
@@ -1915,6 +1915,10 @@ revoke execute on function public._aviso_tarjeta(int, json, text, int, json)    
 -- Cada negocio puede elegir el estilo de su portal (null = el de su sector) y la carta muestra arriba lo más pedido.
 -- =====================================================================
 alter table public.negocios add column if not exists tema text check (tema in ('calido', 'limpio', 'noche', 'energia'));
+-- Pieles para gimnasios (27/11/2026): neon (rosa claro + magenta con brillo de aviso de neón) e industrial (concreto,
+-- grafito y naranja fundido). Cualquier negocio puede elegirlas; el color de la marca lo sigue poniendo cada uno.
+alter table public.negocios drop constraint if exists negocios_tema_check;
+alter table public.negocios add constraint negocios_tema_check check (tema in ('calido', 'limpio', 'noche', 'energia', 'neon', 'industrial'));
 
 -- negocio_publico + tema (sigue sin nada privado)
 create or replace function public.negocio_publico(p_slug text)

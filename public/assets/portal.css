@@ -702,8 +702,8 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 
 /* ===== Portada viva (diseño C, tema cálido) — pedido de Jacobo: "el fondo está re vacío, se siente estático" ===== */
 .pt-deco { display: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-deco { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio { position: relative; z-index: 1; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-deco { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio { position: relative; z-index: 1; }
 .pt-mancha { position: absolute; display: block; border-radius: 42% 58% 63% 37% / 45% 38% 62% 55%; filter: blur(2px); animation: pt-deriva 14s ease-in-out infinite alternate; }
 .pt-mancha.uno { width: 300px; height: 300px; right: -120px; top: -110px; background: color-mix(in srgb, var(--marca) 22%, transparent); }
 .pt-mancha.dos { width: 220px; height: 220px; left: -110px; top: 260px; background: color-mix(in srgb, var(--oro) 30%, transparent); animation-duration: 11s; animation-direction: alternate-reverse; }
@@ -718,33 +718,33 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 @keyframes pt-flota { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-14px) rotate(6deg); } }
 
 /* Cabecera: logo que entra con rebote, nombre grande y lugar en una píldora */
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-cabeza h1 { font-size: 36px; line-height: 1.05; letter-spacing: -.02em; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-logo { width: 92px; height: 92px; box-shadow: 0 14px 30px -14px var(--marca); animation: pt-rebote .8s cubic-bezier(.2, 1.6, .4, 1) both; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-filete { display: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-lugar { display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); letter-spacing: .04em; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-lugar::before, :is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-lugar::after { content: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-cabeza h1 { font-size: 36px; line-height: 1.05; letter-spacing: -.02em; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-logo { width: 92px; height: 92px; box-shadow: 0 14px 30px -14px var(--marca); animation: pt-rebote .8s cubic-bezier(.2, 1.6, .4, 1) both; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-filete { display: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-lugar { display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); letter-spacing: .04em; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-lugar::before, :is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-lugar::after { content: none; }
 @keyframes pt-rebote { from { transform: scale(.4) rotate(-12deg); opacity: 0; } }
 
 /* Botones como baldosas de colores: la principal ocupa todo el ancho; las demás, de a dos */
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones > * { animation: pt-sube .5s cubic-bezier(.2, .8, .2, 1) both; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones > :nth-child(2) { animation-delay: .08s; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones > :nth-child(3) { animation-delay: .16s; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones > :nth-child(4) { animation-delay: .24s; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-botones > :last-child:nth-child(even) { grid-column: 1 / -1; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones > * { animation: pt-sube .5s cubic-bezier(.2, .8, .2, 1) both; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones > :nth-child(2) { animation-delay: .08s; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones > :nth-child(3) { animation-delay: .16s; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones > :nth-child(4) { animation-delay: .24s; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-botones > :last-child:nth-child(even) { grid-column: 1 / -1; }
 @keyframes pt-sube { from { opacity: 0; transform: translateY(18px) scale(.97); } }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) { text-align: left; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px;
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) { text-align: left; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px;
   min-height: 138px; padding: 16px; border: 0; box-shadow: none; border-radius: var(--r-grande); background: var(--oro); color: var(--tinta); font: var(--peso-titulo, 700) 18px/1.15 var(--serif); }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal):nth-child(3) { background: var(--tinta); color: var(--tarjeta); }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) > .pt-ico { width: 44px; height: 44px; background: rgba(255, 255, 255, .35); color: currentColor; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal):nth-child(3) > .pt-ico { background: rgba(255, 255, 255, .12); }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) > span { flex: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) > em { margin: -6px 0 0; color: currentColor; opacity: .75; font-size: 13px; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) > .pt-flecha { display: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton.principal { grid-column: 1 / -1; position: relative; overflow: hidden; min-height: 96px; border: 0; border-radius: var(--r-grande);
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal):nth-child(3) { background: var(--tinta); color: var(--tarjeta); }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) > .pt-ico { width: 44px; height: 44px; background: rgba(255, 255, 255, .35); color: currentColor; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal):nth-child(3) > .pt-ico { background: rgba(255, 255, 255, .12); }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) > span { flex: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) > em { margin: -6px 0 0; color: currentColor; opacity: .75; font-size: 13px; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) > .pt-flecha { display: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton.principal { grid-column: 1 / -1; position: relative; overflow: hidden; min-height: 96px; border: 0; border-radius: var(--r-grande);
   font: var(--peso-titulo, 700) 22px/1.15 var(--serif); box-shadow: 0 16px 30px -18px var(--marca); }
 /* Brillo que cruza la baldosa principal cada tanto */
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton.principal::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .28) 50%, transparent 65%);
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton.principal::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .28) 50%, transparent 65%);
   transform: translateX(-120%); animation: pt-brillo 4.5s ease-in-out 1.2s infinite; }
 @keyframes pt-brillo { 0%, 60% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
 
@@ -759,14 +759,14 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 .pt-inicio .pt-populares { margin: 26px calc(var(--e-24) * -1) 0; }
 .pt-inicio .pt-populares h2 { padding: 0 var(--e-24); text-align: left; }
 .pt-inicio a.pt-pop { text-decoration: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-enlaces.pt-puntos { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-puntos > a, :is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-puntos > details > summary { padding: 9px 16px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); font-weight: 600; text-decoration: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-puntos > :not(:last-child)::after { content: none; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-inicio .pt-boton:not(.principal) > * { align-self: flex-start; grid-column: auto; grid-row: auto; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-enlaces.pt-puntos { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-puntos > a, :is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-puntos > details > summary { padding: 9px 16px; border-radius: var(--r-pildora); background: var(--papel-hondo); color: var(--tinta); font-weight: 600; text-decoration: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-puntos > :not(:last-child)::after { content: none; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton:not(.principal) > * { align-self: flex-start; grid-column: auto; grid-row: auto; }
 
 /* Fondo vivo también en la carta y el club (el contenido va encima) */
-:is([data-tema="calido"], [data-tema="energia"]) .pt-deco ~ main { position: relative; z-index: 1; }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-fija { background: color-mix(in srgb, var(--papel) 88%, transparent); backdrop-filter: blur(8px); }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-deco ~ main { position: relative; z-index: 1; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-fija { background: color-mix(in srgb, var(--papel) 88%, transparent); backdrop-filter: blur(8px); }
 
 /* Buscador: un solo borde (el del campo de texto sobraba) */
 .pt-buscar input, .pt-buscar input:focus, .pt-buscar input:focus-visible { height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: none; }
@@ -783,11 +783,11 @@ html.n-hoja-abierta, html.n-hoja-abierta body { overflow: hidden; overscroll-beh
 .pt-como li span { font-size: 12.5px; line-height: 1.3; color: var(--tinta-2); }
 
 /* Visor 3D sobre una "mesa de madera" cálida (como en las fotos): el plato blanco resalta y se ve servido */
-:is([data-tema="calido"], [data-tema="energia"]) .pt-3d { background:
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-3d { background:
   radial-gradient(ellipse at 50% 42%, rgba(255, 244, 228, .85), transparent 62%),
   repeating-linear-gradient(96deg, rgba(110, 70, 35, .07) 0 2px, transparent 2px 13px),
   linear-gradient(160deg, #E7C9A2, #C99B6B 70%, #B7885A); }
-:is([data-tema="calido"], [data-tema="energia"]) .pt-3d-carga { color: #3B2A1A; }
+:is([data-tema="calido"], [data-tema="energia"], [data-tema="neon"], [data-tema="industrial"]) .pt-3d-carga { color: #3B2A1A; }
 
 /* Club rediseñado: la acción de sumar justo bajo la tarjeta, títulos que ordenan, menos texto suelto */
 .pt-sumar-bloque { display: flex; flex-direction: column; align-items: stretch; gap: 2px; margin: 2px 0 4px; }
@@ -886,3 +886,196 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 .pt-maq.activa { background: var(--marca); color: var(--sobre-marca); }
 .pt-maq.activa small { color: inherit; opacity: .85; }
 .pt-nota-plano { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--tinta-2); }
+
+/* =====================================================================
+   PIEL NEON (27/11/2026) - gimnasios; inspirada en la marca de REPS: rosa palido, magenta plano, negro solo en
+   bloques puntuales, brillo de aviso de neon. Sin degradados (pedido de Jacobo). Titulos en Kanit.
+   ===================================================================== */
+[data-tema="neon"] body.pt { background: var(--papel); }
+[data-tema="neon"] .pt-mancha { display: none; }
+[data-tema="neon"] .pt-doodle { stroke: var(--marca) !important; opacity: .22; }
+[data-tema="neon"] .pt-inicio .pt-boton.principal::after, [data-tema="industrial"] .pt-inicio .pt-boton.principal::after { content: none; }
+[data-tema="neon"] :is(.pt-cabeza h1, .pt-barra h1, .pt-hoja h2, .pt-entreno h2, .pt-accion) { text-transform: uppercase; }
+[data-tema="neon"] .pt-accion { font: 700 var(--t-18) var(--serif); letter-spacing: .03em; }
+[data-tema="neon"] .pt-accion:not(.marca) { background: var(--oscuro); color: #fff; }
+
+/* Portada: un aviso de neon sobre un bloque negro, con dos tubos de luz como los del techo del gimnasio */
+[data-tema="neon"] .pt-inicio .pt-portada { position: relative; overflow: hidden; margin: calc(var(--e-24) * -1) calc(var(--e-24) * -1) 22px;
+  padding: 40px 24px 30px; background: var(--oscuro); border-radius: 0 0 30px 30px; }
+[data-tema="neon"] .pt-inicio .pt-portada::before, [data-tema="neon"] .pt-inicio .pt-portada::after { content: ""; position: absolute; height: 3px; border-radius: 3px;
+  background: var(--neon-suave); box-shadow: 0 0 4px var(--neon), 0 0 12px var(--neon), 0 0 26px var(--marca); transform: rotate(-5deg); animation: pt-neon-zumbido 4s infinite; }
+[data-tema="neon"] .pt-inicio .pt-portada::before { left: -12%; right: 52%; top: 22px; }
+[data-tema="neon"] .pt-inicio .pt-portada::after { left: 55%; right: -12%; bottom: 18px; animation-delay: -1.7s; }
+[data-tema="neon"] .pt-inicio .pt-logo { background: transparent; color: #FFF0FA; border: 2px solid var(--neon-suave); font: 800 italic 34px var(--serif);
+  box-shadow: 0 0 10px var(--neon), inset 0 0 10px var(--neon); text-shadow: 0 0 8px var(--neon); }
+[data-tema="neon"] .pt-inicio .pt-cabeza h1 { font: 800 italic 50px/1 var(--serif); letter-spacing: .03em; color: #FFF0FA; margin-top: 18px;
+  text-shadow: 0 0 2px #fff, 0 0 10px var(--neon), 0 0 24px var(--marca), 0 0 46px var(--marca); animation: pt-neon-encender 1.4s linear both; }
+[data-tema="neon"] .pt-inicio .pt-lugar { background: transparent; color: var(--neon-suave); box-shadow: 0 0 0 1.5px var(--neon) inset, 0 0 10px rgba(255, 62, 200, .45); font-weight: 700; }
+[data-tema="neon"] .pt-inicio .pt-portada .pt-versalitas:not(.pt-lugar) { color: #E7C3DD; margin-top: 12px; }
+@keyframes pt-neon-encender { 0% { opacity: 0; } 8% { opacity: 1; } 12% { opacity: .2; } 20% { opacity: 1; } 26% { opacity: .5; } 34%, 100% { opacity: 1; } }
+@keyframes pt-neon-zumbido { 0%, 92%, 100% { opacity: 1; } 94% { opacity: .45; } 96% { opacity: 1; } 97% { opacity: .6; } }
+
+/* Baldosas: magenta encendido, negro con borde de neon y blanco con contorno magenta */
+[data-tema="neon"] .pt-inicio .pt-boton { font-family: var(--serif); }
+[data-tema="neon"] .pt-inicio .pt-boton.principal { background: var(--marca); color: #fff; font: 700 22px/1.1 var(--serif); text-transform: uppercase; letter-spacing: .01em;
+  box-shadow: 0 0 0 2px #FF9BE0 inset, 0 0 22px rgba(255, 62, 200, .5); }
+[data-tema="neon"] .pt-inicio .pt-boton.principal > .pt-ico { background: rgba(255, 255, 255, .16); color: #fff; }
+[data-tema="neon"] .pt-inicio .pt-boton:not(.principal) { background: var(--oscuro); color: #fff; font: 700 16px/1.15 var(--serif);
+  box-shadow: 0 0 0 1.5px var(--neon) inset, 0 0 16px rgba(255, 62, 200, .3); }
+[data-tema="neon"] .pt-inicio .pt-boton:not(.principal) > .pt-ico { background: rgba(255, 62, 200, .16); color: var(--neon-suave); }
+[data-tema="neon"] .pt-inicio .pt-boton:not(.principal):nth-child(3) { background: var(--tarjeta); color: var(--tinta); box-shadow: 0 0 0 2px var(--marca) inset; }
+[data-tema="neon"] .pt-inicio .pt-boton:not(.principal):nth-child(3) > .pt-ico { background: var(--marca); color: #fff; }
+[data-tema="neon"] .pt-baldosa-extra { background: var(--tarjeta); color: var(--tinta); box-shadow: 0 0 0 2px var(--linea) inset; font: 700 17px/1.15 var(--serif); }
+[data-tema="neon"] .pt-baldosa-extra .pt-dado { background: var(--oscuro); color: var(--neon-suave); box-shadow: 0 0 10px rgba(255, 62, 200, .45); }
+[data-tema="neon"] .pt-baldosa-extra em { background: var(--marca); color: #fff; }
+[data-tema="neon"] .pt-inicio .pt-puntos > a, [data-tema="neon"] .pt-inicio .pt-puntos > details > summary { background: var(--tarjeta); box-shadow: 0 0 0 1.5px var(--linea) inset; }
+
+/* Maquina, plano y cronometro: escenario negro con piso de neon; numeros que brillan */
+[data-tema="neon"] .pt-3d.pt-3d-maquina { background: var(--oscuro); box-shadow: inset 0 -3px 0 var(--neon), inset 0 -18px 30px -18px var(--neon); }
+[data-tema="neon"] .pt-3d-maquina .pt-3d-carga, [data-tema="neon"] .pt-3d-ayuda { color: #E7C3DD; }
+[data-tema="neon"] .pt-entreno { background: var(--oscuro); color: #fff; border: 0; box-shadow: 0 0 0 1.5px var(--neon) inset, 0 0 22px rgba(255, 62, 200, .3); }
+[data-tema="neon"] .pt-entreno h2, [data-tema="neon"] .pt-entreno-estado { color: #E7C3DD; }
+[data-tema="neon"] .pt-entreno-reloj b { font: 800 italic 64px/1 var(--serif); color: #FFF0FA; text-shadow: 0 0 10px var(--neon), 0 0 26px var(--marca); }
+[data-tema="neon"] .pt-entreno-barra { background: rgba(255, 255, 255, .08); }
+[data-tema="neon"] .pt-entreno-barra i { background: var(--neon); box-shadow: 0 0 10px var(--neon); }
+[data-tema="neon"] .pt-entreno .pt-accion:not(.marca) { background: #fff; color: var(--tinta); }
+[data-tema="neon"] .pt-pasos li::before { background: var(--oscuro); color: var(--neon-suave); box-shadow: 0 0 0 1.5px var(--neon) inset; font-family: var(--serif); }
+
+/* =====================================================================
+   PIEL INDUSTRIAL (27/11/2026) - gimnasios; la identidad de Forja Gym: concreto, grafito, naranja fundido, franjas de
+   advertencia, esquinas casi rectas, titulos condensados e inclinados (Barlow Condensed). Portada a la izquierda.
+   ===================================================================== */
+[data-tema="industrial"] body.pt { background-color: var(--papel); background-image: radial-gradient(rgba(27, 28, 30, .06) 1px, transparent 1.3px); background-size: 7px 7px; }
+[data-tema="industrial"] .pt-mancha { display: none; }
+[data-tema="industrial"] .pt-doodle { stroke: var(--marca) !important; opacity: .28; }
+[data-tema="industrial"] :is(.pt-cabeza h1, .pt-barra h1, .pt-hoja h2, .pt-entreno h2, .pt-accion) { text-transform: uppercase; }
+[data-tema="industrial"] .pt-accion { font: 800 20px var(--serif); letter-spacing: .04em; border-radius: var(--r-medio); }
+[data-tema="industrial"] .pt-accion:not(.marca) { background: var(--grafito); color: #fff; }
+[data-tema="industrial"] .pt-versalitas { font-family: var(--serif); font-weight: 600; font-size: 13px; letter-spacing: .14em; }
+
+/* Portada: franja de advertencia arriba, nombre enorme inclinado a la izquierda y barra naranja */
+[data-tema="industrial"] .pt-inicio .pt-portada { position: relative; text-align: left; margin: calc(var(--e-24) * -1) calc(var(--e-24) * -1) 22px; padding: 34px 24px 6px; }
+[data-tema="industrial"] .pt-inicio .pt-portada::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 12px;
+  background: repeating-linear-gradient(-45deg, var(--marca) 0 14px, var(--grafito) 14px 28px); }
+[data-tema="industrial"] .pt-inicio .pt-logo { margin: 0; width: 64px; height: 64px; border-radius: 10px; background: var(--grafito); color: var(--marca);
+  font: 800 italic 32px var(--serif); box-shadow: 4px 4px 0 var(--marca); animation: pt-sube .5s var(--ease) both; }
+[data-tema="industrial"] .pt-inicio .pt-cabeza h1 { font: 800 italic 60px/.88 var(--serif); letter-spacing: -.01em; color: var(--tinta); margin: 18px 0 10px; }
+[data-tema="industrial"] .pt-inicio .pt-filete { display: block !important; width: 72px; height: 7px; margin: 0 0 12px; background: var(--marca); border: 0; }
+[data-tema="industrial"] .pt-inicio .pt-filete i { display: none; }
+[data-tema="industrial"] .pt-inicio .pt-lugar { border-radius: 4px; background: var(--grafito); color: #fff; letter-spacing: .14em; padding: 5px 10px; }
+[data-tema="industrial"] .pt-inicio .pt-portada .pt-versalitas:not(.pt-lugar) { color: var(--tinta-2); }
+
+/* Baldosas: naranja con franja, grafito y placa clara con borde; esquinas casi rectas */
+[data-tema="industrial"] .pt-inicio .pt-botones { gap: 10px; }
+[data-tema="industrial"] .pt-inicio .pt-boton.principal { background: var(--marca); color: var(--tinta); border-radius: var(--r-grande); font: 800 italic 28px/1 var(--serif);
+  text-transform: uppercase; box-shadow: 5px 5px 0 var(--grafito); position: relative; padding-bottom: 10px; }
+[data-tema="industrial"] .pt-inicio .pt-boton.principal::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
+  background: repeating-linear-gradient(-45deg, var(--grafito) 0 9px, transparent 9px 18px); opacity: .85; }
+[data-tema="industrial"] .pt-inicio .pt-boton.principal > .pt-ico { background: var(--grafito); color: var(--marca); border-radius: 8px; }
+[data-tema="industrial"] .pt-inicio .pt-boton.principal > em { font: 600 15px var(--sans); text-transform: none; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal) { background: var(--grafito); color: #fff; border-radius: var(--r-grande); font: 800 21px/1 var(--serif); text-transform: uppercase; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal) > .pt-ico { background: var(--marca); color: var(--grafito); border-radius: 8px; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal) > em { font-family: var(--sans); text-transform: none; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal):nth-child(3) { background: var(--tarjeta); color: var(--tinta); box-shadow: 0 0 0 2px var(--grafito) inset; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal):nth-child(3) > .pt-ico { background: var(--grafito); color: var(--marca); }
+[data-tema="industrial"] .pt-baldosa-extra { border-radius: var(--r-grande); background: var(--tarjeta); color: var(--tinta); box-shadow: inset 6px 0 0 var(--marca), 0 0 0 2px var(--grafito) inset;
+  font: 800 21px/1 var(--serif); text-transform: uppercase; }
+[data-tema="industrial"] .pt-baldosa-extra .pt-dado { background: var(--grafito); color: var(--marca); border-radius: 8px; }
+[data-tema="industrial"] .pt-baldosa-extra em { background: var(--marca); color: var(--tinta); border-radius: 4px; }
+[data-tema="industrial"] .pt-inicio .pt-puntos > a, [data-tema="industrial"] .pt-inicio .pt-puntos > details > summary { border-radius: 6px; background: var(--tarjeta); box-shadow: 0 0 0 1.5px var(--acero) inset; }
+
+/* Maquina, plano y cronometro */
+[data-tema="industrial"] .pt-3d.pt-3d-maquina { background: var(--papel-hondo); border-radius: var(--r-grande); box-shadow: inset 0 -10px 0 var(--acero); }
+[data-tema="industrial"] .pt-entreno { background: var(--grafito); color: #fff; border: 0; border-radius: var(--r-grande); position: relative; overflow: hidden; padding-top: 26px; }
+[data-tema="industrial"] .pt-entreno::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: repeating-linear-gradient(-45deg, var(--marca) 0 10px, var(--grafito) 10px 20px); }
+[data-tema="industrial"] .pt-entreno h2, [data-tema="industrial"] .pt-entreno-estado { color: #D9D4CC; }
+[data-tema="industrial"] .pt-entreno-reloj b { font: 800 italic 72px/1 var(--serif); color: var(--marca); }
+[data-tema="industrial"] .pt-entreno-barra { background: rgba(255, 255, 255, .1); border-radius: 3px; }
+[data-tema="industrial"] .pt-entreno-barra i { background: var(--marca); border-radius: 3px; }
+[data-tema="industrial"] .pt-entreno .pt-accion:not(.marca) { background: #fff; color: var(--tinta); }
+[data-tema="industrial"] .pt-pasos li::before { background: var(--grafito); color: var(--marca); border-radius: 8px; font: 800 italic 18px var(--serif); }
+
+/* Baldosas chicas: el texto largo baja de renglon (no se sale del cuadro) */
+.pt-inicio .pt-boton:not(.principal) > span, .pt-baldosa span { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+
+/* Plano del gimnasio (27/11/2026): el piso visto desde arriba, con los colores de la piel */
+.pl-marco { margin: 8px calc(var(--e-24) * -1) 0; padding: 14px 12px 4px; background: var(--papel-hondo); }
+.pl-svg { display: block; width: 100%; height: auto; font-family: var(--serif); }
+.pl-piso { fill: var(--tarjeta); }
+.pl-muro { fill: none; stroke: var(--tinta); stroke-width: 3.5; stroke-linecap: round; }
+.pl-pasillo { stroke: var(--linea); stroke-width: 14; stroke-linecap: round; opacity: .7; }
+.pl-zona { fill: var(--papel); stroke: var(--linea); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.pl-zona-txt { font-size: 6.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; fill: var(--tinta-2); }
+.pl-sala { fill: var(--papel-hondo); stroke: var(--tinta-3); stroke-width: 1; }
+.pl-sala-txt { font-size: 6.5px; font-weight: 600; text-anchor: middle; fill: var(--tinta-2); }
+.pl-maq { cursor: pointer; outline: none; }
+.pl-maq-forma { fill: var(--tinta); transition: fill var(--dur-2); }
+.pl-maq-txt { font-size: 5.6px; font-weight: 700; text-anchor: middle; fill: var(--tinta); pointer-events: none; }
+.pl-maq:focus-visible .pl-maq-forma { stroke: var(--marca); stroke-width: 2; }
+.pl-maq.activa .pl-maq-forma { fill: var(--marca); animation: pl-late 1.2s ease-in-out infinite; }
+.pl-maq.activa .pl-maq-txt { fill: var(--marca); font-size: 6.4px; }
+@keyframes pl-late { 50% { opacity: .65; } }
+.pl-ruta { fill: none; stroke: var(--marca); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 6; }
+.pl-ruta.dibuja { animation: pl-camina .9s linear infinite; }
+@keyframes pl-camina { to { stroke-dashoffset: -16; } }
+.pl-aqui-punto { fill: var(--marca); stroke: var(--tarjeta); stroke-width: 2; }
+.pl-aqui-onda { fill: var(--marca); opacity: .35; transform-origin: center; animation: pl-onda 1.8s ease-out infinite; }
+@keyframes pl-onda { from { transform: scale(1); opacity: .45; } to { transform: scale(2.8); opacity: 0; } }
+.pl-aqui-txt { font-size: 7px; font-weight: 800; text-anchor: middle; text-transform: uppercase; letter-spacing: .06em; fill: var(--tinta); }
+.pl-guia { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--tinta-2); }
+/* Neón: el piso negro del gimnasio con la ruta encendida */
+[data-tema="neon"] .pl-marco { background: var(--oscuro); }
+[data-tema="neon"] .pl-piso { fill: #1B1A20; }
+[data-tema="neon"] .pl-muro { stroke: var(--neon-suave); filter: drop-shadow(0 0 3px var(--neon)); }
+[data-tema="neon"] .pl-pasillo { stroke: #26242C; opacity: 1; }
+[data-tema="neon"] .pl-zona { fill: #15141A; stroke: #3A2A36; }
+[data-tema="neon"] .pl-zona-txt, [data-tema="neon"] .pl-sala-txt { fill: #C9A9C0; }
+[data-tema="neon"] .pl-sala { fill: #22202A; stroke: #3A2A36; }
+[data-tema="neon"] .pl-maq-forma { fill: #4A3A46; }
+[data-tema="neon"] .pl-maq-txt, [data-tema="neon"] .pl-aqui-txt { fill: #F3DDEB; }
+[data-tema="neon"] .pl-maq.activa .pl-maq-forma { fill: var(--neon); filter: drop-shadow(0 0 4px var(--neon)); }
+[data-tema="neon"] .pl-maq.activa .pl-maq-txt { fill: var(--neon-suave); }
+[data-tema="neon"] .pl-ruta { stroke: var(--neon); filter: drop-shadow(0 0 3px var(--neon)); }
+[data-tema="neon"] .pl-aqui-punto { stroke: var(--oscuro); }
+/* Industrial: plano técnico sobre concreto, franja de advertencia en la puerta */
+[data-tema="industrial"] .pl-marco { background: var(--grafito); }
+[data-tema="industrial"] .pl-piso { fill: var(--papel); }
+[data-tema="industrial"] .pl-zona { fill: var(--tarjeta); stroke: var(--acero); stroke-dasharray: none; }
+[data-tema="industrial"] .pl-maq-forma { fill: var(--grafito); }
+[data-tema="industrial"] .pl-ruta { stroke-width: 3.5; stroke-dasharray: 5 5; }
+[data-tema="industrial"] .pl-aqui-txt { fill: #fff; }
+[data-tema="neon"] .pt-elegida { background: var(--tarjeta); box-shadow: 0 0 0 2px var(--marca) inset, 0 0 18px rgba(255, 62, 200, .25); }
+[data-tema="industrial"] .pt-elegida { background: var(--tarjeta); border-radius: var(--r-grande); box-shadow: inset 6px 0 0 var(--marca), 0 0 0 2px var(--grafito) inset; }
+[data-tema="industrial"] .pt-maq { border-radius: 8px; }
+[data-tema="industrial"] .pt-maq b, [data-tema="neon"] .pt-maq b { font-family: var(--serif); font-size: 18px; text-transform: uppercase; }
+[data-tema="neon"] .pt-inicio .pt-boton.principal > em, [data-tema="industrial"] .pt-inicio .pt-boton.principal > em { text-transform: none; letter-spacing: 0; font-family: var(--sans); font-weight: 500; }
+/* Arreglos a 360 px: la flecha de la baldosa principal se cortaba y "ENTRENAMIENTOS" se partía con guion */
+:is([data-tema="neon"], [data-tema="industrial"]) .pt-inicio .pt-boton.principal > .pt-flecha { display: none; }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal) { text-transform: none; font-size: 22px; letter-spacing: 0; }
+
+/* Plano animado: se arma por partes al abrir; la tarjeta "Está aquí" entra con rebote y la foto de la máquina salta */
+.pl-zona, .pl-sala { animation: pl-aparece .5s var(--ease) both; }
+.pl-zona:nth-of-type(2) { animation-delay: .08s; } .pl-zona:nth-of-type(3) { animation-delay: .16s; } .pl-zona:nth-of-type(4) { animation-delay: .24s; }
+.pl-maq { animation: pl-salta .5s cubic-bezier(.2, 1.6, .4, 1) both; animation-delay: .35s; transform-box: fill-box; transform-origin: center; }
+.pl-maq:nth-of-type(2n) { animation-delay: .45s; } .pl-maq:nth-of-type(3n) { animation-delay: .55s; }
+.pl-muro { stroke-dasharray: 900; animation: pl-traza 1.2s ease-out both; }
+@keyframes pl-aparece { from { opacity: 0; } }
+@keyframes pl-salta { from { opacity: 0; transform: scale(.4); } }
+@keyframes pl-traza { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
+.pt-elegida { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.pt-elegida > div { flex: 1; min-width: 0; }
+.pt-elegida > .pt-accion { flex-basis: 100%; }
+.pt-elegida.entra { animation: pl-tarjeta .45s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes pl-tarjeta { from { opacity: 0; transform: translateY(16px) scale(.97); } }
+.pl-foto { flex: none; width: 96px; height: 96px; object-fit: contain; border-radius: 16px; background: var(--papel-hondo); }
+.pl-foto.entra { animation: pl-salta .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+[data-tema="neon"] .pl-foto { background: var(--oscuro); box-shadow: 0 0 0 1.5px var(--neon) inset, 0 0 14px rgba(255, 62, 200, .35); }
+[data-tema="industrial"] .pl-foto { background: var(--papel-hondo); border-radius: 8px; box-shadow: 0 0 0 2px var(--grafito) inset; }
+/* Barra de arriba en las pieles de gimnasio: título en un renglón y fondo del color de la página */
+:is([data-tema="neon"], [data-tema="industrial"]) .pt-barra h1 { font-size: clamp(18px, 5.4vw, 22px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-tema="neon"] .pt-barra, [data-tema="industrial"] .pt-barra { background: var(--papel); }
+[data-tema="industrial"] .pt-inicio .pt-boton:not(.principal) { font-size: clamp(17px, 5vw, 22px); }
+.pt-inicio .pt-boton:not(.principal) > span, .pt-baldosa span { hyphens: manual; }
+/* Neón: escenario claro para que la máquina (gris oscuro) resalte; el neón queda en la línea del piso */
+[data-tema="neon"] .pt-3d.pt-3d-maquina { background: #FBF3F8; box-shadow: inset 0 -3px 0 var(--neon), inset 0 -16px 22px -16px var(--neon), 0 0 0 1.5px var(--linea) inset; }
+[data-tema="neon"] .pt-3d-maquina .pt-3d-carga, [data-tema="neon"] .pt-3d-maquina .pt-3d-ayuda { color: var(--tinta-2); }

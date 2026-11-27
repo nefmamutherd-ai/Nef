@@ -164,24 +164,35 @@ on conflict (id) do nothing;
 insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, sector, servicios, ubicacion_etiqueta,
   resena_url, whatsapp, bienvenida, monedas_por_visita)
 values ('d0000000-0000-4000-8000-0000000000a3', 'd0000000-0000-4000-8000-000000000001', 'demo-reps', 'REPS',
-  'Demostración de Nef para REPS', '#8b3dff', 'gimnasio', '{"base":true,"catalogo":true,"club":true,"estudio":true}',
+  'Demostración de Nef para REPS', '#c61b98', 'gimnasio', '{"base":true,"catalogo":true,"club":true,"estudio":true}',
   'Bogotá', 'https://www.google.com/maps', '3224731560', 50, 10)
 on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion,
   color = excluded.color, servicios = excluded.servicios, ubicacion_etiqueta = excluded.ubicacion_etiqueta, activo = true;
 update public.negocios set rapido_activo = true, rapido_monedas = 10, horas_entre_visitas = 12,
   maquina_monedas = 5, maquina_minutos = 15, maquina_horas = 8, meta_mes_llegadas = 12, meta_mes_bono = 100
 where id = 'd0000000-0000-4000-8000-0000000000a3';
+-- Identidad de REPS (27/11/2026, de su web repsgym.com.co): piel neon, su magenta, reseña en su sede de Suba Salitre y las
+-- 3 sedes con su link de Google Maps. Forja Gym: piel industrial (identidad propia, distinta de REPS).
+update public.negocios set tema = 'neon', color = '#c61b98', ubicacion_etiqueta = 'Bogotá · 3 sedes',
+  resena_url = 'https://www.google.com/maps/place/Cra.+92+%23159a-6,+Bogot%C3%A1/@4.7557436,-74.0824823,1123m/data=!3m2!1e3!4b1!4m5!3m4!1s0x8e3f845289efab61:0x1acea5380a2f1312!8m2!3d4.7557383!4d-74.0799074?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D',
+  links = '[{"titulo":"Sede Suba Salitre","url":"https://www.google.com/maps/place/Cra.+92+%23159a-6,+Bogot%C3%A1/@4.7557436,-74.0824823,1123m/data=!3m2!1e3!4b1!4m5!3m4!1s0x8e3f845289efab61:0x1acea5380a2f1312!8m2!3d4.7557383!4d-74.0799074?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D"},{"titulo":"Sede Santa Rosita","url":"https://www.google.com/maps/place/Cra.+94+%2375-42,+Bogot%C3%A1/@4.7037023,-74.1121857,1124m/data=!3m2!1e3!4b1!4m6!3m5!1s0x8e3f9b4db5f0f80d:0x3b1828ad1d8fc67d!8m2!3d4.703697!4d-74.1096108!16s%2Fg%2F11py_xwkv2?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D"},{"titulo":"Sede Candelaria La Nueva","url":"https://www.google.com/maps/place/Cl.+68+Sur+%2345d-14,+Bogot%C3%A1/data=!4m2!3m1!1s0x8e3f9f113ece8d99:0x6bb1d498c457f7cd?sa=X&ved=1t:242&ictx=111"}]'::jsonb
+where id = 'd0000000-0000-4000-8000-0000000000a3';
+update public.negocios set tema = 'industrial' where id = 'd0000000-0000-4000-8000-0000000000a2';
 
 -- Las 5 máquinas en 3D (scripts/maquinas_glb.py, estilo artístico sencillo): se giran en la página de la máquina
 update public.productos p set modelo_url = v.modelo
 from (values
-  ('d0000000-0000-4000-8000-00000000b103', '/assets/demo/3d/gym/press-pecho.glb'),
-  ('d0000000-0000-4000-8000-00000000b107', '/assets/demo/3d/gym/mancuernas.glb'),
-  ('d0000000-0000-4000-8000-00000000b101', '/assets/demo/3d/gym/prensa-45.glb'),
-  ('d0000000-0000-4000-8000-00000000b102', '/assets/demo/3d/gym/jalon.glb'),
-  ('d0000000-0000-4000-8000-00000000b105', '/assets/demo/3d/gym/extension.glb')
+  ('d0000000-0000-4000-8000-00000000b103', '/assets/demo/3d/gym/industrial/press-pecho.glb'),
+  ('d0000000-0000-4000-8000-00000000b107', '/assets/demo/3d/gym/industrial/mancuernas.glb'),
+  ('d0000000-0000-4000-8000-00000000b101', '/assets/demo/3d/gym/industrial/prensa-45.glb'),
+  ('d0000000-0000-4000-8000-00000000b102', '/assets/demo/3d/gym/industrial/jalon.glb'),
+  ('d0000000-0000-4000-8000-00000000b105', '/assets/demo/3d/gym/industrial/extension.glb')
 ) as v(id, modelo)
 where p.id = v.id::uuid and (p.modelo_url is null or p.modelo_url like '/assets/demo/3d/gym/%');
+-- Miniatura de cada máquina (scripts/maquina_foto.py): sale en la tarjeta "Está aquí" del plano
+update public.productos p set foto_url = replace(replace(p.modelo_url, '/3d/gym/', '/gym/'), '.glb', '.webp')
+where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and p.modelo_url like '/assets/demo/3d/gym/%'
+  and (p.foto_url is null or p.foto_url like '/assets/demo/gym/%');
 
 -- (Debe ir AL FINAL del archivo: copia lo que Forja Gym ya tiene, modelos 3D incluidos)
 insert into public.productos (id, negocio_id, tipo, nombre, descripcion, pasos, horario, video_url, foto_url, modelo_url, orden)
@@ -190,6 +201,10 @@ select md5('reps-' || p.id::text)::uuid, 'd0000000-0000-4000-8000-0000000000a3',
 from public.productos p where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2'
 on conflict (id) do update set nombre = excluded.nombre, descripcion = excluded.descripcion, pasos = excluded.pasos,
   horario = excluded.horario, foto_url = excluded.foto_url, modelo_url = excluded.modelo_url, orden = excluded.orden;
+-- REPS: las mismas máquinas con cojines magenta (su color)
+update public.productos set modelo_url = replace(modelo_url, '/gym/industrial/', '/gym/neon/'),
+  foto_url = replace(foto_url, '/gym/industrial/', '/gym/neon/')
+where negocio_id = 'd0000000-0000-4000-8000-0000000000a3' and modelo_url like '%/gym/industrial/%';
 insert into public.premios (id, negocio_id, nombre, valor_pesos, orden)
 select md5('reps-' || p.id::text)::uuid, 'd0000000-0000-4000-8000-0000000000a3', replace(p.nombre, 'Forja', 'REPS'), p.valor_pesos, p.orden
 from public.premios p where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2'

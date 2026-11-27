@@ -3,14 +3,16 @@
 # cubiertas blancas; medidas reales (1 unidad = 1 metro); materiales sin texturas, así pesan muy poco.
 # Cada máquina se mueve como si la estuvieran usando, en bucle (3 s por repetición): brazos, carro, barra y pesas.
 # (Se probó con un muñeco haciendo el ejercicio; Jacobo prefirió solo la máquina: el video real lo pone cada gimnasio.)
-# Uso: blender --background --factory-startup --python maquinas_glb.py -- <maquina|todas|recorrido> <carpeta_salida>
+# Uso: blender --background --factory-startup --python maquinas_glb.py -- <maquina|todas|recorrido> <carpeta_salida> [color_hex]
 import bpy, math, sys, os
 from mathutils import Vector
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 QUE = argv[0] if argv else 'todas'
 SALIDA = argv[1] if len(argv) > 1 else '.'
-MORADO = (0.545, 0.239, 1.0)
+# Color de los cojines y las franjas: el de la marca del gimnasio (3.er argumento, hex). Por defecto, morado.
+_HEX = argv[2].lstrip('#') if len(argv) > 2 else '8b3dff'
+MORADO = tuple(int(_HEX[i:i + 2], 16) / 255 for i in (0, 2, 4))
 FPS, CICLO, PASO = 24, 72, 3   # una repetición cada 3 s; un cuadro clave cada 3 cuadros
 
 

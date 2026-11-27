@@ -1,19 +1,70 @@
-// /n/<slug>/recorrido → plano del gimnasio en 3D (Jacobo, 26/11/2026): las máquinas en su lugar del piso, animadas,
-// con un buscador; al elegir una, la cámara vuela hasta ella y ofrece "Ver cómo se usa" (la página de la máquina, que
-// es la misma a la que lleva el NFC o el QR pegado en la máquina). Por ahora el piso es el de la demostración
-// (scripts/maquinas_glb.py recorrido); el plano real de cada gimnasio se arma con ellos.
-import { rpc, esc, html, redirigir, paginaError } from '../../../lib/util.js';
+// /n/<slug>/recorrido → "Encuentra tu máquina" (Jacobo, 27/11/2026): el PLANO del piso visto desde arriba, como el piso
+// real por el que uno camina: entrada con "Estás aquí", recepción, vestidores y zonas. Al elegir una máquina (en el
+// plano o con el buscador) se dibuja la ruta desde la entrada y se dice dónde queda ("al fondo a la izquierda, en la
+// zona de pierna · unos 18 pasos"); "Ver cómo se usa" abre su página (la misma del NFC o QR pegado en la máquina).
+// Por ahora el plano es el de la demostración: el de cada gimnasio se dibuja con ellos. Colores: los de la piel.
+import { rpc, esc, html, redirigir, paginaError, fotoSegura } from '../../../lib/util.js';
 import { inicioPagina, firma, icono } from '../../../lib/portal.js';
 
-// Dónde está cada máquina en el piso de la demo (mismas posiciones que PLANO en scripts/maquinas_glb.py, en metros).
-// glTF usa Y hacia arriba: el punto de Blender (x, y) queda en (x, -y) sobre el piso.
-const PLANO = {
-  'press-pecho': [-2.7, 1.5], jalon: [0, 1.6], extension: [2.6, 1.6], 'prensa-45': [-2.7, -1.6], mancuernas: [2.6, -2.1],
-};
-const lugar = (modelo) => {
-  const m = /\/([a-z0-9-]+)\.glb$/.exec(modelo || '');
-  return m && PLANO[m[1]] ? PLANO[m[1]] : null;
-};
+// Piso de 20 × 14 m (1 unidad = 1 m). La entrada está abajo en el centro.
+const PISO = { ancho: 20, alto: 14, entrada: [10, 14] };
+const ZONAS = [
+  { nombre: 'Zona de pierna', x: 0.6, y: 0.6, w: 8.2, h: 5.6 },
+  { nombre: 'Cardio', x: 0.6, y: 7, w: 8.2, h: 3.6 },
+  { nombre: 'Pecho y espalda', x: 11.2, y: 4.2, w: 8.2, h: 4.8 },
+  { nombre: 'Peso libre', x: 11.2, y: 9.8, w: 8.2, h: 3.6 },
+];
+const SALAS = [
+  { nombre: 'Vestidores', x: 14.4, y: 0, w: 5.6, h: 3.4 },
+  { nombre: 'Recepción', x: 0.6, y: 11.4, w: 4.6, h: 2.2 },
+];
+// Puestos del plano; cada máquina del gimnasio cae en uno por su nombre
+const PUESTOS = [
+  { clave: /prensa/i, x: 1.4, y: 1.4, w: 2.4, h: 3.6, zona: 'Zona de pierna' },
+  { clave: /extensi/i, x: 5.2, y: 1.6, w: 1.9, h: 1.9, zona: 'Zona de pierna' },
+  { clave: /press/i, x: 12, y: 5, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
+  { clave: /jal[oó]n/i, x: 14.7, y: 5, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
+  { clave: /remo/i, x: 17.3, y: 5, w: 1.6, h: 2.4, zona: 'Pecho y espalda' },
+  { clave: /mancuern/i, x: 12.4, y: 11.6, w: 5.4, h: 1.2, zona: 'Peso libre' },
+  { clave: /caminad|cardio|el[ií]ptic|bici/i, x: 1.4, y: 7.6, w: 1.2, h: 2.4, zona: 'Cardio', extra: [[3.2, 7.6], [5, 7.6]] },
+];
+
+// "Al fondo a la izquierda, en la zona de pierna" + pasos desde la entrada (por el pasillo central)
+function indicaciones(p) {
+  const cx = p.x + p.w / 2, frente = p.y + p.h + 0.5;
+  const lado = cx < 8 ? 'a la izquierda' : cx > 12 ? 'a la derecha' : 'al frente';
+  const fondo = frente < 6.5 ? 'Al fondo' : frente < 10.5 ? 'En la mitad' : 'Cerca de la entrada';
+  const metros = (PISO.entrada[1] - frente) + Math.abs(cx - PISO.entrada[0]);
+  return { texto: `${fondo} ${lado}, en la zona de ${p.zona.replace(/^Zona de /, '').toLowerCase()}`, pasos: Math.max(4, Math.round(metros / 0.75)),
+    ruta: [[PISO.entrada[0], PISO.entrada[1] - 0.2], [PISO.entrada[0], frente], [cx, frente]] };
+}
+
+// En el plano va el nombre corto ("Press", "Jalón", "Remo"): los completos se montaban unos sobre otros
+const corto = (nombre) => String(nombre).replace(/^(rack|m[aá]quina) de /i, '').split(/\s+/)[0].replace(/^./, (c) => c.toUpperCase());
+
+function plano(lista) {
+  const E = 10; // escala del dibujo: 1 m = 10 unidades del SVG
+  const r = (o, cls, extra = '') => `<rect class="${cls}" x="${o.x * E}" y="${o.y * E}" width="${o.w * E}" height="${o.h * E}" rx="6"${extra}/>`;
+  const zonas = ZONAS.map((z) => r(z, 'pl-zona') + `<text class="pl-zona-txt" x="${(z.x + 0.4) * E}" y="${(z.y + 0.9) * E}">${esc(z.nombre)}</text>`).join('');
+  const salas = SALAS.map((z) => r(z, 'pl-sala') + `<text class="pl-sala-txt" x="${(z.x + z.w / 2) * E}" y="${(z.y + z.h / 2 + 0.25) * E}">${esc(z.nombre)}</text>`).join('');
+  const maquinas = lista.filter((m) => m.puesto).map((m) => {
+    const p = m.puesto;
+    const piezas = [[p.x, p.y], ...(p.extra || [])].map(([x, y]) => r({ x, y, w: p.w, h: p.h }, 'pl-maq-forma')).join('');
+    return `<g class="pl-maq" data-id="${esc(m.id)}" tabindex="0" role="button" aria-label="${esc(m.nombre)}">${piezas}` +
+      `<text class="pl-maq-txt" x="${(p.x + p.w / 2) * E}" y="${(p.y + p.h + 0.75) * E}">${esc(corto(m.nombre))}</text></g>`;
+  }).join('');
+  const [ex, ey] = PISO.entrada;
+  return `<svg class="pl-svg" viewBox="-6 -6 ${PISO.ancho * E + 12} ${PISO.alto * E + 30}" role="img" aria-label="Plano del gimnasio">
+    <rect class="pl-piso" x="0" y="0" width="${PISO.ancho * E}" height="${PISO.alto * E}" rx="10"/>
+    <path class="pl-pasillo" d="M${ex * E} ${ey * E - 4} V${0.8 * E}"/>
+    ${zonas}${salas}
+    <path class="pl-muro" d="M${(ex - 1.2) * E} ${PISO.alto * E} H10 Q0 ${PISO.alto * E} 0 ${PISO.alto * E - 10} V10 Q0 0 10 0 H${PISO.ancho * E - 10} Q${PISO.ancho * E} 0 ${PISO.ancho * E} 10 V${PISO.alto * E - 10} Q${PISO.ancho * E} ${PISO.alto * E} ${PISO.ancho * E - 10} ${PISO.alto * E} H${(ex + 1.2) * E}"/>
+    <path class="pl-ruta" id="pl-ruta" d=""/>
+    ${maquinas}
+    <g class="pl-aqui" transform="translate(${ex * E} ${ey * E + 4})"><circle class="pl-aqui-onda" r="7"/><circle class="pl-aqui-punto" r="5"/></g>
+    <text class="pl-aqui-txt" x="${ex * E}" y="${ey * E + 20}">Estás aquí · Entrada</text>
+  </svg>`;
+}
 
 export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
@@ -28,25 +79,24 @@ export async function onRequestGet({ params, request, env }) {
   if (!n) return redirigir(new URL('/inactivo', url).href);
   if (n.sector !== 'gimnasio') return redirigir(new URL(`/n/${encodeURIComponent(n.slug)}`, url).href);
   const s = encodeURIComponent(n.slug);
-  const lista = (maquinas || []).map((m) => ({ ...m, pos: lugar(m.modelo_url) }));
-  const puntos = lista.filter((m) => m.pos).map((m, k) =>
-    `<button type="button" class="pt-punto" slot="hotspot-${k}" data-id="${esc(m.id)}" data-position="${m.pos[0]}m 2.45m ${-m.pos[1]}m" data-normal="0m 1m 0m">${esc(m.nombre)}</button>`).join('');
+  const usados = new Set();
+  const lista = (maquinas || []).map((m) => {
+    const puesto = PUESTOS.find((p) => !usados.has(p) && p.clave.test(m.nombre));
+    if (puesto) usados.add(puesto);
+    return { ...m, puesto, guia: puesto ? { ...indicaciones(puesto), foto: fotoSegura(m.foto_url) || null } : (fotoSegura(m.foto_url) ? { foto: fotoSegura(m.foto_url) } : null) };
+  });
+  const datos = Object.fromEntries(lista.map((m) => [m.id, m.guia]));
   const filas = lista.map((m) =>
-    `<button type="button" class="pt-maq" data-id="${esc(m.id)}" data-nombre="${esc(m.nombre.toLowerCase())}"${m.pos ? ` data-x="${m.pos[0]}" data-y="${m.pos[1]}"` : ''}>` +
-    `<b>${esc(m.nombre)}</b>${m.descripcion ? `<small>${esc(m.descripcion)}</small>` : ''}</button>`).join('');
+    `<button type="button" class="pt-maq" data-id="${esc(m.id)}" data-nombre="${esc(m.nombre.toLowerCase())}">` +
+    `<b>${esc(m.nombre)}</b><small>${esc(m.puesto ? m.puesto.zona : 'Pregunta en recepción')}</small></button>`).join('');
 
-  return html(`${inicioPagina(n, { titulo: `Plano del gimnasio · ${n.nombre}` })}
+  return html(`${inicioPagina(n, { titulo: `Encuentra tu máquina · ${n.nombre}` })}
 <main class="pt-pagina pt-recorrido">
   <div class="pt-barra"><a class="pt-volver" href="/n/${s}" aria-label="Volver">${icono('volver')}</a><h1>Encuentra tu máquina</h1><span></span></div>
-  <div class="pt-3d pt-3d-maquina pt-plano" id="m-3d">
-    <div class="pt-3d-carga"><i class="pt-3d-giro"></i><span>Cargando el gimnasio…</span></div>
-    <model-viewer id="plano" src="/assets/demo/3d/gym/recorrido.glb" alt="Plano del gimnasio en 3D" camera-controls autoplay
-      camera-orbit="-25deg 52deg 16m" camera-target="0m 0.4m 0m" min-camera-orbit="auto 20deg 3m" max-camera-orbit="auto 80deg 22m" field-of-view="30deg"
-      touch-action="pan-y" interaction-prompt="none" interpolation-decay="160" shadow-intensity="1" environment-image="neutral" exposure="1.1">${puntos}</model-viewer>
-    <button type="button" class="pt-plano-todo" id="todo" hidden>Ver todo el gimnasio</button>
-  </div>
-  <div class="pt-elegida" id="elegida" hidden>
-    <div><small class="pt-versalitas">Está aquí</small><b id="el-nombre"></b></div>
+  <div class="pl-marco">${plano(lista)}</div>
+  <div class="pt-elegida" id="elegida" hidden aria-live="polite">
+    <img class="pl-foto" id="el-foto" alt="" width="96" height="96" hidden>
+    <div><small class="pt-versalitas" id="el-zona"></small><b id="el-nombre"></b><p class="pl-guia" id="el-guia"></p></div>
     <a class="pt-accion marca" id="el-ir" href="#">Ver cómo se usa</a>
   </div>
   <label class="pt-buscar pt-buscar-maq">${icono('buscar')}<input id="buscar" type="search" placeholder="Busca una máquina" autocomplete="off" enterkeyhint="search"></label>
@@ -55,42 +105,44 @@ export async function onRequestGet({ params, request, env }) {
   ${firma()}
 </main>
 <script type="module">
-  const caja = document.getElementById('m-3d'), mv = document.getElementById('plano');
+  const GUIA = ${JSON.stringify(datos).replace(/</g, '\\u003c')};
   const $ = (id) => document.getElementById(id);
-  const INICIO = { orbita: mv.getAttribute('camera-orbit'), centro: mv.getAttribute('camera-target') };
-  mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
-  import('/assets/vendor/model-viewer/model-viewer.min.js').catch(() => {});
-  const ir = (id) => '/n/${s}/p/' + encodeURIComponent(id);
-  function elegir(b) {
-    document.querySelectorAll('.pt-maq.activa, .pt-punto.activo').forEach((x) => x.classList.remove('activa', 'activo'));
-    b.classList.add('activa');
-    const punto = document.querySelector('.pt-punto[data-id="' + b.dataset.id + '"]');
-    if (punto) punto.classList.add('activo');
-    $('el-nombre').textContent = b.querySelector('b').textContent;
-    $('el-ir').href = ir(b.dataset.id);
+  const ruta = $('pl-ruta');
+  const sinTilde = (t) => t.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+  function elegir(id, mover) {
+    document.querySelectorAll('.pt-maq.activa, .pl-maq.activa').forEach((x) => x.classList.remove('activa'));
+    const fila = document.querySelector('.pt-maq[data-id="' + id + '"]');
+    const enPlano = document.querySelector('.pl-maq[data-id="' + id + '"]');
+    if (fila) fila.classList.add('activa');
+    if (enPlano) enPlano.classList.add('activa');
+    const g = GUIA[id];
+    $('el-nombre').textContent = fila ? fila.querySelector('b').textContent : '';
+    const enMapa = g && g.ruta;
+    $('el-zona').textContent = enMapa ? 'Está aquí' : 'No está en el plano';
+    $('el-guia').textContent = enMapa ? g.texto + ' · unos ' + g.pasos + ' pasos desde la entrada.' : 'Pregunta en recepción dónde está.';
+    const foto = $('el-foto');
+    if (g && g.foto) { foto.src = g.foto; foto.hidden = false; foto.classList.remove('entra'); void foto.offsetWidth; foto.classList.add('entra'); } else foto.hidden = true;
+    const tarjeta = $('elegida'); tarjeta.classList.remove('entra'); void tarjeta.offsetWidth; tarjeta.classList.add('entra');
+    $('el-ir').href = '/n/${s}/p/' + encodeURIComponent(id);
     $('elegida').hidden = false;
-    if (b.dataset.x !== undefined) {
-      mv.cameraTarget = b.dataset.x + 'm 0.9m ' + (-Number(b.dataset.y)) + 'm';
-      mv.cameraOrbit = '-20deg 58deg 6m';
-      $('todo').hidden = false;
-      caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (enMapa) {
+      ruta.setAttribute('d', 'M' + g.ruta.map((p) => p[0] * 10 + ' ' + p[1] * 10).join(' L'));
+      ruta.classList.remove('dibuja'); void ruta.getBBox(); ruta.classList.add('dibuja');
+    } else ruta.setAttribute('d', '');
+    if (mover) document.querySelector('.pl-marco').scrollIntoView({ behavior: 'smooth', block: 'start' });
     try { navigator.vibrate && navigator.vibrate(12); } catch (e) { /* nada */ }
   }
-  document.querySelectorAll('.pt-maq').forEach((b) => b.addEventListener('click', () => elegir(b)));
-  document.querySelectorAll('.pt-punto').forEach((p) => p.addEventListener('click', () => {
-    const b = document.querySelector('.pt-maq[data-id="' + p.dataset.id + '"]');
-    if (b) elegir(b);
-  }));
-  $('todo').addEventListener('click', () => {
-    mv.cameraTarget = INICIO.centro; mv.cameraOrbit = INICIO.orbita; $('todo').hidden = true;
+  document.querySelectorAll('.pt-maq').forEach((b) => b.addEventListener('click', () => elegir(b.dataset.id, true)));
+  document.querySelectorAll('.pl-maq').forEach((g) => {
+    g.addEventListener('click', () => elegir(g.dataset.id, false));
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); elegir(g.dataset.id, false); } });
   });
   $('buscar').addEventListener('input', (e) => {
-    const q = e.target.value.trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+    const q = sinTilde(e.target.value.trim().toLowerCase());
     const filas = [...document.querySelectorAll('.pt-maq')];
-    filas.forEach((b) => { b.hidden = q && !b.dataset.nombre.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').includes(q); });
+    filas.forEach((b) => { b.hidden = q && !sinTilde(b.dataset.nombre).includes(q); });
     const visibles = filas.filter((b) => !b.hidden);
-    if (q && visibles.length === 1) elegir(visibles[0]);
+    if (q && visibles.length === 1) elegir(visibles[0].dataset.id, true);
   });
 </script>
 </body></html>`);

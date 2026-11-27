@@ -81,6 +81,34 @@
   --peso-titulo: 800;
 }
 
+/* Neón (27/11/2026, para gimnasios; inspirado en la marca de REPS): base rosa pálido, magenta plano, negro solo en
+   bloques puntuales y brillo de aviso de neón. Sin degradados. Títulos en Kanit gruesa. */
+[data-tema="neon"] {
+  --papel: #F6EAF3; --papel-hondo: #EFD9E9; --tarjeta: #FFFFFF; --linea: #E8C9DF;
+  --tinta: #1C0F1A; --tinta-2: #5D4257; --tinta-3: #8A7085;
+  --marca: #C61B98; --sobre-marca: #FFFFFF;
+  --neon: #FF3EC8; --neon-suave: #FFC2EC; --oscuro: #111215;
+  --oro: #E39A0C; --oro-suave: #FDEFD3; --oro-tinta: #6B4500;
+  --ok: #138A4A; --ok-suave: #DDF3E5; --alerta: #C8321E; --alerta-suave: #FBE3DF;
+  --serif: "Kanit", system-ui, sans-serif;
+  --peso-titulo: 800;
+  --r-medio: 18px; --r-grande: 24px;
+}
+
+/* Industrial (27/11/2026, para gimnasios; la identidad de Forja Gym): concreto claro, grafito y naranja fundido, franjas
+   de advertencia y esquinas casi rectas. Títulos en Barlow Condensed gruesa e inclinada. */
+[data-tema="industrial"] {
+  --papel: #ECE8E2; --papel-hondo: #DDD7CE; --tarjeta: #F8F6F2; --linea: #CFC8BD;
+  --tinta: #1B1C1E; --tinta-2: #4E4B47; --tinta-3: #77726A;
+  --marca: #FF5A1F; --sobre-marca: #1B1C1E;
+  --grafito: #23252A; --acero: #C9C3B9;
+  --oro: #F2A900; --oro-suave: #FBEFC9; --oro-tinta: #5E4200;
+  --ok: #1F7A45; --ok-suave: #DCEFE2; --alerta: #C0311B; --alerta-suave: #F8E1DC;
+  --serif: "Barlow Condensed", system-ui, sans-serif;
+  --peso-titulo: 800;
+  --r-medio: 10px; --r-grande: 14px; --r-chico: 6px;
+}
+
 [data-tema="noche"] {     /* bares, cafés de noche, coctelería: oscuro y cálido, serif elegante */
   --papel: #16120E; --papel-hondo: #221C16; --tarjeta: #1E1913; --linea: #3A2F24;
   --tinta: #F4EBDD; --tinta-2: #C2B29C; --tinta-3: #8E7F6C;
@@ -103,6 +131,14 @@
    MARCA NEF — solo para superficies de Nef: landing, panel, informes.
    Los portales de los negocios usan los temas de arriba, no esto.
    ===================================================================== */
+/* Fuentes de las pieles de gimnasio (OFL, servidas por el propio sitio) */
+@font-face { font-family: "Kanit"; src: url("/assets/fuentes/kanit-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Kanit"; src: url("/assets/fuentes/kanit-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Kanit"; src: url("/assets/fuentes/kanit-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Kanit"; src: url("/assets/fuentes/kanit-latin-800-italic.woff2") format("woff2"); font-weight: 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fuentes/barlow-condensed-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fuentes/barlow-condensed-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/assets/fuentes/barlow-condensed-latin-800-italic.woff2") format("woff2"); font-weight: 800; font-style: italic; font-display: swap; }
 @font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
 .nef {

@@ -2,7 +2,7 @@
 // Estructura: docs/UI.md §3 · Componentes: public/assets/portal.css · Textos y botones: lib/sectores/*.json
 import { rpc, esc, urlDeBoton, html, redirigir, paginaError, urlSegura, fotoSegura } from '../../lib/util.js';
 import { paquete, botonesPortal } from '../../lib/sectores.js';
-import { inicioPagina, firma, icono, fondoVivo } from '../../lib/portal.js';
+import { inicioPagina, firma, icono, fondoVivo, TEMAS } from '../../lib/portal.js';
 
 const mayuscula = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 const iniciales = (nombre) =>
@@ -27,7 +27,7 @@ export async function onRequestGet({ params, request, env }) {
   // Vista previa del admin: cambia solo la ropa (tema) y el color, nunca datos
   const vista = url.searchParams.get('vista');
   const colorVista = url.searchParams.get('color');
-  if (['calido', 'noche', 'limpio', 'energia'].includes(vista)) n = { ...n, tema: vista };
+  if (TEMAS.includes(vista)) n = { ...n, tema: vista };
   if (/^#[0-9a-f]{6}$/i.test(colorVista || '')) n = { ...n, color: colorVista };
   const conCarta = !!(n.servicios && n.servicios.catalogo && n.tiene_carta);
   let pop = [];

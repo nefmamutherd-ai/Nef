@@ -431,13 +431,13 @@ await caso('máquina: creada en el admin; el tag abre la ficha con video y 3 pas
 });
 await caso('máquina sin video → 3D animado; plano del gimnasio: buscar una máquina y "Ver cómo se usa"', async () => {
   const [prod] = await api(`productos?nombre=eq.Prensa de piernas`);
-  await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: null, modelo_url: '/assets/demo/3d/gym/prensa-45.glb' });
+  await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: null, modelo_url: '/assets/demo/3d/gym/industrial/prensa-45.glb' });
   const [n] = await api(`negocios?slug=eq.${slug}`);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push('plano: ' + e.message));
   await p.setViewportSize({ width: 390, height: 844 });
   await p.goto(`${BASE}/n/${slug}/p/${prod.id}`, { waitUntil: 'domcontentloaded' });
-  assert.equal(await p.getAttribute('#m-3d model-viewer', 'src'), '/assets/demo/3d/gym/prensa-45.glb');
+  assert.equal(await p.getAttribute('#m-3d model-viewer', 'src'), '/assets/demo/3d/gym/industrial/prensa-45.glb');
   assert.equal(await p.locator('iframe.pt-video').count(), 0, 'sin video no hay reproductor vacío');
   if (n.sector === 'gimnasio') {
     await p.goto(`${BASE}/n/${slug}`);
