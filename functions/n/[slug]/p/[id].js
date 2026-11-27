@@ -65,12 +65,18 @@ export async function onRequestGet({ params, request, env }) {
 
   return html(`${inicioPagina(n, { titulo: `${p.nombre} · ${n.nombre}` })}
 <main class="pt-pagina">
+  <div class="pt-club-top"><a class="pt-volver" id="volver" href="/n/${encodeURIComponent(n.slug)}">${icono('volver')}${esc(n.nombre)}</a></div>
+  <script>
+    // Si llegó desde el plano ("Encuentra tu máquina"), volver lo lleva de nuevo al plano; si no, al inicio del gimnasio
+    (function () { try { var r = new URL(document.referrer); if (r.origin === location.origin && r.pathname.endsWith('/recorrido')) document.getElementById('volver').href = r.pathname; } catch (e) {} })();
+  </script>
   <header class="pt-cabeza"><h1>${esc(p.nombre)}</h1><p>${esc(n.nombre)}</p></header>
   ${video(p.video_url) || visor}
   ${p.descripcion ? `<p class="pt-frase">${esc(p.descripcion)}</p>` : ''}
   ${pasos.length ? `<ol class="pt-pasos">${pasos.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
   ${entreno}
   ${demas.length ? `<button type="button" class="pt-accion" id="otras">Ver otras máquinas</button>` : `<a class="pt-accion" href="/n/${encodeURIComponent(n.slug)}">Volver</a>`}
+  ${demas.length ? `<a class="pt-link" href="/n/${encodeURIComponent(n.slug)}">Volver al inicio</a>` : ''}
   ${demas.length ? `<div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-otras" role="dialog" aria-label="Otras máquinas" hidden>
     <h2>Otras máquinas</h2>
