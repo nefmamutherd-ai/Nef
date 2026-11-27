@@ -423,3 +423,37 @@ $('compra-generar').addEventListener('click', async () => {
   tic(n);
   vigiaCompra = setInterval(() => tic(++n), 1000);
 });
+
+// ── Modo rápido (hora pico): la cajera voltea la pantalla y el cliente escanea; el QR cambia cada 30 s ──
+const hojaRapido = hoja($('hoja-rapido'));
+let vigiaRapido = null;
+let codigoMostrado = '';
+async function pintarRapido() {
+  let r;
+  try { r = await rpc('caja_rapido_codigo', { p_sesion: caja.sesion }); } catch { $('rapido-resumen').textContent = 'Sin conexión: el modo rápido necesita internet'; return false; }
+  if (!r || r.error) {
+    if (r && r.error === 'sesion') { cerrarSesion(); return false; }
+    const motivo = r && r.error === 'fuera_de_horario' ? `El modo rápido funciona de ${r.desde} a ${r.hasta}` : 'El modo rápido está apagado: actívalo en el panel del negocio';
+    toast(motivo);
+    return false;
+  }
+  if (r.codigo !== codigoMostrado) {
+    codigoMostrado = r.codigo;
+    const qr = window.qrcode(0, 'M');
+    qr.addData(`${location.origin}/n/${slug}/club?r=${r.codigo}`);
+    qr.make();
+    $('rapido-codigo').textContent = '';
+    // El SVG lo genera la librería a partir de una URL propia (código hexadecimal), no de texto del usuario
+    $('rapido-codigo').insertAdjacentHTML('afterbegin', qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true }));
+    $('rapido-resumen').textContent = `Gana ${numero(r.monedas)} ${caja.moneda_plural || 'monedas'}`;
+  }
+  return true;
+}
+const pararRapido = () => { clearInterval(vigiaRapido); vigiaRapido = null; codigoMostrado = ''; };
+$('hoja-rapido').querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', pararRapido));
+$('modo-rapido').addEventListener('click', async () => {
+  pararRapido();
+  if (!(await pintarRapido())) return;
+  hojaRapido.abrir();
+  vigiaRapido = setInterval(pintarRapido, 5000);
+});

@@ -192,6 +192,18 @@ function pintarTarjeta(t, base = 0) {
 
   // Nivel discreto arriba a la derecha
   $('t-neg').textContent = t.nivel && t.nivel.nombre ? t.nivel.nombre : '';
+  // Meta del mes (gimnasios): "Este mes: 9 de 12 llegadas" con su barra
+  $('t-mes').hidden = !t.meta_mes;
+  if (t.meta_mes) {
+    const hechas = Math.min(t.llegadas_mes || 0, t.meta_mes.llegadas);
+    const faltan = t.meta_mes.llegadas - hechas;
+    $('t-mes-n').textContent = `${numero(hechas)} de ${numero(t.meta_mes.llegadas)} llegadas`;
+    $('t-mes-bono').textContent = `+${numero(t.meta_mes.bono)}`;
+    $('t-mes-barra').style.width = `${(hechas / t.meta_mes.llegadas) * 100}%`;
+    $('t-mes-frase').textContent = faltan > 0
+      ? `Te faltan ${numero(faltan)} ${faltan === 1 ? 'llegada' : 'llegadas'} para ganar ${numero(t.meta_mes.bono)} de bono este mes.`
+      : '¡Cumpliste la meta del mes! Tu bono ya está en tu saldo.';
+  }
   // Racha semanal arriba, con llama (si la hay, reemplaza al nivel para que haya un solo sello)
   const semanas = t.racha && t.racha.semanas > 0 ? t.racha.semanas : 0;
   $('t-racha').hidden = !semanas;
@@ -427,8 +439,10 @@ document.addEventListener('visibilitychange', () => {
 // ── Arranque ─────────────────────────────────────────────────────────
 // ── QR de compra: la caja muestra /n/<slug>/club?c=<código>; al abrirlo, se suma esa compra (una sola vez) ──
 let compraPendiente = new URLSearchParams(location.search).get('c');
-if (compraPendiente) history.replaceState(null, '', location.pathname); // recargar no lo reintenta
+let rapidoPendiente = new URLSearchParams(location.search).get('r');
+if (compraPendiente || rapidoPendiente) history.replaceState(null, '', location.pathname); // recargar no lo reintenta
 async function reclamarCompra() {
+  if (rapidoPendiente) return reclamarRapido();
   const codigo = compraPendiente;
   compraPendiente = null;
   if (!codigo || !/^[0-9a-f]{32}$/.test(codigo) || !tokenActual) return;
@@ -456,6 +470,26 @@ if (token) {
 } else {
   mostrar('registro');
   if (compraPendiente) toast('Únete al club y esta compra se suma a tus monedas');
+}
+
+// Modo rápido (hora pico): QR de la caja que cambia cada 30 s → monedas fijas
+async function reclamarRapido() {
+  const codigo = rapidoPendiente;
+  rapidoPendiente = null;
+  if (!codigo || !/^[0-9a-f]{32}$/.test(codigo) || !tokenActual) return;
+  let r;
+  try { r = await rpc('club_rapido', { p_slug: slug, p_token: tokenActual, p_codigo: codigo }); } catch {
+    toast('Sin conexión: vuelve a escanear el código de la caja');
+    return;
+  }
+  if (r && r.ok) { await cargarTarjeta(tokenActual); return; }
+  const MENSAJES = {
+    vencido: 'Ese código ya cambió: escanéalo otra vez',
+    muy_pronto: 'Ya sumaste hace poco: vuelve en tu próxima visita',
+    fuera_de_horario: 'El modo rápido no está activo a esta hora',
+    inactivo: 'El modo rápido no está activo',
+  };
+  toast(MENSAJES[r && r.error] || 'No se pudo sumar');
 }
 
 // ── Lector del QR de la caja (la caja MUESTRA un QR; el cliente LEE) ──
@@ -505,12 +539,12 @@ if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const texto = await leer();
         let u = null;
         try { u = texto && new URL(texto); } catch { u = null; }
-        const codigo = u && u.searchParams.get('c');
+        const codigo = u && (u.searchParams.get('c') || u.searchParams.get('r'));
         if (codigo && /^[0-9a-f]{32}$/.test(codigo)) {
           parar();
           hojaLector.cerrar();
           if (u.pathname !== '/n/' + slug + '/club') { toast('Ese QR es de otro negocio'); return; }
-          compraPendiente = codigo;
+          if (u.searchParams.get('r')) rapidoPendiente = codigo; else compraPendiente = codigo;
           reclamarCompra();
           return;
         }

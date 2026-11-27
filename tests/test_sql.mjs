@@ -324,8 +324,9 @@ await caso('ninguna RPC pública crea monedas salvo la caja (con sesión); rese�
   const filas = await q(`select p.proname from pg_proc p join pg_namespace s on s.oid = p.pronamespace
     where s.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
       and p.prosrc ~* '(insert\\s+into\\s+(public\\.)?movimientos|_sumar_visita\\s*\\()'`);
-  // club_reclamar_compra solo canjea un QR que creó la caja (con sesión), una vez y por 10 minutos (ver DECISIONES)
-  assert.deepEqual(filas.map((f) => f.proname).sort(), ['caja_canje', 'caja_visita', 'club_reclamar_compra']);
+  // club_reclamar_compra y club_rapido solo canjean códigos que crea la caja (con sesión); club_maquina_terminar exige haber
+  // registrado la llegada ese día en recepción, 15 min y 8 h entre premios (ver DECISIONES)
+  assert.deepEqual(filas.map((f) => f.proname).sort(), ['caja_canje', 'caja_visita', 'club_maquina_terminar', 'club_rapido', 'club_reclamar_compra']);
   const antes = (await q(`select count(*)::int n from movimientos`))[0].n;
   await como('anon');
   await q(`select registrar_click('cafe-luna','resena',null)`);
@@ -855,6 +856,120 @@ console.log('QR de compra');
   });
   await db.exec('reset role;');
   await db.exec(`reset nef.ahora; delete from negocios where slug in ('qr-cafe', 'qr-otro')`);
+}
+
+console.log('Modo rápido (hora pico)');
+{
+  await db.exec('reset role;');
+  await db.exec(`set nef.ahora = '2026-03-03 12:00-05'`);
+  const [nr] = await q(`insert into negocios (slug, nombre, bienvenida, horas_entre_visitas, rapido_activo, rapido_monedas, rapido_desde, rapido_hasta, servicios)
+    values ('rap-cafe', 'Rápido Café', 0, 6, true, 15, '11:00', '15:00', '{"base":true,"club":true}') returning id`);
+  const [otro] = await q(`insert into negocios (slug, nombre, rapido_activo) values ('rap-otro', 'Otro', true) returning id`);
+  await como('authenticated', ADMIN);
+  await q(`select fijar_pin_caja($1, '1357')`, [nr.id]);
+  await q(`select fijar_pin_caja($1, '1357')`, [otro.id]);
+  await como('anon');
+  const ses = (await q(`select caja_entrar('rap-cafe', '1357') r`))[0].r.sesion;
+  const sesOtro = (await q(`select caja_entrar('rap-otro', '1357') r`))[0].r.sesion;
+  const tokA = (await q(`select club_registrar('rap-cafe', 'Ana', '3005551001', true) r`))[0].r.token;
+  const tokB = (await q(`select club_registrar('rap-cafe', 'Beto', '3005551002', true) r`))[0].r.token;
+  const codigo = async (sesion) => (await q(`select caja_rapido_codigo($1) r`, [sesion]))[0].r;
+  const reclamar = async (tok, cod) => (await q(`select club_rapido('rap-cafe', $1, $2) r`, [tok, cod]))[0].r;
+
+  await caso('modo rápido: la caja muestra un código; el cliente lo escanea y gana las monedas fijas', async () => {
+    const c = await codigo(ses);
+    assert.match(c.codigo, /^[0-9a-f]{32}$/);
+    assert.equal(c.monedas, 15);
+    const r = await reclamar(tokA, c.codigo);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.monedas, 15);
+    assert.equal((await reclamar(tokA, c.codigo)).saldo, 15, 'el mismo código otra vez no suma doble');
+    assert.equal((await q(`select caja_rapido_codigo('falsa') r`))[0].r.error, 'sesion');
+  });
+  await caso('modo rápido: una vez cada "horas entre visitas"; el código cambia cada 30 s (uno viejo no sirve); otro negocio no sirve', async () => {
+    await db.exec(`set nef.ahora = '2026-03-03 12:00:40-05'`);
+    const c2 = await codigo(ses);
+    assert.equal((await reclamar(tokA, c2.codigo)).error, 'muy_pronto', 'Ana ya sumó hace menos de 6 horas');
+    const viejo = c2.codigo;
+    await db.exec(`set nef.ahora = '2026-03-03 12:01:50-05'`);
+    assert.equal((await reclamar(tokB, viejo)).error, 'vencido', 'una foto del QR de hace un minuto no sirve');
+    assert.equal((await reclamar(tokB, (await codigo(sesOtro)).codigo)).error, 'vencido', 'el código de otro negocio no sirve');
+    assert.equal((await reclamar(tokB, (await codigo(ses)).codigo)).ok, true, 'Beto sí');
+    await db.exec(`set nef.ahora = '2026-03-03 18:30-05'`);
+    assert.equal((await codigo(ses)).error, 'fuera_de_horario', 'fuera de la franja la caja no muestra QR');
+  });
+  await caso('modo rápido: apagado no da nada; la función interna no se llama desde afuera', async () => {
+    await db.exec('reset role;');
+    await q(`update negocios set rapido_activo = false where id = $1`, [nr.id]);
+    await db.exec(`set nef.ahora = '2026-03-03 13:00-05'`);
+    await como('anon');
+    assert.equal((await codigo(ses)).error, 'inactivo');
+    assert.equal((await reclamar(tokB, 'x')).error, 'inactivo');
+    await assert.rejects(q(`select _rapido_codigo('s', 1)`), /permission denied/);
+  });
+  await db.exec('reset role;');
+  await db.exec(`reset nef.ahora; delete from negocios where slug in ('rap-cafe', 'rap-otro')`);
+}
+
+console.log('Gimnasio: entrenar con tutorial y meta del mes');
+{
+  await db.exec('reset role;');
+  await db.exec(`set nef.ahora = '2026-04-06 07:00-05'`);
+  const [g] = await q(`insert into negocios (slug, nombre, sector, bienvenida, horas_entre_visitas, rapido_activo, rapido_monedas,
+    maquina_monedas, maquina_minutos, maquina_horas, meta_mes_llegadas, meta_mes_bono, servicios)
+    values ('gym-t', 'Gym T', 'gimnasio', 0, 12, true, 10, 5, 15, 8, 2, 100, '{"base":true,"club":true,"catalogo":true}') returning id`);
+  const [maq] = await q(`insert into productos (negocio_id, tipo, nombre) values ($1, 'maquina', 'Prensa') returning id`, [g.id]);
+  const [maq2] = await q(`insert into productos (negocio_id, tipo, nombre) values ($1, 'maquina', 'Remo') returning id`, [g.id]);
+  await como('authenticated', ADMIN);
+  await q(`select fijar_pin_caja($1, '2580')`, [g.id]);
+  await como('anon');
+  const tok = (await q(`select club_registrar('gym-t', 'Sofi', '3005552001', true) r`))[0].r.token;
+  // La recepción entra a la caja (la sesión dura 12 h) y muestra el QR; el socio lo escanea
+  const llegar = async () => {
+    const sx = (await q(`select caja_entrar('gym-t', '2580') r`))[0].r.sesion;
+    return (await q(`select club_rapido('gym-t', $1, $2) r`, [tok, (await q(`select caja_rapido_codigo($1) r`, [sx]))[0].r.codigo]))[0].r;
+  };
+  const empezar = async (p) => (await q(`select club_maquina_empezar('gym-t', $1, $2) r`, [tok, p]))[0].r;
+  const terminar = async (sesion) => (await q(`select club_maquina_terminar('gym-t', $1, $2) r`, [tok, sesion]))[0].r;
+
+  await caso('gimnasio: sin registrar la llegada del día no se puede ganar en una máquina (una foto del sticker no sirve desde la casa)', async () => {
+    assert.equal((await empezar(maq.id)).error, 'sin_llegada');
+    assert.equal((await llegar()).monedas, 10, 'llegar con el QR de recepción da 10');
+  });
+  await caso('gimnasio: 15 minutos y "Terminé" → +5; antes de tiempo no; repetir el mismo código no suma doble', async () => {
+    const e = await empezar(maq.id);
+    assert.ok(e.sesion, JSON.stringify(e));
+    assert.equal(e.minutos, 15);
+    await db.exec(`set nef.ahora = '2026-04-06 07:10-05'`);
+    assert.equal((await terminar(e.sesion)).error, 'falta', 'a los 10 minutos todavía no');
+    await db.exec(`set nef.ahora = '2026-04-06 07:16-05'`);
+    const t = await terminar(e.sesion);
+    assert.equal(t.ok, true); assert.equal(t.monedas, 5); assert.equal(t.saldo, 15);
+    assert.equal((await terminar(e.sesion)).saldo, 15, 'tocar "Terminé" otra vez no suma doble');
+  });
+  await caso('gimnasio: otra máquina antes de 8 horas no da; después sí (si llegó ese día); la sesión vence a las 3 horas', async () => {
+    await db.exec(`set nef.ahora = '2026-04-06 09:00-05'`);
+    assert.equal((await empezar(maq2.id)).error, 'muy_pronto', 'no se farmea escaneando otra máquina');
+    await db.exec(`set nef.ahora = '2026-04-06 15:30-05'`);
+    const e = await empezar(maq2.id);
+    assert.ok(e.sesion, 'pasadas 8 horas y con llegada hoy, sí');
+    await db.exec(`set nef.ahora = '2026-04-06 19:00-05'`);
+    assert.equal((await terminar(e.sesion)).error, 'vencida', 'no se deja abierta para cobrarla después');
+    await db.exec(`set nef.ahora = '2026-04-07 08:00-05'`);
+    assert.equal((await empezar(maq.id)).error, 'sin_llegada', 'al otro día hay que registrar la llegada otra vez');
+    assert.equal((await empezar('00000000-0000-4000-8000-000000000000')).error, 'maquina');
+  });
+  await caso('gimnasio: meta del mes (2 llegadas) da su bono una sola vez; la tarjeta muestra las llegadas del mes', async () => {
+    const r = await llegar();   // 2.ª llegada del mes (la 1.ª fue el 6/4)
+    assert.equal(r.bono_meta, 100, JSON.stringify(r));
+    const t = (await q(`select club_tarjeta('gym-t', $1) r`, [tok]))[0].r;
+    assert.equal(t.llegadas_mes, 2); assert.equal(t.meta_mes.llegadas, 2); assert.equal(t.meta_mes.bono, 100);
+    await db.exec(`set nef.ahora = '2026-04-08 08:00-05'`);
+    assert.equal((await llegar()).bono_meta, 0, 'la 3.ª llegada no repite el bono');
+    assert.equal((await q(`select count(*)::int n from sesiones_maquina`))[0].n, 0, 'anon no lee las sesiones');
+  });
+  await db.exec('reset role;');
+  await db.exec(`reset nef.ahora; delete from negocios where slug = 'gym-t'`);
 }
 
 console.log('Legal · responsable del tratamiento');

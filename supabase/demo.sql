@@ -96,8 +96,15 @@ on conflict (id) do nothing;
 
 insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
   ('d0000000-0000-4000-8000-0000000b0101', 'd0000000-0000-4000-8000-0000000000a2', 'Batido de proteína', 12000, 1),
-  ('d0000000-0000-4000-8000-0000000b0102', 'd0000000-0000-4000-8000-0000000000a2', 'Toalla Forja', 25000, 2)
+  ('d0000000-0000-4000-8000-0000000b0102', 'd0000000-0000-4000-8000-0000000000a2', 'Toalla Forja', 25000, 2),
+  ('d0000000-0000-4000-8000-0000000b0103', 'd0000000-0000-4000-8000-0000000000a2', '10 % en tu proteína', 15000, 3)
 on conflict (id) do nothing;
+
+-- Gimnasio (26/11/2026): llegada con el QR de recepción (modo rápido, +10, una vez cada 12 h), entrenar con el tutorial
+-- de una máquina (+5 tras 15 min, cada 8 h) y meta del mes (12 llegadas → +100). Ver DECISIONES.
+update public.negocios set rapido_activo = true, rapido_monedas = 10, horas_entre_visitas = 12,
+  maquina_monedas = 5, maquina_minutos = 15, maquina_horas = 8, meta_mes_llegadas = 12, meta_mes_bono = 100
+where id = 'd0000000-0000-4000-8000-0000000000a2';
 
 insert into public.tags (id, codigo, negocio_id, nombre, destino, producto_id) values
   ('d0000000-0000-4000-8000-0000000e0101', 'demogym', 'd0000000-0000-4000-8000-0000000000a2', 'Recepción', 'hub', null),

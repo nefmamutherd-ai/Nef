@@ -42,6 +42,7 @@ export async function onRequestGet({ params, request, env }) {
       <button type="button" class="pt-escanear" id="escanear">${icono('qr')}Escanear su código</button>
     </div>
     <button type="button" class="pt-escanear" id="cobrar-qr" hidden>${icono('qr')}Cobrar con QR</button>
+    <button type="button" class="pt-escanear" id="modo-rapido">${icono('racha')}Modo rápido (hora pico)</button>
     <div class="pt-vacio" id="buscar-vacio" hidden></div>
 
     <div class="pt-cliente" id="ficha" hidden>
@@ -88,6 +89,14 @@ export async function onRequestGet({ params, request, env }) {
       <p class="pt-ayuda-caja" id="compra-vence"></p>
       <button type="button" class="pt-accion" id="compra-otra" hidden>Nueva compra</button>
     </div>
+    <button type="button" class="pt-link" data-cerrar>Cerrar</button>
+  </div>
+  <div class="pt-fondo" hidden></div>
+  <div class="pt-hoja" id="hoja-rapido" role="dialog" aria-label="Modo rápido" hidden>
+    <h2>Que lo escanee con su celular</h2>
+    <div class="pt-qr pt-qr-rapido" id="rapido-codigo"></div>
+    <p class="pt-compra-resumen" id="rapido-resumen"></p>
+    <p class="pt-ayuda-caja">El código cambia cada 30 segundos. Cada cliente suma una vez y vuelve a sumar en su próxima visita.</p>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <div class="pt-toast" id="toast" role="status"></div>

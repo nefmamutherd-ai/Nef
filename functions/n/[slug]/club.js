@@ -19,9 +19,10 @@ export async function onRequestGet({ params, request, env }) {
   const plural = esc(c.moneda_plural);
   const datos = `/n/${encodeURIComponent(n.slug)}/datos`;
   const portal = `/n/${encodeURIComponent(n.slug)}`;
+  const gym = n.sector === 'gimnasio';
 
   return html(`${inicioPagina(n, { titulo: `Club · ${n.nombre}`, extraHead: '<meta name="robots" content="noindex"><script src="/api/config"></script><script src="/assets/qrcode.js"></script>' })}
-${fondoVivo()}
+${fondoVivo(n.sector)}
 <main class="pt-pagina" id="club" data-slug="${esc(n.slug)}" data-plural="${plural}" data-singular="${esc(c.moneda_singular)}" data-modo="${esc(c.modo)}" data-por-visita="${esc(c.monedas_por_visita)}">
 
   <div id="cargando"><div class="pt-cargando"></div><div class="pt-cargando"></div></div>
@@ -64,8 +65,13 @@ ${fondoVivo()}
     <span class="pt-aviso neutro" id="t-aviso" hidden></span>
     <!-- Lo primero después de la tarjeta: cómo sumar (la acción de todos los días) -->
     <div class="pt-sumar-bloque">
-      <button type="button" class="pt-accion marca pt-accion-doble" id="t-escanear" hidden>${icono('qr')}<span><b>Sumar mis ${plural}</b><small>Escanea el QR que te muestra la caja</small></span></button>
+      <button type="button" class="pt-accion marca pt-accion-doble" id="t-escanear" hidden>${icono('qr')}<span><b>${gym ? 'Registrar mi llegada' : 'Sumar mis ' + plural}</b><small>${gym ? 'Escanea el QR de la recepción' : 'Escanea el QR que te muestra la caja'}</small></span></button>
       <button type="button" class="pt-accion" id="t-codigo">${icono('qr')}Mostrar mi código</button>
+    </div>
+    <div class="pt-meta pt-meta-mes" id="t-mes" hidden>
+      <div class="pt-meta-fila"><div><small>Este mes</small><b id="t-mes-n"></b></div><span class="pt-meta-cuesta" id="t-mes-bono"></span></div>
+      <div class="pt-entreno-barra" aria-hidden="true"><i id="t-mes-barra"></i></div>
+      <p class="pt-frase" id="t-mes-frase"></p>
     </div>
     <div class="pt-meta" id="t-meta" hidden>
       <div class="pt-meta-fila"><div><small id="t-meta-titulo">Tu próximo premio</small><b id="t-meta-nombre"></b></div><span class="pt-meta-cuesta" id="t-meta-cuesta"></span></div>

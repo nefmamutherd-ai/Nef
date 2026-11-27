@@ -196,7 +196,7 @@ await caso('mismo negocio como gimnasio: tema energía y "Clases de hoy" sin toc
   await p.goto(`${BASE}/n/${slug}`);
   assert.equal(await p.getAttribute('html', 'data-tema'), 'energia');
   const textos = await p.$$eval('.pt-boton span', (s) => s.map((x) => x.textContent));
-  assert.deepEqual(textos, ['Clases de hoy', 'Mis monedas', 'Déjanos tu reseña']);
+  assert.deepEqual(textos, ['Clases de hoy', 'Mis entrenamientos', 'Déjanos tu reseña']);
   await sinScrollHorizontal(p);
   await p.screenshot({ path: DIR + 'portal-gym-movil.png', fullPage: true });
   await p.close();
@@ -213,7 +213,7 @@ await caso('/inactivo con la marca Nef', async () => {
   await p.screenshot({ path: DIR + 'inactivo-movil.png', fullPage: true });
   await p.close();
 });
-await caso('admin: cambiar a Gimnasio + Club → el portal cambia de tema y muestra "Mis monedas"', async () => {
+await caso('admin: cambiar a Gimnasio + Club → el portal cambia de tema y muestra "Mis entrenamientos"', async () => {
   await panel.click('.tab[data-tab=negocios]');
   await panel.click(`#lista-negocios tr:has(td.cod:text-is("/n/${slug}")) [data-editar]`);
   // Por ahora solo restaurantes: Gimnasio está escondido tras "Ver más sectores"
@@ -231,7 +231,7 @@ await caso('admin: cambiar a Gimnasio + Club → el portal cambia de tema y mues
   await p.setViewportSize({ width: 390, height: 844 });
   await p.goto(`${BASE}/n/${slug}`);
   assert.equal(await p.getAttribute('html', 'data-tema'), 'energia');
-  assert.ok((await p.$$eval('.pt-boton span', (s) => s.map((x) => x.textContent))).includes('Mis monedas'));
+  assert.ok((await p.$$eval('.pt-boton span', (s) => s.map((x) => x.textContent))).includes('Mis entrenamientos'));
   await p.close();
   const m = await ctx.newPage();
   await m.setViewportSize({ width: 390, height: 844 });
@@ -419,6 +419,9 @@ await caso('máquina: creada en el admin; el tag abre la ficha con video y 3 pas
   assert.match(p.url(), new RegExp(`/n/${slug}/p/${prod.id}`));
   assert.match(await p.getAttribute('iframe.pt-video', 'src'), /^https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/);
   assert.equal(await p.locator('.pt-pasos li').count(), 3);
+  // Gimnasio con club: "Entrena con el tutorial" (Empezar si ya es socio; si no, invitar al club)
+  await p.waitForSelector('#entreno:not([hidden])');
+  assert.ok((await p.isVisible('#e-empezar')) || (await p.isVisible('#e-club')), 'muestra cómo ganar entrenando');
   const [color, fondo] = await p.$eval('.pt-accion', (e) => [getComputedStyle(e).color, getComputedStyle(e).backgroundColor]);
   assert.notEqual(color, fondo, 'el texto del botón se pierde en su fondo');
   await sinScrollHorizontal(p);
@@ -668,7 +671,7 @@ await caso('mensualidades: vencido + sin gracia apaga el toque; "Registrar pago"
   const [s2, l2] = await ir(`/t/${codigos[0]}`);
   assert.equal(s2, 302); assert.match(l2, new RegExp(`/n/${slug}`), 'pagado: vuelve al portal');
 });
-await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal cuando existe', async () => {
+await caso('"Tócalo tú": escondido sin demos; lleva a elegir entre las demos (restaurante y gimnasio)', async () => {
   const p = await ctx.newPage();
   await p.goto(BASE + '/');
   await p.waitForTimeout(800);
@@ -678,6 +681,9 @@ await caso('"Tócalo tú": escondido sin negocio demo; visible y lleva al portal
   await p.waitForTimeout(800);
   assert.equal(await p.isVisible('#demo'), true);
   await p.click('#demo');
+  await p.waitForTimeout(400);
+  assert.equal(await p.isVisible('#demos'), true, '"Tócalo tú" lleva a elegir la demo');
+  await p.click('#demos a[href="/n/demo-cafe"]');
   await p.waitForURL(/\/n\/demo-cafe$/);
   await p.close();
 });
@@ -724,12 +730,10 @@ await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Go
   await a.waitForSelector('.pt-guia h2:has-text("Necesitas una app de Google")');
   assert.match(await a.getAttribute('.pt-guia [data-instalar]', 'href'), /play\.google\.com\/store\/apps\/details\?id=com\.google\.ar\.core/);
   assert.match(await a.textContent('.pt-guia'), /Servicios de Google Play para RA/);
-  await a.screenshot({ path: DIR + 'carta-aviso-google.png' });
   await a.tap('.pt-guia [data-salir]');
   // Si la app de Google no puede, vuelve con #ra-no-compatible-<id> → aviso claro
   await a.evaluate((id) => { location.hash = 'ra-no-compatible-' + id; }, prods[0].id);
   await a.waitForSelector('.pt-guia h2:has-text("No es compatible")');
-  await a.screenshot({ path: DIR + 'carta-no-compatible.png' });
   await ctxA.close();
 
   // iPhone (simulado, sin Quick Look en este navegador): aviso claro en vez de no hacer nada
@@ -739,8 +743,8 @@ await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Go
   ip.on('pageerror', (e) => errores.push('carta iphone: ' + e.message));
   await ip.goto(`${BASE}/n/${slug}/carta`);
   await ip.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
-  await ip.waitForSelector('#d-3d.listo', { timeout: 30000 });
-  await ip.tap('#d-3d .pt-ar');
+  await ip.waitForSelector('#d-3d .pt-ar', { state: 'attached', timeout: 30000 }); // sin esperar el dibujo del 3D: aligera la prueba
+  await ip.$eval('#d-3d .pt-ar', (b) => b.click());
   await ip.waitForSelector('.pt-guia h2:has-text("iPhone")');
   await ctxI.close();
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
@@ -788,6 +792,41 @@ await caso('QR de compra: la caja marca productos y genera el QR; una clienta nu
   await cli.screenshot({ path: DIR + 'club-qr-compra.png' });
   await caja.waitForSelector('#compra-titulo:has-text("¡Listo!")', { timeout: 10000 });
   await ctxC.close();
+});
+
+await caso('modo rápido: la caja muestra un QR que cambia; una clienta nueva lo escanea, se inscribe y gana las monedas fijas', async () => {
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { rapido_activo: true, rapido_monedas: 12, rapido_desde: null, rapido_hasta: null });
+  const caja = await ctx.newPage();
+  caja.on('pageerror', (e) => errores.push('caja rápido: ' + e.message));
+  await caja.setViewportSize({ width: 390, height: 844 });
+  await caja.goto(`${BASE}/caja/${slug}`);
+  await caja.waitForSelector('#pantalla-buscar:not([hidden])');
+  const [resp] = await Promise.all([
+    caja.waitForResponse((r) => r.url().includes('/rpc/caja_rapido_codigo')),
+    caja.click('#modo-rapido'),
+  ]);
+  const { codigo, monedas } = await resp.json();
+  assert.match(codigo, /^[0-9a-f]{32}$/);
+  assert.equal(monedas, 12);
+  await caja.waitForSelector('#rapido-codigo svg');
+  assert.match(await caja.textContent('#rapido-resumen'), /Gana 12/);
+  await caja.screenshot({ path: DIR + 'caja-modo-rapido.png' });
+
+  const ctxC = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  if (process.env.SB_BUNDLE) await ctxC.route(/cdn\.jsdelivr\.net\/.*supabase/, (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: fs.readFileSync(process.env.SB_BUNDLE, 'utf8') }));
+  const cli = await ctxC.newPage();
+  cli.on('pageerror', (e) => errores.push('cliente rápido: ' + e.message));
+  await cli.goto(`${BASE}/n/${slug}/club?r=${codigo}`);
+  await cli.waitForSelector('#registro:not([hidden])');
+  await cli.fill('#r-nombre', 'Rita Rápida');
+  await cli.fill('#r-celular', '3209990022');
+  await cli.check('#r-acepto');
+  await cli.click('#r-unirme');
+  await cli.waitForSelector('#tarjeta:not([hidden])');
+  await cli.waitForFunction(() => Number(document.getElementById('t-numero').textContent.replace(/\D/g, '')) >= 12, null, { timeout: 15000 });
+  await ctxC.close();
+  await caja.close();
+  await api(`negocios?slug=eq.${slug}`, 'PATCH', { rapido_activo: false });
 });
 
 console.log('Fase 8 · panel del dueño');

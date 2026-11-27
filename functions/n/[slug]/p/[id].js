@@ -35,6 +35,17 @@ export async function onRequestGet({ params, request, env }) {
 
   const pasos = (Array.isArray(p.pasos) ? p.pasos : []).filter((x) => typeof x === 'string' && x.trim());
   const demas = (otras || []).filter((m) => m.id !== p.id);
+  // Gimnasio con club: "Entrena con el tutorial" (cronómetro + Terminé → monedas). Lo arma public/assets/entreno.js
+  const entreno = p.tipo === 'maquina' && n.servicios && n.servicios.club ? `<section class="pt-entreno" id="entreno" data-slug="${esc(n.slug)}" data-producto="${esc(p.id)}" hidden>
+    <h2 class="pt-versalitas">Entrena con el tutorial</h2>
+    <div class="pt-entreno-reloj"><b id="e-reloj">15:00</b></div>
+    <div class="pt-entreno-barra" aria-hidden="true"><i id="e-barra"></i></div>
+    <p class="pt-entreno-estado" id="e-estado" role="status">Entrena con el tutorial y gana monedas.</p>
+    <button type="button" class="pt-accion marca" id="e-empezar" hidden>Empezar entrenamiento</button>
+    <button type="button" class="pt-accion marca" id="e-terminar" hidden disabled>Terminé</button>
+    <a class="pt-accion" id="e-club" href="/n/${encodeURIComponent(n.slug)}/club" hidden>Unirme al club</a>
+  </section>
+  <script type="module" src="/assets/entreno.js"></script>` : '';
 
   return html(`${inicioPagina(n, { titulo: `${p.nombre} · ${n.nombre}` })}
 <main class="pt-pagina">
@@ -42,6 +53,7 @@ export async function onRequestGet({ params, request, env }) {
   ${video(p.video_url)}
   ${p.descripcion ? `<p class="pt-frase">${esc(p.descripcion)}</p>` : ''}
   ${pasos.length ? `<ol class="pt-pasos">${pasos.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+  ${entreno}
   ${demas.length ? `<button type="button" class="pt-accion" id="otras">Ver otras máquinas</button>` : `<a class="pt-accion" href="/n/${encodeURIComponent(n.slug)}">Volver</a>`}
   ${demas.length ? `<div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-otras" role="dialog" aria-label="Otras máquinas" hidden>

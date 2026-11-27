@@ -95,6 +95,15 @@ nav .entrar:hover { text-decoration: underline; text-underline-offset: 4px; }
 .extras span { color: var(--texto-2); }
 .fundadores { margin-top: 20px; padding: 18px 20px; border-radius: 18px; background: var(--mandarina-suave); line-height: 1.45; }
 .condiciones { margin-top: 18px; padding-left: 18px; color: var(--gris); font-size: 14px; line-height: 1.6; }
+.demos { display: grid; gap: 16px; margin-top: 28px; }
+.demo-card { display: flex; align-items: center; gap: 16px; padding: 14px; border-radius: 24px; background: var(--blanco); color: var(--tinta); text-decoration: none; transition: transform .2s ease; }
+.demo-card:hover { transform: translateY(-3px); }
+.demo-card img, .demo-gym-ico { flex: none; width: 96px; height: 96px; border-radius: 18px; object-fit: cover; }
+.demo-gym-ico { display: grid; place-items: center; background: #121314; color: #C8F03C; }
+.demo-card small { display: block; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mandarina); }
+.demo-card b { display: block; font-family: var(--titulos); font-size: 22px; font-weight: 800; }
+.demo-card span { display: block; margin-top: 2px; color: var(--texto-2); font-size: 15px; line-height: 1.4; }
+.demo-card[hidden] { display: none; }
 .lead-sec { max-width: 640px; margin-top: 14px; font-size: 18px; line-height: 1.5; color: var(--texto-2); }
 .vitrina { display: grid; gap: 16px; margin-top: 32px; }
 .vt { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 28px; background: var(--blanco); overflow: hidden; }
@@ -186,6 +195,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
 footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 14px; color: var(--gris); }
 
 @media (min-width: 900px) {
+  .demos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .planes { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
   .vitrina { grid-template-columns: 1.3fr 1fr 1fr; grid-template-rows: auto auto; }
   .vt.grande { grid-row: 1 / 3; }
@@ -299,7 +309,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
       <p class="lead">Un punto en la mesa, el mostrador o la recepción. Tu cliente acerca el celular, ve lo que ofreces, junta monedas y te deja la reseña. Tú sabes quién dejó de venir.</p>
       <div class="acc">
         <a class="btn p js-wa" href="#cierre">Quiero Nef en mi negocio</a>
-        <a class="btn s" id="demo" href="/n/demo-cafe">Tócalo tú</a>
+        <a class="btn s" id="demo" href="#demos">Tócalo tú</a>
       </div>
       <p class="nota">Sin apps. Funciona con NFC y con QR.</p>
     </div>
@@ -313,6 +323,22 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     </div>
   </header>
   <div class="cinta" aria-hidden="true"><div><span>Restaurantes</span><span>Cafés</span><span>Panaderías</span><span>Gimnasios</span><span>Veterinarias</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Pizzerías</span><span>Tiendas de barrio</span><span>Restaurantes</span><span>Cafés</span><span>Panaderías</span><span>Gimnasios</span><span>Veterinarias</span><span>Barberías</span><span>Heladerías</span><span>Salones</span><span>Pizzerías</span><span>Tiendas de barrio</span></div></div>
+
+  <!-- 1b. Pruébalo tú: las demos (cada una se esconde si no existe) -->
+  <section class="sec" id="demos">
+    <div class="et">Pruébalo tú</div>
+    <h2 class="t1">Elige un negocio y tócalo.</h2>
+    <div class="demos">
+      <a class="demo-card" href="/n/demo-cafe" data-demo>
+        <img src="/assets/demo/calentado.webp" alt="" width="600" height="600" loading="lazy">
+        <div><small>Restaurante</small><b>Café Luna</b><span>Carta con fotos y 3D, club de monedas, "Elige por mí".</span></div>
+      </a>
+      <a class="demo-card gym" href="/n/demo-gym" data-demo>
+        <div class="demo-gym-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/></svg></div>
+        <div><small>Gimnasio</small><b>Forja Gym</b><span>Clases de hoy, máquinas con video y premios por entrenar seguido.</span></div>
+      </a>
+    </div>
+  </section>
 
   <!-- 2. Cómo funciona -->
   <section class="sec" id="como-funciona">
@@ -365,7 +391,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
       <article class="nicho pronto">
         <div class="et">Próximamente</div>
         <h3>Gimnasios y veterinarias.</h3>
-        <p>El mismo motor: que el socio o el dueño de la mascota vuelva, y que tú sepas quién dejó de venir. Si tienes uno, escríbenos y lo armamos contigo.</p>
+        <p>El mismo motor: que el socio o el dueño de la mascota vuelva, y que tú sepas quién dejó de venir. Ya puedes <a href="/n/demo-gym">ver la demo de un gimnasio</a>; veterinarias, muy pronto.</p>
       </article>
       <article class="nicho gym" id="gimnasios" hidden>
         <div class="et">Gimnasios</div>
@@ -543,9 +569,16 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 
   // ── "Tócalo tú": solo se muestra si el negocio de demostración existe (Fase 7). ──
   var demo = document.getElementById('demo');
-  fetch(demo.getAttribute('href'), { redirect: 'manual' })
-    .then(function (r) { if (r.status !== 200) demo.hidden = true; })
-    .catch(function () { demo.hidden = true; });
+  var tarjetas = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
+  Promise.all(tarjetas.map(function (a) {
+    return fetch(a.getAttribute('href'), { redirect: 'manual' })
+      .then(function (r) { a.hidden = r.status !== 200; return !a.hidden; })
+      .catch(function () { a.hidden = true; return false; });
+  })).then(function (hay) {
+    var alguna = hay.some(Boolean);
+    demo.hidden = !alguna;
+    document.getElementById('demos').hidden = !alguna;
+  });
 </script>
 </body>
 </html>

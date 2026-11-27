@@ -588,6 +588,9 @@ begin
     'cercano', v_cercano,
     'nivel', public._nivel(n.id, m.total_ganado),
     'racha', v_racha,
+    'llegadas_mes', (select count(*) from public.movimientos mv where mv.membresia_id = m.id and mv.tipo = 'visita'
+      and mv.creado >= date_trunc('month', public._ahora() at time zone 'America/Bogota') at time zone 'America/Bogota'),
+    'meta_mes', case when n.meta_mes_llegadas is not null then json_build_object('llegadas', n.meta_mes_llegadas, 'bono', n.meta_mes_bono) end,
     'hora_dorada', v_dorada,
     'proxima_hora_dorada', case when v_dorada is null then public._proxima_hora_dorada(n.id, public._ahora()) end,
     'aviso', public._aviso_tarjeta(m.bienvenida_pendiente, v_dorada,
@@ -720,7 +723,8 @@ end $$;
 -- Sumar una visita. Idempotente por p_op_id: reenviar la misma operación nunca suma dos veces.
 -- Interna: suma una visita (y bienvenida, hora dorada, racha) a una membresía del negocio. Idempotente por p_op_id.
 -- La llaman la caja (caja_visita, con sesión) y el QR de compra que genera la caja (club_reclamar_compra).
-create or replace function public._sumar_visita(p_negocio uuid, p_token text, p_op_id uuid, p_valor int default null)
+drop function if exists public._sumar_visita(uuid, text, uuid, int);
+create or replace function public._sumar_visita(p_negocio uuid, p_token text, p_op_id uuid, p_valor int default null, p_monedas int default null)
 returns json language plpgsql security definer set search_path = public as $$
 declare
   v_negocio uuid := p_negocio;
@@ -734,6 +738,8 @@ declare
   v_extra int;
   v_racha json;
   v_bono_racha int;
+  v_bono_meta int := 0;
+  v_inicio_mes timestamptz := date_trunc('month', public._ahora() at time zone 'America/Bogota') at time zone 'America/Bogota';
 begin
   if v_negocio is null then return json_build_object('error', 'sesion'); end if;
   if p_op_id is null then return json_build_object('error', 'op_id'); end if;
@@ -750,7 +756,9 @@ begin
     return json_build_object('error', 'muy_pronto', 'desde', m.ultima_visita + make_interval(hours => n.horas_entre_visitas));
   end if;
 
-  if n.modo_monedas = 'valor' then
+  if p_monedas is not null then
+    v_monedas := p_monedas;   -- modo rápido de la caja: monedas fijas, sin valor de compra
+  elsif n.modo_monedas = 'valor' then
     if coalesce(p_valor, 0) <= 0 then return json_build_object('error', 'valor'); end if;
     v_monedas := floor(p_valor::numeric * n.devolucion_pct / 100 / public.valor_moneda());
   else
@@ -799,13 +807,23 @@ begin
   where id = m.id
   returning * into m;
 
-  v_res := jsonb_build_object('ok', true, 'monedas', v_monedas, 'bienvenida', v_bienvenida, 'hora_dorada', v_extra,
+  -- Meta del mes (gimnasios): al llegar a N visitas en el mes, un bono, una sola vez por mes
+  if n.meta_mes_llegadas is not null
+     and (select count(*) from public.movimientos mv where mv.membresia_id = m.id and mv.tipo = 'visita' and mv.creado >= v_inicio_mes) = n.meta_mes_llegadas
+     and not exists (select 1 from public.movimientos mv where mv.membresia_id = m.id and mv.tipo = 'bono_meta' and mv.creado >= v_inicio_mes) then
+    v_bono_meta := n.meta_mes_bono;
+    insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, detalle, creado)
+    values (m.id, v_negocio, 'bono_meta', v_bono_meta, n.meta_mes_llegadas || ' llegadas en el mes', public._ahora());
+    update public.membresias set saldo = saldo + v_bono_meta, total_ganado = total_ganado + v_bono_meta where id = m.id returning * into m;
+  end if;
+
+  v_res := jsonb_build_object('ok', true, 'monedas', v_monedas, 'bienvenida', v_bienvenida, 'hora_dorada', v_extra, 'bono_meta', v_bono_meta,
     'bono_racha', v_bono_racha, 'racha', m.racha_semanas, 'saldo', m.saldo,
     'nivel', public._nivel(v_negocio, m.total_ganado)::jsonb);
   update public.operaciones_caja set resultado = v_res where op_id = p_op_id;
   return v_res::json;
 end $$;
-revoke execute on function public._sumar_visita(uuid, text, uuid, int) from public, anon, authenticated;
+revoke execute on function public._sumar_visita(uuid, text, uuid, int, int) from public, anon, authenticated;
 
 create or replace function public.caja_visita(p_sesion text, p_token text, p_op_id uuid, p_valor int default null)
 returns json language plpgsql security definer set search_path = public as $$
@@ -2309,3 +2327,209 @@ revoke execute on function public.club_reclamar_compra(text, text, text) from pu
 grant  execute on function public.caja_crear_compra(text, jsonb) to anon, authenticated;
 grant  execute on function public.caja_estado_compra(text, text) to anon, authenticated;
 grant  execute on function public.club_reclamar_compra(text, text, text) to anon, authenticated;
+
+
+-- =====================================================================
+-- ===== Modo rápido (hora pico) =====  pedido de Jacobo (25/11/2026): en hora pico la cajera voltea la pantalla de la
+-- caja y el cliente escanea un QR que CAMBIA cada 30 s (una foto no sirve). Da monedas fijas, una vez por cliente cada
+-- "horas_entre_visitas", y solo dentro de la franja que configure el negocio. El código sale de la caja (con sesión):
+-- se mantiene la regla 6 (monedas solo desde la caja).
+-- =====================================================================
+alter table public.negocios add column if not exists rapido_activo boolean not null default false;
+alter table public.negocios add column if not exists rapido_monedas int not null default 10 check (rapido_monedas between 0 and 1000);
+alter table public.negocios add column if not exists rapido_desde time;
+alter table public.negocios add column if not exists rapido_hasta time;
+alter table public.negocios add column if not exists rapido_secreto text not null default replace(gen_random_uuid()::text, '-', '');
+
+-- ¿Se puede usar ahora? null = sí; si no, el motivo ('inactivo' o 'fuera_de_horario'). Franja en hora de Bogotá; puede cruzar la medianoche.
+create or replace function public._rapido_estado(n public.negocios)
+returns text language plpgsql stable security definer set search_path = public as $$
+declare v_h time := (public._ahora() at time zone 'America/Bogota')::time;
+begin
+  if not n.rapido_activo then return 'inactivo'; end if;
+  if n.rapido_desde is null or n.rapido_hasta is null then return null; end if;
+  if n.rapido_desde <= n.rapido_hasta then
+    if v_h between n.rapido_desde and n.rapido_hasta then return null; end if;
+  elsif v_h >= n.rapido_desde or v_h <= n.rapido_hasta then
+    return null;
+  end if;
+  return 'fuera_de_horario';
+end $$;
+
+-- Código del periodo de 30 s: HMAC con el secreto del negocio (no se puede adivinar ni calcular desde afuera)
+create or replace function public._rapido_codigo(p_secreto text, p_periodo bigint)
+returns text language sql immutable set search_path = public, extensions as $$
+  select left(encode(extensions.hmac(p_periodo::text, p_secreto, 'sha256'), 'hex'), 32)
+$$;
+create or replace function public._rapido_periodo()
+returns bigint language sql stable set search_path = public as $$
+  select floor(extract(epoch from public._ahora()) / 30)::bigint
+$$;
+
+-- Caja: el código vigente para mostrar en el QR (se pide de nuevo cada pocos segundos)
+create or replace function public.caja_rapido_codigo(p_sesion text)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  v_negocio uuid := public._sesion_valida(p_sesion);
+  n public.negocios;
+  v_estado text;
+  v_periodo bigint := public._rapido_periodo();
+begin
+  if v_negocio is null then return json_build_object('error', 'sesion'); end if;
+  select * into n from public.negocios where id = v_negocio;
+  v_estado := public._rapido_estado(n);
+  if v_estado is not null then
+    return json_build_object('error', v_estado, 'desde', to_char(n.rapido_desde, 'HH24:MI'), 'hasta', to_char(n.rapido_hasta, 'HH24:MI'));
+  end if;
+  return json_build_object('codigo', public._rapido_codigo(n.rapido_secreto, v_periodo), 'monedas', n.rapido_monedas,
+    'expira', to_timestamp((v_periodo + 1) * 30));
+end $$;
+
+-- Cliente: reclama con el token de su tarjeta. Vale el código del periodo actual o el anterior (margen de 30 s).
+-- Idempotente por cliente y código; el tope real lo pone horas_entre_visitas (en _sumar_visita).
+create or replace function public.club_rapido(p_slug text, p_token text, p_codigo text)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  n public.negocios;
+  m public.membresias;
+  v_estado text;
+  v_periodo bigint := public._rapido_periodo();
+begin
+  select * into n from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
+  if not found then return json_build_object('error', 'negocio'); end if;
+  v_estado := public._rapido_estado(n);
+  if v_estado is not null then return json_build_object('error', v_estado); end if;
+  select * into m from public.membresias where token = p_token and negocio_id = n.id;
+  if not found then return json_build_object('error', 'token'); end if;
+  if coalesce(p_codigo, '') not in (public._rapido_codigo(n.rapido_secreto, v_periodo), public._rapido_codigo(n.rapido_secreto, v_periodo - 1)) then
+    return json_build_object('error', 'vencido');
+  end if;
+  return public._sumar_visita(n.id, p_token, md5(m.id::text || p_codigo)::uuid, null, n.rapido_monedas);
+end $$;
+
+revoke execute on function public._rapido_estado(public.negocios) from public, anon, authenticated;
+revoke execute on function public._rapido_codigo(text, bigint) from public, anon, authenticated;
+revoke execute on function public._rapido_periodo() from public, anon, authenticated;
+revoke execute on function public.caja_rapido_codigo(text) from public;
+revoke execute on function public.club_rapido(text, text, text) from public;
+grant  execute on function public.caja_rapido_codigo(text) to anon, authenticated;
+grant  execute on function public.club_rapido(text, text, text) to anon, authenticated;
+
+
+-- =====================================================================
+-- ===== Gimnasio: entrenar con el tutorial de la máquina + meta del mes =====  (Jacobo, 26/11/2026)
+-- El socio escanea la máquina, ve el video, y si pasan N minutos (15) y toca "Terminé", gana monedas fijas (5).
+-- Contra trampas: solo si ese día ya registró su LLEGADA en recepción (el QR que cambia cada 30 s del modo rápido,
+-- o una compra en caja) — así una foto del sticker no sirve desde la casa —, una vez cada N horas (8), y la sesión
+-- vence a las 3 horas. Una sola moneda para todo: llegar, entrenar con tutorial, metas; las monedas suben el nivel.
+-- (Torniquete: más adelante; por ahora las llegadas son con el QR de recepción.)
+-- =====================================================================
+alter table public.movimientos drop constraint if exists movimientos_tipo_check;
+alter table public.movimientos add constraint movimientos_tipo_check check (tipo in ('bienvenida', 'visita', 'bono_hora_dorada',
+  'bono_racha', 'bono_ruleta', 'canje', 'ajuste', 'vencimiento', 'maquina', 'bono_meta'));
+
+alter table public.negocios add column if not exists maquina_monedas int not null default 5 check (maquina_monedas between 0 and 1000);
+alter table public.negocios add column if not exists maquina_minutos int not null default 15 check (maquina_minutos between 1 and 120);
+alter table public.negocios add column if not exists maquina_horas int not null default 8 check (maquina_horas between 0 and 72);
+alter table public.negocios add column if not exists meta_mes_llegadas int check (meta_mes_llegadas between 1 and 62);
+alter table public.negocios add column if not exists meta_mes_bono int not null default 100 check (meta_mes_bono between 0 and 10000);
+
+create table if not exists public.sesiones_maquina (
+  id           uuid primary key default gen_random_uuid(),
+  negocio_id   uuid not null references public.negocios(id) on delete cascade,
+  membresia_id uuid not null references public.membresias(id) on delete cascade,
+  producto_id  uuid references public.productos(id) on delete set null,
+  inicio       timestamptz not null,
+  fin          timestamptz,
+  monedas      int
+);
+create index if not exists sesiones_maquina_socio_idx on public.sesiones_maquina(membresia_id, inicio);
+alter table public.sesiones_maquina enable row level security;
+drop policy if exists admin_todo on public.sesiones_maquina;
+create policy admin_todo on public.sesiones_maquina for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- ¿Registró su llegada hoy (hora Bogotá)?
+create or replace function public._llego_hoy(m public.membresias)
+returns boolean language sql stable set search_path = public as $$
+  select m.ultima_visita is not null
+     and (m.ultima_visita at time zone 'America/Bogota')::date = (public._ahora() at time zone 'America/Bogota')::date
+$$;
+-- Última vez que ganó por entrenar con tutorial
+create or replace function public._ultima_maquina(p_membresia uuid)
+returns timestamptz language sql stable set search_path = public as $$
+  select max(fin) from public.sesiones_maquina where membresia_id = p_membresia and coalesce(monedas, 0) > 0
+$$;
+
+create or replace function public.club_maquina_empezar(p_slug text, p_token text, p_producto uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  n public.negocios;
+  m public.membresias;
+  s public.sesiones_maquina;
+  v_ultima timestamptz;
+begin
+  select * into n from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
+  if not found then return json_build_object('error', 'negocio'); end if;
+  select * into m from public.membresias where token = p_token and negocio_id = n.id;
+  if not found then return json_build_object('error', 'token'); end if;
+  if not exists (select 1 from public.productos where id = p_producto and negocio_id = n.id and tipo = 'maquina' and activo) then
+    return json_build_object('error', 'maquina');
+  end if;
+  if not public._llego_hoy(m) then return json_build_object('error', 'sin_llegada'); end if;
+  v_ultima := public._ultima_maquina(m.id);
+  if v_ultima is not null and public._ahora() < v_ultima + make_interval(hours => n.maquina_horas) then
+    return json_build_object('error', 'muy_pronto', 'desde', v_ultima + make_interval(hours => n.maquina_horas));
+  end if;
+  -- Ya tiene uno en curso (de las últimas 3 horas): se sigue con ese
+  select * into s from public.sesiones_maquina where membresia_id = m.id and fin is null and inicio > public._ahora() - interval '3 hours'
+    order by inicio desc limit 1;
+  if not found then
+    insert into public.sesiones_maquina (negocio_id, membresia_id, producto_id, inicio)
+    values (n.id, m.id, p_producto, public._ahora()) returning * into s;
+  end if;
+  return json_build_object('sesion', s.id, 'inicio', s.inicio, 'listo', s.inicio + make_interval(mins => n.maquina_minutos),
+    'minutos', n.maquina_minutos, 'monedas', n.maquina_monedas);
+end $$;
+
+create or replace function public.club_maquina_terminar(p_slug text, p_token text, p_sesion uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  n public.negocios;
+  m public.membresias;
+  s public.sesiones_maquina;
+  v_ultima timestamptz;
+begin
+  select * into n from public.negocios where slug = lower(trim(p_slug)) and activo and public._negocio_habilitado(id);
+  if not found then return json_build_object('error', 'negocio'); end if;
+  select * into m from public.membresias where token = p_token and negocio_id = n.id for update;
+  if not found then return json_build_object('error', 'token'); end if;
+  select * into s from public.sesiones_maquina where id = p_sesion and membresia_id = m.id for update;
+  if not found then return json_build_object('error', 'no_existe'); end if;
+  if s.fin is not null then return json_build_object('ok', true, 'monedas', coalesce(s.monedas, 0), 'saldo', m.saldo); end if;
+  if public._ahora() < s.inicio + make_interval(mins => n.maquina_minutos) then
+    return json_build_object('error', 'falta', 'listo', s.inicio + make_interval(mins => n.maquina_minutos));
+  end if;
+  if public._ahora() > s.inicio + interval '3 hours' then
+    update public.sesiones_maquina set fin = public._ahora(), monedas = 0 where id = s.id;
+    return json_build_object('error', 'vencida');
+  end if;
+  v_ultima := public._ultima_maquina(m.id);
+  if v_ultima is not null and public._ahora() < v_ultima + make_interval(hours => n.maquina_horas) then
+    update public.sesiones_maquina set fin = public._ahora(), monedas = 0 where id = s.id;
+    return json_build_object('error', 'muy_pronto', 'desde', v_ultima + make_interval(hours => n.maquina_horas));
+  end if;
+  update public.sesiones_maquina set fin = public._ahora(), monedas = n.maquina_monedas where id = s.id;
+  insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, detalle, creado)
+  values (m.id, n.id, 'maquina', n.maquina_monedas, (select nombre from public.productos where id = s.producto_id), public._ahora());
+  update public.membresias set saldo = saldo + n.maquina_monedas, total_ganado = total_ganado + n.maquina_monedas
+  where id = m.id returning * into m;
+  return json_build_object('ok', true, 'monedas', n.maquina_monedas, 'saldo', m.saldo, 'nivel', public._nivel(n.id, m.total_ganado));
+end $$;
+
+revoke execute on function public._llego_hoy(public.membresias) from public, anon, authenticated;
+revoke execute on function public._ultima_maquina(uuid) from public, anon, authenticated;
+revoke execute on function public.club_maquina_empezar(text, text, uuid) from public;
+revoke execute on function public.club_maquina_terminar(text, text, uuid) from public;
+grant  execute on function public.club_maquina_empezar(text, text, uuid) to anon, authenticated;
+grant  execute on function public.club_maquina_terminar(text, text, uuid) to anon, authenticated;

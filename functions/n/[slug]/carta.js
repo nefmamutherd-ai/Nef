@@ -63,7 +63,7 @@ export async function onRequestGet({ params, request, env }) {
   </section>` : '';
 
   return html(`${inicioPagina(n, { titulo: `${titulo} · ${n.nombre}`, extraHead: '<script src="/api/config"></script>' })}
-${fondoVivo()}
+${fondoVivo(n.sector)}
 <main class="pt-pagina" id="carta" data-slug="${esc(n.slug)}" data-tag="${esc(t)}">
   <header class="pt-carta-cabeza pt-entra">
     <a class="pt-volver" href="/n/${encodeURIComponent(n.slug)}${t ? `?t=${esc(t)}` : ''}" aria-label="Volver">${icono('volver')}</a>

@@ -77,7 +77,7 @@ export async function onRequestGet({ params, request, env }) {
   const fotos = (pop || []).filter((p) => fotoSegura(p.foto_url)).slice(0, 8);
   const populares = fotos.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido"><h2 class="pt-versalitas">Lo más pedido</h2>
     <div class="pt-carrusel">${fotos.map((p) => `<a class="pt-pop" href="${esc(carta)}"><img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b></a>`).join('')}</div></section>` : '';
-  const deco = fondoVivo();
+  const deco = fondoVivo(n.sector);
 
   return html(`${inicioPagina(n, { extraHead: n.descripcion ? `<meta name="description" content="${esc(n.descripcion)}">` : '' })}
 ${deco}
