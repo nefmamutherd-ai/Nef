@@ -26,8 +26,8 @@ Instalación a **$120.000** y mensualidad congelada por 12 meses.
   ("Encuentra tu máquina"). **Sin cobro mensual por máquina.**
 - **Cómo se usa cada máquina:** el video de una persona usándola (lo graba el gimnasio o se acuerda grabarlo).
   Las máquinas en 3D de la demo son solo para mostrar; en 3D irán en el **plano 3D de cada piso: próximamente** (Jacobo, 27/11).
-- Fundadores: instalación a $120.000 por sede y mensualidad congelada 12 meses.
-- Ejemplo REPS (3 sedes): $95.000 + $70.000 + $70.000 = **$235.000 al mes**; instalación de fundador 3 × $120.000 = $360.000.
+- Fundadores: instalación a $120.000 **solo en la primera sede** (las demás a $250.000) y mensualidad congelada 12 meses.
+- Ejemplo REPS (3 sedes): **$235.000 al mes**; instalación de fundador $120.000 + $250.000 + $250.000 = $620.000. Cuenta completa: `docs/ventas/precios-gimnasios-reps.md`.
 
 ## Condiciones
 - Plan mensual sin permanencia. El plan anual se paga por adelantado.
