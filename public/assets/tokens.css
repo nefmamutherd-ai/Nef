@@ -70,13 +70,14 @@
   --r-medio: 20px; --r-grande: 28px;
 }
 
-[data-tema="energia"] {   /* gimnasios, deportes, academias */
-  --papel: #121314; --papel-hondo: #1E2022; --tarjeta: #1A1C1E; --linea: #2C2F32;
-  --tinta: #F4F4F2; --tinta-2: #B9BBB5; --tinta-3: #7D807A;
-  --marca: #C8F03C; --sobre-marca: #121314;
+[data-tema="energia"] {   /* gimnasios, deportes, academias. Estética inspirada en REPS (Jacobo, 26/11/2026):
+                             negro, morado eléctrico, títulos en mayúsculas gruesas, tono aspiracional */
+  --papel: #0B0A0F; --papel-hondo: #1A1724; --tarjeta: #15131D; --linea: #2B2738;
+  --tinta: #F6F4FB; --tinta-2: #BDB6CC; --tinta-3: #8A8299;
+  --marca: #8B3DFF; --sobre-marca: #FFFFFF;
   --oro: #F2C14E; --oro-suave: #2E2817; --oro-tinta: #F2C14E;
   --ok: #4ADE80; --ok-suave: #17301F; --alerta: #FF6B5E; --alerta-suave: #3A1C19;
-  --serif: var(--sans);               /* en gimnasios no hay serif: todo sans, títulos en 800 */
+  --serif: "Bricolage", var(--sans);  /* títulos gruesos en mayúsculas (ver portal.css, "Gimnasio estilo REPS") */
   --peso-titulo: 800;
 }
 

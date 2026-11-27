@@ -137,3 +137,53 @@ where p.id = v.id::uuid and (p.foto_url is null or p.foto_url like '/assets/demo
 -- Modelos 3D de los mismos platos (scripts/platos_glb.py): se giran con el dedo y se ven en la mesa (realidad aumentada)
 update public.productos p set modelo_url = replace(replace(p.foto_url, '/assets/demo/', '/assets/demo/3d/'), '.webp', '.glb')
 where p.negocio_id = 'd0000000-0000-4000-8000-0000000000c1' and p.foto_url like '/assets/demo/%.webp' and p.modelo_url is null;
+
+-- ---------- Gimnasio estilo REPS (26/11/2026) ----------
+-- Forja Gym con tono aspiracional y un rack de mancuernas (5 máquinas con tutorial en 3D)
+update public.negocios set descripcion = 'Entrena fuerte · Suma en cada visita' where id = 'd0000000-0000-4000-8000-0000000000a2';
+insert into public.productos (id, negocio_id, tipo, nombre, descripcion, pasos, orden) values
+  ('d0000000-0000-4000-8000-00000000b107', 'd0000000-0000-4000-8000-0000000000a2', 'maquina', 'Rack de mancuernas', 'Brazos, hombros y pecho',
+   '["Toma el par con la espalda recta, doblando las rodillas","Codos pegados al cuerpo y sin balancearte","Devuélvelas a su lugar, de la más liviana a la más pesada"]', 3)
+on conflict (id) do nothing;
+
+-- Copia para la reunión con REPS (gimnasio de Bogotá, prospecto): SOLO su nombre en texto y su morado; sin su logo
+-- ni fotos suyas. Marcada como demostración de Nef y sin indexar (lib/portal.js: slugs demo-* llevan noindex).
+-- Se entra por /n/demo-reps. Los productos y premios son copia de Forja Gym con ids fijos (md5), así es idempotente.
+insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, sector, servicios, ubicacion_etiqueta,
+  resena_url, whatsapp, bienvenida, monedas_por_visita)
+values ('d0000000-0000-4000-8000-0000000000a3', 'd0000000-0000-4000-8000-000000000001', 'demo-reps', 'REPS',
+  'Demostración de Nef para REPS', '#8b3dff', 'gimnasio', '{"base":true,"catalogo":true,"club":true,"estudio":true}',
+  'Demostración', 'https://www.google.com/maps', '3224731560', 50, 10)
+on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion,
+  color = excluded.color, servicios = excluded.servicios, activo = true;
+update public.negocios set rapido_activo = true, rapido_monedas = 10, horas_entre_visitas = 12,
+  maquina_monedas = 5, maquina_minutos = 15, maquina_horas = 8, meta_mes_llegadas = 12, meta_mes_bono = 100
+where id = 'd0000000-0000-4000-8000-0000000000a3';
+
+-- Las 5 máquinas en 3D (scripts/maquinas_glb.py, estilo artístico sencillo): se giran en la página de la máquina
+update public.productos p set modelo_url = v.modelo
+from (values
+  ('d0000000-0000-4000-8000-00000000b103', '/assets/demo/3d/gym/press-pecho.glb'),
+  ('d0000000-0000-4000-8000-00000000b107', '/assets/demo/3d/gym/mancuernas.glb'),
+  ('d0000000-0000-4000-8000-00000000b101', '/assets/demo/3d/gym/prensa-45.glb'),
+  ('d0000000-0000-4000-8000-00000000b102', '/assets/demo/3d/gym/jalon.glb'),
+  ('d0000000-0000-4000-8000-00000000b105', '/assets/demo/3d/gym/extension.glb')
+) as v(id, modelo)
+where p.id = v.id::uuid and (p.modelo_url is null or p.modelo_url like '/assets/demo/3d/gym/%');
+
+-- (Debe ir AL FINAL del archivo: copia lo que Forja Gym ya tiene, modelos 3D incluidos)
+insert into public.productos (id, negocio_id, tipo, nombre, descripcion, pasos, horario, video_url, foto_url, modelo_url, orden)
+select md5('reps-' || p.id::text)::uuid, 'd0000000-0000-4000-8000-0000000000a3', p.tipo, p.nombre, p.descripcion, p.pasos,
+  p.horario, p.video_url, p.foto_url, p.modelo_url, p.orden
+from public.productos p where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2'
+on conflict (id) do update set nombre = excluded.nombre, descripcion = excluded.descripcion, pasos = excluded.pasos,
+  horario = excluded.horario, foto_url = excluded.foto_url, modelo_url = excluded.modelo_url, orden = excluded.orden;
+insert into public.premios (id, negocio_id, nombre, valor_pesos, orden)
+select md5('reps-' || p.id::text)::uuid, 'd0000000-0000-4000-8000-0000000000a3', replace(p.nombre, 'Forja', 'REPS'), p.valor_pesos, p.orden
+from public.premios p where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2'
+on conflict (id) do nothing;
+insert into public.tags (id, codigo, negocio_id, nombre, destino, producto_id) values
+  ('d0000000-0000-4000-8000-0000000e0301', 'demoreps', 'd0000000-0000-4000-8000-0000000000a3', 'Recepción', 'hub', null)
+on conflict (id) do nothing;
+update public.negocios set pin_caja_hash = extensions.crypt('1234', extensions.gen_salt('bf'))
+where id = 'd0000000-0000-4000-8000-0000000000a3' and pin_caja_hash is null;

@@ -835,3 +835,42 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 .pt-entreno-barra i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--marca); transition: width 1s linear; }
 .pt-entreno-estado { margin: 0 0 14px; color: var(--tinta-2); font-size: 15px; line-height: 1.4; }
 .pt-entreno .pt-accion:disabled { opacity: .45; }
+
+/* ===== Gimnasio estilo REPS (Jacobo, 26/11/2026): negro, morado eléctrico, títulos en MAYÚSCULAS gruesas ===== */
+[data-tema="energia"] body.pt { background: radial-gradient(120% 60% at 50% -10%, color-mix(in srgb, var(--marca) 30%, transparent), transparent 60%), var(--papel); background-attachment: fixed; }
+[data-tema="energia"] :is(.pt-cabeza h1, .pt-hoja h2, .pt-entreno h2, .pt-boton > span, .pt-accion, .pt-recorrido h2) { text-transform: uppercase; letter-spacing: -.01em; }
+[data-tema="energia"] .pt-cabeza h1 { font-weight: 800; line-height: 1; }
+[data-tema="energia"] .pt-inicio .pt-cabeza h1 { font-size: 42px; letter-spacing: -.025em; }
+[data-tema="energia"] .pt-accion { font-family: var(--serif); font-weight: 800; letter-spacing: .02em; }
+[data-tema="energia"] .pt-portada .pt-versalitas:not(.pt-lugar) { color: var(--marca); letter-spacing: .22em; }
+[data-tema="energia"] .pt-inicio .pt-boton.principal { background: linear-gradient(120deg, #6A1FE8, var(--marca) 55%, #B47CFF); box-shadow: 0 18px 40px -16px var(--marca), 0 0 0 1px rgba(255, 255, 255, .08) inset; }
+[data-tema="energia"] .pt-inicio .pt-boton:not(.principal) { background: var(--tinta); color: #0B0A0F; }
+[data-tema="energia"] .pt-inicio .pt-boton:not(.principal) > .pt-ico { background: var(--marca); color: #fff; }
+[data-tema="energia"] .pt-inicio .pt-boton:not(.principal):nth-child(3) { background: var(--papel-hondo); color: var(--tinta); box-shadow: 0 0 0 1px var(--linea) inset; }
+[data-tema="energia"] .pt-inicio .pt-boton:not(.principal):nth-child(3) > .pt-ico { background: color-mix(in srgb, var(--marca) 22%, transparent); color: #C9A4FF; }
+[data-tema="energia"] .pt-inicio .pt-lugar { background: color-mix(in srgb, var(--marca) 18%, var(--papel-hondo)); color: var(--tinta); }
+[data-tema="energia"] .pt-inicio .pt-logo { background: var(--marca); color: #fff; font-family: var(--serif); }
+[data-tema="energia"] .pt-mancha.dos { background: color-mix(in srgb, var(--marca) 16%, transparent); }
+[data-tema="energia"] .pt-doodle { stroke: color-mix(in srgb, var(--marca) 70%, white) !important; opacity: .35; }
+[data-tema="energia"] .pt-pasos li::marker, [data-tema="energia"] .pt-pasos li::before { color: var(--marca); }
+[data-tema="energia"] .pt-entreno { background: linear-gradient(160deg, color-mix(in srgb, var(--marca) 14%, var(--tarjeta)), var(--tarjeta) 60%); border-color: color-mix(in srgb, var(--marca) 35%, var(--linea)); }
+[data-tema="energia"] .pt-entreno-reloj b { color: #fff; text-shadow: 0 0 24px var(--marca); }
+[data-tema="energia"] .pt-entreno-barra i { background: linear-gradient(90deg, #6A1FE8, #B47CFF); }
+/* Máquina en 3D (página de la máquina): escenario oscuro con luz morada, no la "mesa de madera" de los platos */
+.pt-3d-maquina { aspect-ratio: 4 / 3.4; margin: 4px 0 14px; }
+[data-tema="energia"] .pt-3d.pt-3d-maquina { background: radial-gradient(90% 70% at 50% 35%, color-mix(in srgb, var(--marca) 34%, #1a1726), #0B0A0F 75%); }
+[data-tema="energia"] .pt-3d-maquina .pt-3d-carga { color: var(--tinta-2); }
+.pt-3d-ayuda { position: absolute; left: 0; right: 0; bottom: 10px; margin: 0; text-align: center; font: 600 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: color-mix(in srgb, var(--tinta) 60%, transparent); pointer-events: none; }
+/* Baldosa "Recorrido del gimnasio · Próximamente" y su página de vista previa */
+.pt-baldosa-extra { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 14px; min-height: 84px; border-radius: var(--r-grande);
+  background: var(--papel-hondo); color: var(--tinta); text-decoration: none; font: var(--peso-titulo, 700) 17px/1.15 var(--serif); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--marca) 45%, transparent) inset; }
+.pt-baldosa-extra .pt-dado { animation: none; background: var(--marca); color: #fff; flex: none; }
+.pt-baldosa-extra span { flex: 1; }
+.pt-baldosa-extra em { margin: 0 !important; padding: 5px 10px; border-radius: var(--r-pildora); background: color-mix(in srgb, var(--marca) 22%, transparent); color: var(--tinta); font: 700 11px var(--sans) !important; letter-spacing: .1em; text-transform: uppercase; opacity: 1 !important; }
+[data-tema="energia"] .pt-baldosa-extra span { text-transform: uppercase; }
+.pt-recorrido .pt-3d-maquina { aspect-ratio: 1; }
+.pt-pronto { display: inline-block; margin: 6px 0 0; padding: 6px 12px; border-radius: var(--r-pildora); background: var(--marca); color: var(--sobre-marca); font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; }
+.pt-recorrido-lista { display: grid; gap: 8px; margin: 14px 0; padding: 0; list-style: none; }
+.pt-recorrido-lista li { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--papel-hondo); font-size: 15px; color: var(--tinta-2); }
+.pt-recorrido-lista b { color: var(--tinta); }
+.pt-3d.pt-3d-maquina { touch-action: pan-y; }

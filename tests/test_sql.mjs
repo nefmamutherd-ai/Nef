@@ -715,7 +715,9 @@ await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y d
   const [{ r: c }] = await q(`select carta_publica('demo-cafe') r`);
   assert.equal(c.categorias.flatMap((x) => x.productos).length, 12);
   assert.equal((await q(`select club_publico('demo-cafe') r`))[0].r.premios.length, 3);
-  assert.equal((await q(`select maquinas_publicas('demo-gym') r`))[0].r.length, 6);
+  assert.equal((await q(`select maquinas_publicas('demo-gym') r`))[0].r.length, 7);
+  assert.equal((await q(`select maquinas_publicas('demo-reps') r`))[0].r.length, 7, 'la copia para REPS tiene las mismas máquinas');
+  assert.equal((await q(`select club_publico('demo-reps') r`))[0].r.premios.length, 3);
   const [{ r: t }] = await q(`select resolver_toque('demoprensa','nfc',null) r`);
   assert.equal(t.destino, 'producto'); assert.ok(t.producto_id);
   assert.ok((await q(`select caja_entrar('demo-cafe','1234') r`))[0].r.sesion, 'la caja demo abre con 1234');

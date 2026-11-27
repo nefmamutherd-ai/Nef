@@ -33,6 +33,21 @@ export async function onRequestGet({ params, request, env }) {
   if (!n) return redirigir(new URL('/inactivo', url).href);
   if (!p) return redirigir(portal);
 
+  // Máquina en 3D (estilo artístico, scripts/maquinas_glb.py): se gira con el dedo. Solo modelos del propio sitio o https.
+  const modelo = /^(https:\/\/[^\s"<>]+|\/assets\/[A-Za-z0-9_/.-]+)\.glb$/.test(p.modelo_url || '') ? p.modelo_url : null;
+  const visor = modelo ? `<div class="pt-3d pt-3d-maquina" id="m-3d">
+    <div class="pt-3d-carga"><i class="pt-3d-giro"></i><span>Cargando la máquina…</span></div>
+    <model-viewer src="${esc(modelo)}" alt="${esc(p.nombre)} en 3D" camera-controls auto-rotate auto-rotate-delay="1500" rotation-per-second="18deg"
+      camera-orbit="-35deg 72deg auto" min-camera-orbit="auto 30deg auto" max-camera-orbit="auto 88deg auto" touch-action="pan-y" disable-pan
+      interaction-prompt="none" shadow-intensity="1.1" shadow-softness="0.8" environment-image="neutral" exposure="1.1"></model-viewer>
+    <p class="pt-3d-ayuda">Gírala con el dedo</p>
+  </div>
+  <script type="module">
+    const caja = document.getElementById('m-3d'), mv = caja.querySelector('model-viewer');
+    mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
+    mv.addEventListener('error', () => caja.remove(), { once: true });
+    import('/assets/vendor/model-viewer/model-viewer.min.js').catch(() => caja.remove());
+  </script>` : '';
   const pasos = (Array.isArray(p.pasos) ? p.pasos : []).filter((x) => typeof x === 'string' && x.trim());
   const demas = (otras || []).filter((m) => m.id !== p.id);
   // Gimnasio con club: "Entrena con el tutorial" (cronómetro + Terminé → monedas). Lo arma public/assets/entreno.js
@@ -50,6 +65,7 @@ export async function onRequestGet({ params, request, env }) {
   return html(`${inicioPagina(n, { titulo: `${p.nombre} · ${n.nombre}` })}
 <main class="pt-pagina">
   <header class="pt-cabeza"><h1>${esc(p.nombre)}</h1><p>${esc(n.nombre)}</p></header>
+  ${visor}
   ${video(p.video_url)}
   ${p.descripcion ? `<p class="pt-frase">${esc(p.descripcion)}</p>` : ''}
   ${pasos.length ? `<ol class="pt-pasos">${pasos.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}

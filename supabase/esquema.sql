@@ -1260,7 +1260,7 @@ create or replace function public.producto_publico(p_slug text, p_id uuid)
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object('id', p.id, 'tipo', p.tipo, 'nombre', p.nombre, 'descripcion', p.descripcion,
     'precio', p.precio, 'foto_url', p.foto_url, 'video_url', p.video_url, 'pasos', p.pasos, 'horario', p.horario,
-    'agotado', p.agotado)
+    'agotado', p.agotado, 'modelo_url', p.modelo_url)
   from public.productos p join public.negocios n on n.id = p.negocio_id
   where n.slug = lower(trim(p_slug)) and n.activo and p.id = p_id and p.activo
 $$;

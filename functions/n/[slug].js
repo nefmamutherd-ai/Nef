@@ -74,6 +74,9 @@ export async function onRequestGet({ params, request, env }) {
   const carta = `/n/${encodeURIComponent(n.slug)}/carta${q}`;
   // "Elige por mí" en la portada (pedido de Jacobo): abre la tragamonedas de la carta de una
   const elige = conCarta ? `<a class="pt-baldosa pt-baldosa-elige" href="${esc(carta)}#elige"><i class="pt-dado">${icono('dado')}</i><span>Elige por mí</span><em>Que la suerte decida</em></a>` : '';
+  // Baldosa extra del paquete del sector (gimnasio: "Recorrido del gimnasio · Próximamente")
+  const bx = pq.baldosa_extra;
+  const extra = bx ? `<a class="pt-baldosa pt-baldosa-extra" href="${esc(bx.ruta.replace('{slug}', encodeURIComponent(n.slug)))}"><i class="pt-dado">${icono(bx.icono)}</i><span>${esc(bx.texto)}</span>${bx.detalle ? `<em>${esc(bx.detalle)}</em>` : ''}</a>` : '';
   const fotos = (pop || []).filter((p) => fotoSegura(p.foto_url)).slice(0, 8);
   const populares = fotos.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido"><h2 class="pt-versalitas">Lo más pedido</h2>
     <div class="pt-carrusel">${fotos.map((p) => `<a class="pt-pop" href="${esc(carta)}"><img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b></a>`).join('')}</div></section>` : '';
@@ -83,7 +86,7 @@ export async function onRequestGet({ params, request, env }) {
 ${deco}
 <main class="pt-pagina pt-inicio">
   <header class="pt-cabeza pt-portada pt-entra">${logo}<h1>${esc(n.nombre)}</h1>${lugar ? `<p class="pt-versalitas pt-lugar">${esc(lugar)}</p>` : ''}<div class="pt-filete" aria-hidden="true"><i></i></div>${n.descripcion ? `<p class="pt-versalitas">${esc(n.descripcion)}</p>` : ''}</header>
-  ${botones.length || elige ? `<div class="pt-botones pt-entra">${botones.join('')}${elige}</div>` : ''}
+  ${botones.length || elige || extra ? `<div class="pt-botones pt-entra">${botones.join('')}${elige}${extra}</div>` : ''}
   ${populares}
   ${enlaces.length ? `<nav class="pt-enlaces pt-puntos">${enlaces.join('')}</nav>` : ''}
   ${firma()}
