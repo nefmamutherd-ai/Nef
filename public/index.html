@@ -137,6 +137,22 @@ nav .entrar:hover { text-decoration: underline; text-underline-offset: 4px; }
 .demo-card b { display: block; font-family: var(--titulos); font-size: 22px; font-weight: 800; }
 .demo-card span { display: block; margin-top: 2px; color: var(--texto-2); font-size: 15px; line-height: 1.4; }
 .demo-card[hidden] { display: none; }
+.demo-item { position: relative; }
+.demo-item[hidden] { display: none; }
+.demo-item .demo-card { padding-right: 76px; }
+.demo-qr { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: grid; place-items: center; gap: 1px; width: 52px; height: 58px; border: 0; border-radius: 16px;
+  background: var(--tinta); color: var(--papel); font: 800 11px var(--titulos); letter-spacing: .06em; cursor: pointer; transition: transform .15s ease; }
+.demo-qr:active { transform: translateY(-50%) scale(.94); }
+.qr-capa { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(29, 27, 24, .72); animation: qr-entra .25s ease both; }
+.qr-capa[hidden] { display: none; }
+.qr-tarjeta { width: min(100%, 420px); padding: 28px 24px 22px; border-radius: 28px; background: var(--blanco); text-align: center; box-shadow: 0 30px 60px -20px rgba(0,0,0,.5); }
+.qr-tarjeta small { display: block; font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mandarina); }
+.qr-tarjeta h3 { margin: 4px 0 18px; font: 800 28px/1.1 var(--titulos); }
+.qr-codigo { width: min(100%, 300px); margin: 0 auto; padding: 14px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 2px var(--arena) inset; }
+.qr-codigo svg { display: block; width: 100%; height: auto; }
+.qr-url { margin: 14px 0 18px; font-size: 14px; color: var(--texto-2); word-break: break-all; }
+.qr-tarjeta .btn { width: 100%; }
+@keyframes qr-entra { from { opacity: 0; } }
 .demo-card img.demo-gym-img { background: #23252A; object-fit: contain; padding: 6px; }
 .demo-card img.demo-reps-img { background: #111215; object-fit: contain; padding: 6px; box-shadow: 0 0 0 2px #FF3EC8 inset; }
 .lead-sec { max-width: 640px; margin-top: 14px; font-size: 18px; line-height: 1.5; color: var(--texto-2); }
@@ -381,19 +397,37 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     <div class="et">Pruébalo tú</div>
     <h2 class="t1">Elige un negocio y tócalo.</h2>
     <div class="demos">
-      <a class="demo-card" href="/n/demo-cafe" data-demo>
-        <img src="/assets/demo/calentado.webp" alt="" width="600" height="600" loading="lazy">
-        <div><small>Restaurante</small><b>Café Luna</b><span>Carta con fotos y 3D, club de monedas, "Elige por mí".</span></div>
-      </a>
-      <a class="demo-card gym" href="/n/demo-gym" data-demo>
-        <img class="demo-gym-img" src="/assets/demo/gym/industrial/prensa-45.webp" alt="" width="240" height="240" loading="lazy">
-        <div><small>Gimnasio</small><b>Forja Gym</b><span>"Encuentra tu máquina", cómo se usa cada una y premios por entrenar.</span></div>
-      </a>
+      <div class="demo-item">
+        <a class="demo-card" href="/n/demo-cafe" data-demo>
+          <img src="/assets/demo/calentado.webp" alt="" width="600" height="600" loading="lazy">
+          <div><small>Restaurante</small><b>Café Luna</b><span>Carta con fotos y 3D, club de monedas, "Elige por mí".</span></div>
+        </a>
+        <button type="button" class="demo-qr" data-url="/n/demo-cafe" data-nombre="Café Luna" aria-label="Mostrar el QR de Café Luna"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg><span>QR</span></button>
+      </div>
+      <div class="demo-item">
+        <a class="demo-card gym" href="/n/demo-gym" data-demo>
+          <img class="demo-gym-img" src="/assets/demo/gym/industrial/prensa-45.webp" alt="" width="240" height="240" loading="lazy">
+          <div><small>Gimnasio</small><b>Forja Gym</b><span>"Encuentra tu máquina", cómo se usa cada una y premios por entrenar.</span></div>
+        </a>
+        <button type="button" class="demo-qr" data-url="/n/demo-gym" data-nombre="Forja Gym" aria-label="Mostrar el QR de Forja Gym"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg><span>QR</span></button>
+      </div>
       <!-- TEMPORAL (27/11/2026, pedido de Jacobo para tener acceso fácil en la reunión con REPS): quitar después. -->
-      <a class="demo-card" href="/n/demo-reps" data-demo>
-        <img class="demo-reps-img" src="/assets/demo/gym/neon/prensa-45.webp" alt="" width="240" height="240" loading="lazy">
-        <div><small>Gimnasio · demostración</small><b>Demo para REPS</b><span>Con su estilo: neón, sus 3 sedes y "Encuentra tu máquina".</span></div>
-      </a>
+      <div class="demo-item">
+        <a class="demo-card" href="/n/demo-reps" data-demo>
+          <img class="demo-reps-img" src="/assets/demo/gym/neon/prensa-45.webp" alt="" width="240" height="240" loading="lazy">
+          <div><small>Gimnasio · demostración</small><b>Demo para REPS</b><span>Con su estilo: neón, sus 3 sedes y "Encuentra tu máquina".</span></div>
+        </a>
+        <button type="button" class="demo-qr" data-url="/n/demo-reps" data-nombre="Demo para REPS" aria-label="Mostrar el QR de Demo para REPS"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg><span>QR</span></button>
+      </div>
+    </div>
+    <div class="qr-capa" id="qr-capa" role="dialog" aria-modal="true" aria-labelledby="qr-nombre" hidden>
+      <div class="qr-tarjeta">
+        <small>Escanéalo con la cámara</small>
+        <h3 id="qr-nombre"></h3>
+        <div class="qr-codigo" id="qr-codigo"></div>
+        <p class="qr-url" id="qr-url"></p>
+        <button type="button" class="btn p" id="qr-cerrar">Listo</button>
+      </div>
     </div>
   </section>
 
@@ -711,13 +745,37 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     } else cargar3d();
   }
 
+  // ── QR de cada demo: se abre en grande para mostrarlo en la pantalla y que lo escaneen (la librería se baja al tocar) ──
+  var capaQR = document.getElementById('qr-capa'), libQR = null;
+  function cargarLibQR() {
+    return libQR || (libQR = new Promise(function (ok, mal) { var sc = document.createElement('script'); sc.src = '/assets/qrcode.js'; sc.onload = ok; sc.onerror = mal; document.head.appendChild(sc); }));
+  }
+  function cerrarQR() { capaQR.hidden = true; }
+  document.querySelectorAll('.demo-qr').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var url = location.origin + b.dataset.url;
+      cargarLibQR().then(function () {
+        var qr = window.qrcode(0, 'M'); qr.addData(url); qr.make();
+        // El SVG lo arma la librería con una URL propia del sitio (no es texto del usuario)
+        document.getElementById('qr-codigo').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+        document.getElementById('qr-nombre').textContent = b.dataset.nombre;
+        document.getElementById('qr-url').textContent = url.replace(/^https?:\/\//, '');
+        capaQR.hidden = false;
+        document.getElementById('qr-cerrar').focus();
+      });
+    });
+  });
+  document.getElementById('qr-cerrar').addEventListener('click', cerrarQR);
+  capaQR.addEventListener('click', function (e) { if (e.target === capaQR) cerrarQR(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !capaQR.hidden) cerrarQR(); });
+
   // ── "Tócalo tú": solo se muestra si el negocio de demostración existe (Fase 7). ──
   var demo = document.getElementById('demo');
   var tarjetas = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
   Promise.all(tarjetas.map(function (a) {
     return fetch(a.getAttribute('href'), { redirect: 'manual' })
-      .then(function (r) { a.hidden = r.status !== 200; return !a.hidden; })
-      .catch(function () { a.hidden = true; return false; });
+      .then(function (r) { a.hidden = r.status !== 200; if (a.parentNode.classList.contains('demo-item')) a.parentNode.hidden = a.hidden; return !a.hidden; })
+      .catch(function () { a.hidden = true; if (a.parentNode.classList.contains('demo-item')) a.parentNode.hidden = true; return false; });
   })).then(function (hay) {
     var alguna = hay.some(Boolean);
     demo.hidden = !alguna;
