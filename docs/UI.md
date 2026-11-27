@@ -58,7 +58,7 @@ Cada una: **ruta · archivo · componentes · textos exactos · listo cuando**. 
 ### Portales (cliente final)
 | Pantalla | Fase | Ruta · archivo | Componentes | Textos | Listo cuando |
 |---|---|---|---|---|---|
-| Portal | 1 | `/n/<slug>` · `functions/n/[slug].js` | `.pt-cabeza`, `.pt-botones` (1–3 según servicios), `.pt-enlaces`, `.pt-firma` | Botones por sector desde `lib/sectores/*.json` ("Ver la carta"/"Clases de hoy", "Mis monedas", "Déjanos tu reseña") | Café y gym con el mismo código; igual a `maqueta.png` |
+| Portal | 1 | `/n/<slug>` · `functions/n/[slug].js` | `.pt-cabeza`, `.pt-botones` (1–3 según servicios), `.pt-enlaces`, `.pt-firma` | Botones por sector desde `lib/sectores/*.json` ("Ver la carta"/"Clases de hoy", "Mis premios" (antes "Mis monedas", 27/11), "Déjanos tu reseña") | Café y gym con el mismo código; igual a `maqueta.png` |
 | Registro al club | 2 | `/n/<slug>/club` | `.pt-club` h1, `.pt-form`, `.pt-campo` ×2, `.pt-casilla` (sin marcar), `.pt-accion.marca` | "Únete al club de ${negocio}", "Tu nombre", "Tu celular", "Autorizo el uso de mis datos para el club. Cómo se usan", "Unirme" | No envía sin casilla; celular de 10 dígitos que empieza por 3 |
 | Mis monedas | 2 | `/n/<slug>/club` (con sesión) | `.pt-club`, `.pt-saldo` (`--progreso` = saldo/costo del premio más cercano ×100, máx. 100), `.pt-frase`, un `.pt-aviso`, `.pt-accion` "Mostrar mi código", `.pt-link` "Ver todos los premios" | "Te faltan **N** para un X" o "¡Ya puedes canjear X!" | Bienvenida pendiente muestra aviso neutro "Tus 50 de bienvenida se activan en tu primera visita" |
 | Mi código | 2 | hoja inferior en la misma página | `.pt-hoja` con QR grande (assets/qrcode.js) y el número en grande | "Muéstraselo al cajero" | QR legible a 30 cm (≥ 240 px) |
