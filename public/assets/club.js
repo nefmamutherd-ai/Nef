@@ -172,7 +172,8 @@ function pintarTarjeta(t, base = 0) {
   $('t-regalo').textContent = regalo ? `+${numero(regalo)} de regalo` : '';
 
   // Tu próximo premio: barra ondulada desde lo que vio la última vez hasta hoy; el regalo, como tramo punteado
-  const meta = premios.find((p) => p.costo > t.saldo) || alcanzables[alcanzables.length - 1];
+  const elegida = premios.find((p) => p.id === leer(CLAVE + '_meta'));
+  const meta = (elegida && !elegida.alcanzable ? elegida : null) || premios.find((p) => p.costo > t.saldo) || alcanzables[alcanzables.length - 1];
   $('t-meta').hidden = !meta;
   if (meta) {
     const ola = $('t-ola');
@@ -186,7 +187,7 @@ function pintarTarjeta(t, base = 0) {
     const m = document.createElement('i'); m.className = 'pt-moneda-p'; m.setAttribute('aria-hidden', 'true');
     cuesta.append(m, numero(meta.costo));
     const faltan = meta.costo - t.saldo;
-    $('t-meta-titulo').textContent = faltan <= 0 ? 'Ya puedes canjear' : 'Tu próximo premio';
+    $('t-meta-titulo').textContent = faltan <= 0 ? 'Ya puedes canjear' : meta === elegida ? 'Tu meta' : 'Tu próximo premio';
     const conRegalo = premios.filter((p) => p.costo <= t.saldo + regalo).pop();
     if (faltan <= 0) frase($('t-frase'), ['¡Ya te alcanza! Muéstrale tu código al cajero y ', { b: 'canjéalo' }, '.']);
     else if (regalo && conRegalo) frase($('t-frase'), ['Con tus ', { b: `${numero(regalo)} ${plural} de regalo` }, ' ya te alcanza para ', { b: conRegalo.nombre }, `. Se activan en ${primera}.`]);
@@ -258,25 +259,57 @@ function pintarTarjeta(t, base = 0) {
     v.textContent = 'Este negocio aún no tiene premios.';
     lista.append(v);
   }
+  // Tienda de premios (Jacobo, 27/11/2026: "un mercado para elegir uno mismo qué ganarse"). El cambio sigue siendo en la
+  // caja: "Lo quiero" abre el código del cliente con el nombre del premio; si aún no le alcanza, lo pone de meta.
+  const tienda = document.createElement('div');
+  tienda.className = 'pt-tienda';
+  const metaId = leer(CLAVE + '_meta');
   for (const p of premios) {
     const d = document.createElement('div');
-    d.className = 'pt-premio' + (p.alcanzable ? ' listo' : '');
-    const b = document.createElement('b');
-    b.textContent = p.nombre;
-    const s = document.createElement('small');
-    s.textContent = p.alcanzable ? '¡Ya te alcanza!' : `${numero(p.costo)} ${plural}`;
-    const barra = document.createElement('div');
-    barra.className = 'pt-barrita';
-    const i = document.createElement('i');
-    i.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / p.costo)));
-    barra.append(i);
-    const v = document.createElement('small');
-    v.textContent = `${numero(p.costo)} ${plural} · vale ${pesos(p.valor_pesos)}`;
-    d.append(b, s, barra, v);
-    lista.append(d);
+    d.className = 'pt-art' + (p.alcanzable ? ' listo' : '') + (p.id === metaId && !p.alcanzable ? ' meta' : '');
+    const ico = document.createElement('div');
+    ico.className = 'pt-art-ico';
+    ico.innerHTML = iconoPremio(p.nombre); // SVG fijo de esta lista, no texto del usuario
+    const b = document.createElement('b'); b.textContent = p.nombre;
+    const precio = document.createElement('div'); precio.className = 'pt-art-precio';
+    const mon = document.createElement('i'); mon.className = 'pt-moneda-p'; mon.setAttribute('aria-hidden', 'true');
+    precio.append(mon, `${numero(p.costo)} ${plural}`);
+    const barra = document.createElement('div'); barra.className = 'pt-barrita';
+    const i = document.createElement('i'); i.style.setProperty('--v', String(Math.min(1, (t.saldo || 0) / p.costo))); barra.append(i);
+    const nota = document.createElement('small');
+    nota.textContent = p.alcanzable ? '' : `Te faltan ${numero(p.costo - (t.saldo || 0))}`;
+    nota.hidden = p.alcanzable; // la insignia "¡Te alcanza!" ya lo dice
+    const btn = document.createElement('button'); btn.type = 'button';
+    if (p.alcanzable) {
+      btn.className = 'pt-art-btn marca'; btn.textContent = 'Lo quiero';
+      btn.addEventListener('click', () => { hojaPremios.cerrar(); setTimeout(() => abrirCodigo(p.nombre), 320); });
+    } else {
+      const esMeta = p.id === metaId;
+      btn.className = 'pt-art-btn'; btn.textContent = esMeta ? 'Es tu meta' : 'Ponerlo de meta';
+      btn.disabled = esMeta;
+      btn.addEventListener('click', () => { guardar(CLAVE + '_meta', p.id); toast(`Listo: tu meta es ${p.nombre}`); hojaPremios.cerrar(); pintarTarjeta(t, t.saldo); });
+    }
+    d.append(ico, b, precio, barra, nota, btn);
+    tienda.append(d);
   }
+  if (premios.length) lista.append(tienda);
   mostrar('tarjeta');
 }
+
+const ICONOS_PREMIO = [
+  [/batido|prote[ií]n|malteada|jugo|limonada|bebida|smoothie/i, '<path d="M7 4h10l-1.5 16h-7z"/><path d="M7.5 9h9M12 4l2-2"/>'],
+  [/torta|postre|galleta|croissant|pan|ponqu|pastel|natas/i, '<path d="M4 20h16v-7H4z"/><path d="M4 13c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2M12 7v4M12 4v1"/>'],
+  [/caf[eé]|capuchino|tinto|chocolate|t[eé]\b|latte/i, '<path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3v2M12 3v2"/>'],
+  [/desayuno|almuerzo|plato|hamburg|combo|sanduche|arepa/i, '<path d="M3 15h18M5 15a7 7 0 0 1 14 0M12 6v2M8 19h8"/>'],
+  [/toalla|camis|termo|gorra|botella|maleta|guantes/i, '<path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-1 2-2.5 3-4 3S9 6 8 4z"/>'],
+  [/clase|sesi[oó]n|entren|valoraci|pase|mes\b|d[ií]a gratis/i, '<path d="M4 8h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z"/><path d="M14 8v10" stroke-dasharray="2 2"/>'],
+  [/%|descuento/i, '<path d="M6 18 18 6"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>'],
+];
+const iconoPremio = (nombre) => {
+  const par = ICONOS_PREMIO.find(([re]) => re.test(nombre));
+  const trazo = par ? par[1] : '<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M4 13h16M12 9v11M12 9C10.5 5.5 7 5 7 7.2 7 8.6 9.5 9 12 9zM12 9c1.5-3.5 5-4 5-1.8C17 8.6 14.5 9 12 9z"/>';
+  return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazo + '</svg>';
+};
 
 // ── Qué cambió desde la última vez que el cliente vio su tarjeta → celebración ──────────────
 const RAZON = { bienvenida: 'de bienvenida', visita: 'por tu visita', bono_hora_dorada: 'de hora dorada', bono_racha: 'por tu racha' };
@@ -427,7 +460,9 @@ form.addEventListener('submit', async (e) => {
 });
 
 // ── Tarjeta ──────────────────────────────────────────────────────────
-$('t-codigo').addEventListener('click', () => {
+function abrirCodigo(premio) {
+  $('qr-premio').hidden = !premio;
+  $('qr-premio').textContent = premio ? `Para cambiar «${premio}», muestra este código en la caja.` : '';
   const qr = window.qrcode(0, 'M');
   qr.addData(tokenActual);
   qr.make();
@@ -437,7 +472,8 @@ $('t-codigo').addEventListener('click', () => {
   cont.insertAdjacentHTML('afterbegin', qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true }));
   hojaCodigo.abrir();
   vigilar();
-});
+}
+$('t-codigo').addEventListener('click', () => abrirCodigo(null));
 $('t-premios').addEventListener('click', () => hojaPremios.abrir());
 
 // Al volver a la pestaña (p. ej. después de pagar), revisa si hay algo nuevo que celebrar

@@ -709,7 +709,7 @@ await caso('aviso único: prioridad bienvenida → hora dorada → premio → ra
 });
 
 console.log('Fase 7 · vender y cobrar');
-await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y demo-gym (7 máquinas, 12 clases)', async () => {
+await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 7 premios) y demo-gym (7 máquinas, 12 clases)', async () => {
   await db.exec('reset role;');
   const demo = fs.readFileSync(new URL('../supabase/demo.sql', import.meta.url), 'utf8');
   await db.exec(demo);
@@ -718,10 +718,10 @@ await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y d
   await como('anon');
   const [{ r: c }] = await q(`select carta_publica('demo-cafe') r`);
   assert.equal(c.categorias.flatMap((x) => x.productos).length, 15);
-  assert.equal((await q(`select club_publico('demo-cafe') r`))[0].r.premios.length, 3);
+  assert.equal((await q(`select club_publico('demo-cafe') r`))[0].r.premios.length, 7);
   assert.equal((await q(`select maquinas_publicas('demo-gym') r`))[0].r.length, 7);
   assert.equal((await q(`select maquinas_publicas('demo-reps') r`))[0].r.length, 7, 'la copia para REPS tiene las mismas máquinas');
-  assert.equal((await q(`select club_publico('demo-reps') r`))[0].r.premios.length, 3);
+  assert.equal((await q(`select club_publico('demo-reps') r`))[0].r.premios.length, 7);
   const [{ r: t }] = await q(`select resolver_toque('demoprensa','nfc',null) r`);
   assert.equal(t.destino, 'producto'); assert.ok(t.producto_id);
   assert.ok((await q(`select caja_entrar('demo-cafe','1234') r`))[0].r.sesion, 'la caja demo abre con 1234');

@@ -44,6 +44,13 @@ insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
   ('d0000000-0000-4000-8000-0000000b0002', 'd0000000-0000-4000-8000-0000000000c1', 'Capuchino', 8000, 2),
   ('d0000000-0000-4000-8000-0000000b0003', 'd0000000-0000-4000-8000-0000000000c1', 'Desayuno completo', 20000, 3)
 on conflict (id) do nothing;
+-- Más premios para que el club se vea como una tienda (27/11/2026): unos al alcance, otros para ponerlos de meta
+insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
+  ('d0000000-0000-4000-8000-0000000b0004', 'd0000000-0000-4000-8000-0000000000c1', 'Tinto con almojábana', 6000, 4),
+  ('d0000000-0000-4000-8000-0000000b0005', 'd0000000-0000-4000-8000-0000000000c1', 'Torta de chocolate', 9000, 5),
+  ('d0000000-0000-4000-8000-0000000b0006', 'd0000000-0000-4000-8000-0000000000c1', 'Malteada de fresa', 14000, 6),
+  ('d0000000-0000-4000-8000-0000000b0007', 'd0000000-0000-4000-8000-0000000000c1', 'Hamburguesa de la casa', 26000, 7)
+on conflict (id) do nothing;
 
 insert into public.tags (id, codigo, negocio_id, nombre) values
   ('d0000000-0000-4000-8000-0000000e0001', 'democafe', 'd0000000-0000-4000-8000-0000000000c1', 'Mesa 4')
@@ -118,6 +125,12 @@ insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
   ('d0000000-0000-4000-8000-0000000b0101', 'd0000000-0000-4000-8000-0000000000a2', 'Batido de proteína', 12000, 1),
   ('d0000000-0000-4000-8000-0000000b0102', 'd0000000-0000-4000-8000-0000000000a2', 'Toalla Forja', 25000, 2),
   ('d0000000-0000-4000-8000-0000000b0103', 'd0000000-0000-4000-8000-0000000000a2', '10 % en tu proteína', 15000, 3)
+on conflict (id) do nothing;
+insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
+  ('d0000000-0000-4000-8000-0000000b0104', 'd0000000-0000-4000-8000-0000000000a2', 'Bebida hidratante', 6000, 4),
+  ('d0000000-0000-4000-8000-0000000b0105', 'd0000000-0000-4000-8000-0000000000a2', 'Clase personalizada', 30000, 5),
+  ('d0000000-0000-4000-8000-0000000b0106', 'd0000000-0000-4000-8000-0000000000a2', 'Valoración física', 35000, 6),
+  ('d0000000-0000-4000-8000-0000000b0107', 'd0000000-0000-4000-8000-0000000000a2', 'Camiseta Forja', 45000, 7)
 on conflict (id) do nothing;
 
 -- Gimnasio (26/11/2026): llegada con el QR de recepción (modo rápido, +10, una vez cada 12 h), entrenar con el tutorial

@@ -84,7 +84,7 @@ ${fondoVivo(n.sector)}
     </div>
     <h2 class="pt-versalitas pt-sub">Tus premios</h2>
     <div class="pt-premios-fila" id="t-camino" hidden></div>
-    <button type="button" class="pt-link" id="t-premios">Ver todos los premios</button>
+    <button type="button" class="pt-accion pt-ir-tienda" id="t-premios">${icono('regalo')}<span><b>Tienda de premios</b><small>Elige qué quieres ganarte</small></span></button>
     <details class="pt-como">
       <summary>¿Cómo gano ${plural}?</summary>
       <ol><li><i>${icono('carta')}</i><b>Compra</b><span>Pide lo que quieras</span></li>
@@ -98,13 +98,15 @@ ${fondoVivo(n.sector)}
   <div class="pt-hoja" id="hoja-codigo" role="dialog" aria-label="Mi código" hidden>
     <h2>Mi código</h2>
     <div class="pt-qr" id="qr"></div>
+    <p class="pt-qr-premio" id="qr-premio" hidden></p>
     <p>Muéstraselo al cajero</p>
     <p class="pt-espera" id="t-espera"><i aria-hidden="true"></i>Tus ${plural} aparecen aquí apenas te las sume</p>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-premios" role="dialog" aria-label="Premios" hidden>
-    <h2>Premios</h2>
+    <h2>Tienda de premios</h2>
+    <p class="pt-tienda-ayuda">Elige tu premio. Si ya te alcanza, toca "Lo quiero" y muestra tu código en la caja.</p>
     <div id="lista-premios"></div>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>

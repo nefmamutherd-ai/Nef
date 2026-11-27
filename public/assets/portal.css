@@ -1147,3 +1147,29 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 [data-tema="industrial"] .pt-dia-btn[aria-selected="true"] { background: var(--marca); color: var(--tinta); }
 [data-tema="industrial"] .pt-dia-btn i { background: var(--grafito); color: var(--marca); }
 [data-tema="industrial"] .pt-clase-hora { background: var(--grafito); color: var(--marca); border-radius: 6px; font-style: italic; }
+
+/* Tienda de premios (27/11/2026): vitrina en dos columnas; "Lo quiero" si alcanza, "Ponerlo de meta" si no */
+.pt-ir-tienda { min-height: 64px; justify-content: flex-start; gap: 12px; padding: 0 18px; margin-top: 10px; text-align: left; }
+.pt-ir-tienda svg { width: 28px; height: 28px; flex: none; }
+.pt-ir-tienda span { display: flex; flex-direction: column; gap: 1px; }
+.pt-ir-tienda b { font: var(--peso-titulo, 700) 18px/1.1 var(--serif); }
+.pt-ir-tienda small { font: 500 13px var(--sans); opacity: .8; }
+.pt-tienda-ayuda { margin: -4px 0 14px; color: var(--tinta-2); font-size: 14px; line-height: 1.4; }
+.pt-tienda { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 6px; }
+.pt-art { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px 12px 12px; border-radius: 18px; background: var(--papel-hondo); }
+.pt-art.listo { background: var(--tarjeta); box-shadow: 0 0 0 2px var(--marca) inset; }
+.pt-art.meta { box-shadow: 0 0 0 2px var(--oro) inset; }
+.pt-art.meta::before { content: "Tu meta"; position: absolute; top: -9px; right: 10px; padding: 2px 8px; border-radius: 99px; background: var(--oro); color: var(--oro-tinta); font: 800 11px var(--sans); }
+.pt-art.listo::before { content: "¡Te alcanza!"; position: absolute; top: -9px; right: 10px; padding: 2px 8px; border-radius: 99px; background: var(--marca); color: var(--sobre-marca); font: 800 11px var(--sans); }
+.pt-art-ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: var(--tarjeta); color: var(--marca); }
+.pt-art.listo .pt-art-ico { background: var(--marca); color: var(--sobre-marca); animation: pt-regalo 3.2s ease-in-out infinite; }
+.pt-art b { font: var(--peso-titulo, 700) 15.5px/1.2 var(--serif); min-height: 2.4em; }
+.pt-art-precio { display: flex; align-items: center; gap: 6px; font: 800 14px var(--sans); font-variant-numeric: tabular-nums; }
+.pt-art .pt-barrita { height: 6px; border-radius: 3px; background: var(--linea); overflow: hidden; }
+.pt-art .pt-barrita i { display: block; height: 100%; width: calc(var(--v) * 100%); background: var(--marca); border-radius: inherit; }
+.pt-art small { font-size: 12.5px; color: var(--tinta-2); }
+.pt-art-btn { min-height: 40px; margin-top: 2px; border: 0; border-radius: 12px; background: var(--tarjeta); color: var(--tinta); font: 700 14px var(--sans); cursor: pointer; box-shadow: 0 0 0 1.5px var(--linea) inset; }
+.pt-art-btn.marca { background: var(--marca); color: var(--sobre-marca); box-shadow: none; }
+.pt-art-btn:disabled { opacity: .7; cursor: default; }
+.pt-qr-premio { margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--oro-suave); color: var(--oro-tinta); font-weight: 700; text-align: center; }
+[data-tema="industrial"] .pt-art, [data-tema="industrial"] .pt-art-ico, [data-tema="industrial"] .pt-art-btn { border-radius: 8px; }
