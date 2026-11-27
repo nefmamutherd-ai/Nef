@@ -1111,3 +1111,39 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
   animation: pt-dedo-gira 2.2s ease-in-out infinite; transition: opacity .4s; }
 .pt-dedo.fuera { opacity: 0; }
 @keyframes pt-dedo-gira { 0%, 100% { transform: translateX(-44px) rotate(-8deg); } 50% { transform: translateX(44px) rotate(8deg); } }
+/* Plano: número sobre cada máquina (sin textos que choquen) y la onda de "Estás aquí" centrada en su punto */
+.pl-aqui-onda { transform-box: fill-box; transform-origin: center; }
+.pl-num-fondo { fill: var(--tarjeta); stroke: var(--tinta); stroke-width: 1.2; pointer-events: none; }
+.pl-num { font-size: 7px; font-weight: 800; text-anchor: middle; fill: var(--tinta); pointer-events: none; font-family: var(--sans); }
+.pl-maq.activa .pl-num-fondo { fill: var(--tarjeta); stroke: var(--marca); stroke-width: 2; }
+.pl-maq.activa .pl-num { fill: var(--marca); }
+[data-tema="neon"] .pl-num-fondo { fill: var(--oscuro); stroke: var(--neon-suave); }
+[data-tema="neon"] .pl-num { fill: #fff; }
+.pt-maq { flex-direction: row !important; align-items: center !important; gap: 12px !important; }
+.pt-maq > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pl-n { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--tarjeta); color: var(--tinta); font: 800 14px var(--sans); font-style: normal; box-shadow: 0 0 0 1.5px var(--tinta) inset; }
+.pt-maq.activa .pl-n { background: var(--sobre-marca); color: var(--marca); box-shadow: none; }
+/* "Elige por mí": el plato que salió se puede tocar para verlo */
+.pt-ver-plato { display: inline-flex; align-items: center; min-height: 40px; margin-left: 10px; padding: 0 14px; border: 0; border-radius: var(--r-pildora); background: var(--tinta); color: var(--tarjeta); font: 700 14px var(--sans); cursor: pointer; animation: pt-sube .4s var(--ease) both; }
+.pt-maquina.gano .pt-ruleta { cursor: pointer; }
+
+/* Clases de la semana: pestañas con el día (Hoy, Mañana, Lun…) y la cantidad de clases */
+.pt-dias { display: flex; gap: 8px; margin: 4px calc(var(--e-24) * -1) 18px; padding: 2px var(--e-24) 6px; overflow-x: auto; scrollbar-width: none; }
+.pt-dias::-webkit-scrollbar { display: none; }
+.pt-dia-btn { position: relative; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 62px; padding: 10px 10px 8px; border: 0; border-radius: 16px;
+  background: var(--papel-hondo); color: var(--tinta); cursor: pointer; transition: background var(--dur-2), color var(--dur-2), transform var(--dur-1); }
+.pt-dia-btn small { font: 700 12px var(--sans); text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+.pt-dia-btn b { font: var(--peso-titulo, 700) 22px/1 var(--serif); }
+.pt-dia-btn i { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--marca); color: var(--sobre-marca); font: 800 11px/20px var(--sans); font-style: normal; text-align: center; }
+.pt-dia-btn[aria-selected="true"] { background: var(--tinta); color: var(--tarjeta); }
+.pt-dia-btn:active { transform: scale(.96); }
+.pt-dia:not([hidden]) { animation: pt-sube .3s var(--ease) both; }
+.pt-dia h2 { margin: 0 0 10px; }
+.pt-clase { align-items: center; }
+.pt-clase-hora { flex: none; min-width: 58px; padding: 8px 0; border-radius: 12px; background: var(--papel-hondo); text-align: center; font: var(--peso-titulo, 700) 17px var(--serif); font-variant-numeric: tabular-nums; }
+[data-tema="neon"] .pt-dia-btn[aria-selected="true"] { background: var(--marca); color: #fff; box-shadow: 0 0 14px rgba(255, 62, 200, .45); }
+[data-tema="neon"] .pt-dia-btn i { background: var(--oscuro); color: var(--neon-suave); }
+[data-tema="industrial"] .pt-dia-btn { border-radius: 8px; }
+[data-tema="industrial"] .pt-dia-btn[aria-selected="true"] { background: var(--marca); color: var(--tinta); }
+[data-tema="industrial"] .pt-dia-btn i { background: var(--grafito); color: var(--marca); }
+[data-tema="industrial"] .pt-clase-hora { background: var(--grafito); color: var(--marca); border-radius: 6px; font-style: italic; }

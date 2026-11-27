@@ -78,7 +78,7 @@ export async function onRequestGet({ params, request, env }) {
   const bx = pq.baldosa_extra;
   const extra = bx ? `<a class="pt-baldosa pt-baldosa-extra" href="${esc(bx.ruta.replace('{slug}', encodeURIComponent(n.slug)))}"><i class="pt-dado">${icono(bx.icono)}</i><span>${esc(bx.texto)}</span>${bx.detalle ? `<em>${esc(bx.detalle)}</em>` : ''}</a>` : '';
   const fotos = (pop || []).filter((p) => fotoSegura(p.foto_url)).slice(0, 8);
-  const populares = fotos.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido"><h2 class="pt-versalitas">Lo más pedido</h2>
+  const populares = fotos.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Los favoritos"><h2 class="pt-versalitas">Los favoritos</h2>
     <div class="pt-carrusel">${fotos.map((p) => `<a class="pt-pop" href="${esc(carta)}"><img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b></a>`).join('')}</div></section>` : '';
   const deco = fondoVivo(n.sector);
 

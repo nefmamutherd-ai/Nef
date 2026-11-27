@@ -56,8 +56,8 @@ export async function onRequestGet({ params, request, env }) {
 
   // "Lo más pedido": carrusel con fotos grandes (solo si hay al menos 2 con foto)
   const populares = (pop || []).filter((p) => fotoSegura(p.foto_url));
-  const carrusel = populares.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Lo más pedido">
-    <h2 class="pt-versalitas">Lo más pedido</h2>
+  const carrusel = populares.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Los favoritos">
+    <h2 class="pt-versalitas">Los favoritos</h2>
     <div class="pt-carrusel">${populares.map((p) => `<button type="button" class="pt-pop" data-id="${esc(p.id)}">
       <img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b><span class="pt-precio">${pesos(p.precio)}</span></button>`).join('')}</div>
   </section>` : '';
@@ -114,6 +114,7 @@ ${fondoVivo(n.sector)}
       </div>
       <div class="pt-resultado" id="g-resultado" hidden>
         <span class="pt-precio" id="g-precio"></span>
+        <button type="button" class="pt-ver-plato" id="g-ver">Ver el plato ›</button>
         <p class="pt-frase" id="g-frase" hidden></p>
       </div>
       <div class="pt-dos" id="g-acciones" hidden>

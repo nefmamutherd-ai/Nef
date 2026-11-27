@@ -452,7 +452,7 @@ await caso('máquina sin video → 3D animado; plano del gimnasio: buscar una m�
   await p.close();
   await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', modelo_url: null });
 });
-await caso('clases de hoy: solo las del día (hora Bogotá)', async () => {
+await caso('clases de la semana: abre en hoy (hora Bogotá) y cada día en su pestaña', async () => {
   const dias = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const hoy = dias.indexOf(new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/Bogota' }));
   const [n] = await api(`negocios?slug=eq.${slug}`);
@@ -466,8 +466,12 @@ await caso('clases de hoy: solo las del día (hora Bogotá)', async () => {
   await p.goto(`${BASE}/n/${slug}`);
   await p.click('.pt-boton:has-text("Clases de hoy")');
   await p.waitForURL(new RegExp(`/n/${slug}/clases`));
-  const nombres = await p.$$eval('.pt-prod b', (b) => b.map((x) => x.textContent));
-  assert.deepEqual(nombres, ['Spinning']);
+  // Abre en hoy: solo las de hoy a la vista; la pestaña de mañana muestra las de mañana (semana completa, 27/11/2026)
+  const vistas = () => p.$$eval('.pt-dia:not([hidden]) .pt-prod b', (b) => b.map((x) => x.textContent));
+  assert.deepEqual(await vistas(), ['Spinning']);
+  await p.click(`.pt-dia-btn[data-dia="${(hoy + 1) % 7}"]`);
+  assert.deepEqual(await vistas(), ['Yoga']);
+  await p.click(`.pt-dia-btn[data-dia="${hoy}"]`);
   await p.screenshot({ path: DIR + 'clases-hoy.png', fullPage: true });
   await p.close();
 });

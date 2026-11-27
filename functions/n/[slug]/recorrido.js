@@ -20,13 +20,13 @@ const SALAS = [
 ];
 // Puestos del plano; cada máquina del gimnasio cae en uno por su nombre
 const PUESTOS = [
-  { clave: /prensa/i, x: 1.4, y: 1.4, w: 2.4, h: 3.6, zona: 'Zona de pierna' },
-  { clave: /extensi/i, x: 5.2, y: 1.6, w: 1.9, h: 1.9, zona: 'Zona de pierna' },
-  { clave: /press/i, x: 12, y: 5, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
-  { clave: /jal[oó]n/i, x: 14.7, y: 5, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
-  { clave: /remo/i, x: 17.3, y: 5, w: 1.6, h: 2.4, zona: 'Pecho y espalda' },
-  { clave: /mancuern/i, x: 12.4, y: 11.6, w: 5.4, h: 1.2, zona: 'Peso libre' },
-  { clave: /caminad|cardio|el[ií]ptic|bici/i, x: 1.4, y: 7.6, w: 1.2, h: 2.4, zona: 'Cardio', extra: [[3.2, 7.6], [5, 7.6]] },
+  { clave: /prensa/i, x: 1.4, y: 2, w: 2.4, h: 3.4, zona: 'Zona de pierna' },
+  { clave: /extensi/i, x: 5.2, y: 2.2, w: 1.9, h: 1.9, zona: 'Zona de pierna' },
+  { clave: /press/i, x: 12, y: 5.7, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
+  { clave: /jal[oó]n/i, x: 14.7, y: 5.7, w: 1.9, h: 2.2, zona: 'Pecho y espalda' },
+  { clave: /remo/i, x: 17.3, y: 5.7, w: 1.6, h: 2.2, zona: 'Pecho y espalda' },
+  { clave: /mancuern/i, x: 12.4, y: 11.5, w: 5.4, h: 1.2, zona: 'Peso libre' },
+  { clave: /caminad|cardio|el[ií]ptic|bici/i, x: 1.4, y: 8.2, w: 1.2, h: 2.1, zona: 'Cardio', extra: [[3.2, 8.2], [5, 8.2]] },
 ];
 
 // "Al fondo a la izquierda, en la zona de pierna" + pasos desde la entrada (por el pasillo central)
@@ -39,19 +39,16 @@ function indicaciones(p) {
     ruta: [[PISO.entrada[0], PISO.entrada[1] - 0.2], [PISO.entrada[0], frente], [cx, frente]] };
 }
 
-// En el plano va el nombre corto ("Press", "Jalón", "Remo"): los completos se montaban unos sobre otros
-const corto = (nombre) => String(nombre).replace(/^(rack|m[aá]quina) de /i, '').split(/\s+/)[0].replace(/^./, (c) => c.toUpperCase());
-
 function plano(lista) {
   const E = 10; // escala del dibujo: 1 m = 10 unidades del SVG
   const r = (o, cls, extra = '') => `<rect class="${cls}" x="${o.x * E}" y="${o.y * E}" width="${o.w * E}" height="${o.h * E}" rx="6"${extra}/>`;
   const zonas = ZONAS.map((z) => r(z, 'pl-zona') + `<text class="pl-zona-txt" x="${(z.x + 0.4) * E}" y="${(z.y + 0.9) * E}">${esc(z.nombre)}</text>`).join('');
   const salas = SALAS.map((z) => r(z, 'pl-sala') + `<text class="pl-sala-txt" x="${(z.x + z.w / 2) * E}" y="${(z.y + z.h / 2 + 0.25) * E}">${esc(z.nombre)}</text>`).join('');
   const maquinas = lista.filter((m) => m.puesto).map((m) => {
-    const p = m.puesto;
+    const p = m.puesto, cx = (p.x + p.w / 2) * E, cy = (p.y + p.h / 2) * E;
     const piezas = [[p.x, p.y], ...(p.extra || [])].map(([x, y]) => r({ x, y, w: p.w, h: p.h }, 'pl-maq-forma')).join('');
     return `<g class="pl-maq" data-id="${esc(m.id)}" tabindex="0" role="button" aria-label="${esc(m.nombre)}">${piezas}` +
-      `<text class="pl-maq-txt" x="${(p.x + p.w / 2) * E}" y="${(p.y + p.h + 0.75) * E}">${esc(corto(m.nombre))}</text></g>`;
+      `<circle class="pl-num-fondo" cx="${cx}" cy="${cy}" r="6.2"/><text class="pl-num" x="${cx}" y="${cy + 2.4}">${m.num}</text></g>`;
   }).join('');
   const [ex, ey] = PISO.entrada;
   return `<svg class="pl-svg" viewBox="-6 -6 ${PISO.ancho * E + 12} ${PISO.alto * E + 30}" role="img" aria-label="Plano del gimnasio">
@@ -80,15 +77,19 @@ export async function onRequestGet({ params, request, env }) {
   if (n.sector !== 'gimnasio') return redirigir(new URL(`/n/${encodeURIComponent(n.slug)}`, url).href);
   const s = encodeURIComponent(n.slug);
   const usados = new Set();
+  let numero = 0;
   const lista = (maquinas || []).map((m) => {
     const puesto = PUESTOS.find((p) => !usados.has(p) && p.clave.test(m.nombre));
     if (puesto) usados.add(puesto);
-    return { ...m, puesto, guia: puesto ? { ...indicaciones(puesto), foto: fotoSegura(m.foto_url) || null } : (fotoSegura(m.foto_url) ? { foto: fotoSegura(m.foto_url) } : null) };
+    return { ...m, num: null, puesto, guia: puesto ? { ...indicaciones(puesto), foto: fotoSegura(m.foto_url) || null } : (fotoSegura(m.foto_url) ? { foto: fotoSegura(m.foto_url) } : null) };
   });
+  // Números de corrido recorriendo el plano (zona de pierna, pecho y espalda, peso libre, cardio); la lista va en ese orden
+  lista.sort((a, b) => (a.puesto ? PUESTOS.indexOf(a.puesto) : 99) - (b.puesto ? PUESTOS.indexOf(b.puesto) : 99));
+  lista.forEach((m) => { if (m.puesto) m.num = ++numero; });
   const datos = Object.fromEntries(lista.map((m) => [m.id, m.guia]));
   const filas = lista.map((m) =>
     `<button type="button" class="pt-maq" data-id="${esc(m.id)}" data-nombre="${esc(m.nombre.toLowerCase())}">` +
-    `<b>${esc(m.nombre)}</b><small>${esc(m.puesto ? m.puesto.zona : 'Pregunta en recepción')}</small></button>`).join('');
+    `${m.num ? `<i class="pl-n">${m.num}</i>` : ''}<span><b>${esc(m.nombre)}</b><small>${esc(m.puesto ? m.puesto.zona : 'Pregunta en recepción')}</small></span></button>`).join('');
 
   return html(`${inicioPagina(n, { titulo: `Encuentra tu máquina · ${n.nombre}` })}
 <main class="pt-pagina pt-recorrido">

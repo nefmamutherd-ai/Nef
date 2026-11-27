@@ -94,6 +94,26 @@ insert into public.productos (id, negocio_id, tipo, nombre, descripcion, horario
    '[{"dia":1,"hora":"19:00","duracion":50,"cupo":30},{"dia":3,"hora":"19:00","duracion":50,"cupo":30},{"dia":6,"hora":"10:30","duracion":50,"cupo":30}]', 4)
 on conflict (id) do nothing;
 
+-- Más clases para que la semana se vea viva (Jacobo, 27/11/2026): 3 a 5 por día, mañana, mediodía y noche
+insert into public.productos (id, negocio_id, tipo, nombre, descripcion, horario, orden) values
+  ('d0000000-0000-4000-8000-00000000b205', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'HIIT', 'Intervalos de alta intensidad, 30 minutos',
+   '[{"dia":1,"hora":"07:00","duracion":30,"cupo":20},{"dia":3,"hora":"07:00","duracion":30,"cupo":20},{"dia":5,"hora":"07:00","duracion":30,"cupo":20},{"dia":2,"hora":"19:00","duracion":30,"cupo":20},{"dia":4,"hora":"19:00","duracion":30,"cupo":20}]', 5),
+  ('d0000000-0000-4000-8000-00000000b206', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Pilates', 'Core, postura y control',
+   '[{"dia":2,"hora":"08:00","duracion":50,"cupo":14},{"dia":4,"hora":"08:00","duracion":50,"cupo":14},{"dia":6,"hora":"08:00","duracion":50,"cupo":14}]', 6),
+  ('d0000000-0000-4000-8000-00000000b207', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Glúteos y piernas', 'Tren inferior con bandas',
+   '[{"dia":1,"hora":"18:00","duracion":45,"cupo":22},{"dia":3,"hora":"18:00","duracion":45,"cupo":22},{"dia":6,"hora":"11:00","duracion":45,"cupo":22}]', 7),
+  ('d0000000-0000-4000-8000-00000000b208', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Abdomen 30', 'A mediodía, en 30 minutos',
+   '[{"dia":1,"hora":"12:30","duracion":30,"cupo":18},{"dia":2,"hora":"12:30","duracion":30,"cupo":18},{"dia":3,"hora":"12:30","duracion":30,"cupo":18},{"dia":4,"hora":"12:30","duracion":30,"cupo":18},{"dia":5,"hora":"12:30","duracion":30,"cupo":18}]', 8),
+  ('d0000000-0000-4000-8000-00000000b209', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Kickboxing', 'Cardio con golpes y patadas',
+   '[{"dia":2,"hora":"20:00","duracion":50,"cupo":20},{"dia":4,"hora":"20:00","duracion":50,"cupo":20},{"dia":5,"hora":"18:00","duracion":50,"cupo":20}]', 9),
+  ('d0000000-0000-4000-8000-00000000b210', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Cross training', 'Fuerza y resistencia en circuito',
+   '[{"dia":1,"hora":"19:30","duracion":50,"cupo":16},{"dia":3,"hora":"19:30","duracion":50,"cupo":16},{"dia":5,"hora":"19:30","duracion":50,"cupo":16},{"dia":0,"hora":"10:00","duracion":50,"cupo":16}]', 10),
+  ('d0000000-0000-4000-8000-00000000b211', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Estiramiento', 'Movilidad para recuperarte',
+   '[{"dia":0,"hora":"11:00","duracion":40,"cupo":20},{"dia":3,"hora":"07:30","duracion":40,"cupo":20}]', 11),
+  ('d0000000-0000-4000-8000-00000000b212', 'd0000000-0000-4000-8000-0000000000a2', 'clase', 'Baile fitness', 'Ritmos latinos para sudar',
+   '[{"dia":5,"hora":"19:00","duracion":50,"cupo":30},{"dia":6,"hora":"16:00","duracion":50,"cupo":30},{"dia":0,"hora":"16:00","duracion":50,"cupo":30}]', 12)
+on conflict (id) do nothing;
+
 insert into public.premios (id, negocio_id, nombre, valor_pesos, orden) values
   ('d0000000-0000-4000-8000-0000000b0101', 'd0000000-0000-4000-8000-0000000000a2', 'Batido de proteína', 12000, 1),
   ('d0000000-0000-4000-8000-0000000b0102', 'd0000000-0000-4000-8000-0000000000a2', 'Toalla Forja', 25000, 2),
@@ -149,6 +169,12 @@ insert into public.productos (id, negocio_id, categoria_id, tipo, nombre, descri
   ('d0000000-0000-4000-8000-00000000a014', 'd0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000c0001', 'plato', 'Desayuno cafetero', 'Pericos, arepa con queso, pan y fruta picada', 19500, '{salado}', true, false, '/assets/demo/desayuno.webp', '/assets/demo/3d/solo3d/desayuno.glb'),
   ('d0000000-0000-4000-8000-00000000a015', 'd0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000c0005', 'plato', 'Malteada de fresa', 'Con crema batida, chispitas y cereza', 14000, '{bebida,dulce}', false, false, '/assets/demo/malteada.webp', '/assets/demo/3d/solo3d/malteada.glb')
 on conflict (id) do nothing;
+
+-- "Los favoritos" de Café Luna = los mejores renders (Jacobo, 27/11/2026): esos van destacados, el resto no
+update public.productos set destacado = (id in ('d0000000-0000-4000-8000-00000000a013', 'd0000000-0000-4000-8000-00000000a015',
+  'd0000000-0000-4000-8000-00000000a014', 'd0000000-0000-4000-8000-00000000a005', 'd0000000-0000-4000-8000-00000000a009',
+  'd0000000-0000-4000-8000-00000000a003'))
+where negocio_id = 'd0000000-0000-4000-8000-0000000000c1';
 
 -- ---------- Gimnasio estilo REPS (26/11/2026) ----------
 -- Forja Gym con tono aspiracional y un rack de mancuernas (5 máquinas con tutorial en 3D)

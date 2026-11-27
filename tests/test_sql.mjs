@@ -460,6 +460,10 @@ await caso('máquinas y clases: ficha pública y solo las clases de hoy', async 
   assert.equal(f.nombre, 'Prensa'); assert.equal(f.pasos.length, 3);
   const [{ r: c }] = await q(`select clases_hoy('gym-forja') r`);
   assert.deepEqual(c.map((x) => x.nombre), ['Spinning']); assert.equal(c[0].hora, '18:00');
+  // La semana completa: cada horario es una fila, en orden de día y hora (lunes 18:00, martes 09:00, miércoles 07:00)
+  const [{ r: sem }] = await q(`select clases_semana('gym-forja') r`);
+  assert.deepEqual(sem.map((x) => `${x.dia} ${x.hora} ${x.nombre}`), ['1 18:00 Spinning', '2 09:00 Yoga', '3 07:00 Spinning']);
+  assert.equal(sem[0].cupo, 20); assert.ok(!('telefono' in sem[0]));
   assert.equal((await q(`select producto_publico('cafe-luna', $1) r`, [maq.id]))[0].r, null);
   await db.exec(`reset nef.ahora`);
 });
@@ -705,7 +709,7 @@ await caso('aviso único: prioridad bienvenida → hora dorada → premio → ra
 });
 
 console.log('Fase 7 · vender y cobrar');
-await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y demo-gym (6 máquinas, 4 clases)', async () => {
+await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y demo-gym (7 máquinas, 12 clases)', async () => {
   await db.exec('reset role;');
   const demo = fs.readFileSync(new URL('../supabase/demo.sql', import.meta.url), 'utf8');
   await db.exec(demo);
@@ -722,7 +726,7 @@ await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y d
   assert.equal(t.destino, 'producto'); assert.ok(t.producto_id);
   assert.ok((await q(`select caja_entrar('demo-cafe','1234') r`))[0].r.sesion, 'la caja demo abre con 1234');
   await db.exec('reset role;');
-  assert.equal((await q(`select count(*)::int n from productos where negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and tipo = 'clase'`))[0].n, 4);
+  assert.equal((await q(`select count(*)::int n from productos where negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and tipo = 'clase'`))[0].n, 12, 'la semana del gimnasio demo tiene 12 clases');
 });
 
 console.log('Diseño · pieles y "Lo más pedido"');
@@ -736,7 +740,7 @@ await caso('"Lo más pedido": destacados si no hay datos; luego lo más visto; n
   for (let i = 0; i < 3; i++) await q(`select registrar_evento_carta('cafe-luna', 'ver_producto', $1, null)`, [calentado]);
   for (let i = 0; i < 5; i++) await q(`select registrar_evento_carta('cafe-luna', 'ver_producto', $1, null)`, [croissant]);
   const despues = (await q(`select carta_populares('cafe-luna') r`))[0].r.map((p) => p.nombre);
-  assert.equal(despues[0], 'Calentado', 'lo más visto primero');
+  assert.deepEqual(despues.slice(0, 2), ['Huevos rancheros', 'Calentado'], 'los destacados del dueño primero; luego lo más visto');
   assert.ok(!despues.includes('Croissant'), 'un agotado nunca sale en "Lo más pedido"');
 });
 await caso('el negocio puede elegir su piel; null = la de su sector', async () => {

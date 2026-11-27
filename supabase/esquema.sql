@@ -1283,6 +1283,20 @@ returns json language sql stable security definer set search_path = public as $$
     and (h->>'dia')::int = (select d from hoy)
 $$;
 
+-- Clases de toda la semana (27/11/2026: la página de clases muestra la semana con un día por pestaña). Lo mismo que
+-- clases_hoy, sin filtrar el día: nombre, descripción, día (0 = domingo), hora, duración y cupo.
+create or replace function public.clases_semana(p_slug text)
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion,
+           'dia', (h->>'dia')::int, 'hora', h->>'hora', 'duracion', (h->>'duracion')::int, 'cupo', (h->>'cupo')::int)
+         order by (h->>'dia')::int, h->>'hora', p.nombre), '[]'::json)
+  from public.productos p
+  join public.negocios n on n.id = p.negocio_id
+  cross join lateral jsonb_array_elements(p.horario) h
+  where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'clase'
+$$;
+grant execute on function public.clases_semana(text) to anon, authenticated;
+
 -- Máquinas activas del negocio (para "Ver otras máquinas")
 create or replace function public.maquinas_publicas(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
@@ -1951,8 +1965,9 @@ returns json language sql stable security definer set search_path = public as $$
     where pr.negocio_id = n.id and pr.activo and not pr.agotado and pr.tipo in ('plato', 'servicio')
   )
   select coalesce(json_agg(json_build_object('id', id, 'nombre', nombre, 'precio', precio, 'foto_url', foto_url)
-                  order by puntos desc, destacado desc, nombre), '[]'::json)
-  from (select * from p where puntos > 0 or destacado order by puntos desc, destacado desc, nombre limit 6) x
+                  order by destacado desc, puntos desc, nombre), '[]'::json)
+  -- Los destacados del dueño primero (sus mejores fotos o lo que quiere vender), luego lo más visto (Jacobo, 27/11/2026)
+  from (select * from p where puntos > 0 or destacado order by destacado desc, puntos desc, nombre limit 6) x
 $$;
 grant execute on function public.carta_populares(text) to anon, authenticated;
 

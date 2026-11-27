@@ -419,6 +419,15 @@ function girar() {
   }, { once: true });
 }
 $('otra-vez').addEventListener('click', girar);
+// Curiosidad (Jacobo, 27/11): al salir el plato, tocarlo (en la ventana de la máquina o en "Ver el plato") lo abre con su foto y su 3D
+function verElegido() {
+  if (!elegido || !$('maquina').classList.contains('gano')) return;
+  const p = elegido;
+  elige.cerrar();
+  setTimeout(() => abrirDetalle(p), 320);
+}
+$('g-ver').addEventListener('click', verElegido);
+$('rollo').addEventListener('click', verElegido);
 $('lo-pido').addEventListener('click', () => {
   if (!elegido) return;
   evento('ruleta_acepto', elegido.id);
