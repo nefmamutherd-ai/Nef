@@ -711,7 +711,7 @@ await caso('"Tócalo tú": escondido sin demos; lleva a elegir entre las demos (
   await p.close();
 });
 
-await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Google y de no compatible; sin modelo, solo la foto', async () => {
+await caso('plato en 3D: carga con fundido, giro limitado, sin "Verlo en tu mesa" (apagado por ahora); sin modelo, solo la foto', async () => {
   const [n] = await api(`negocios?slug=eq.${slug}`);
   const prods = await api(`productos?negocio_id=eq.${n.id}&tipo=eq.plato&activo=eq.true&select=id,nombre&order=nombre&limit=2`);
   assert.ok(prods.length >= 2, 'hay platos para probar');
@@ -738,38 +738,25 @@ await caso('plato en 3D: carga con fundido, giro limitado, aviso de la app de Go
   assert.equal(await p.evaluate(() => document.documentElement.classList.contains('n-hoja-abierta')), true, 'con la hoja abierta, la carta de atrás no se mueve');
   await p.close();
 
-  // Android (simulado): carga → 3D con fundido; "Verlo en tu mesa" muestra el paso a paso (3 pasos, dibujos azules)
-  const ctxA = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
-    userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36' });
-  const a = await ctxA.newPage();
-  a.on('pageerror', (e) => errores.push('carta android: ' + e.message));
-  await a.goto(`${BASE}/n/${slug}/carta`);
-  await a.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
-  await a.waitForSelector('#d-3d .pt-3d-carga');
-  assert.match(await a.textContent('#d-3d .pt-3d-carga'), /Cargando tu plato/);
-  await a.waitForSelector('#d-3d.listo', { timeout: 30000 });
-  // Sin la realidad aumentada de Google (este navegador): aviso de la app de Google y su servicio, sin tarjetas de pasos
-  await a.tap('#d-3d .pt-ar');
-  await a.waitForSelector('.pt-guia h2:has-text("Necesitas una app de Google")');
-  assert.match(await a.getAttribute('.pt-guia [data-instalar]', 'href'), /play\.google\.com\/store\/apps\/details\?id=com\.google\.ar\.core/);
-  assert.match(await a.textContent('.pt-guia'), /Servicios de Google Play para RA/);
-  await a.tap('.pt-guia [data-salir]');
-  // Si la app de Google no puede, vuelve con #ra-no-compatible-<id> → aviso claro
-  await a.evaluate((id) => { location.hash = 'ra-no-compatible-' + id; }, prods[0].id);
-  await a.waitForSelector('.pt-guia h2:has-text("No es compatible")');
-  await ctxA.close();
-
-  // iPhone (simulado, sin Quick Look en este navegador): aviso claro en vez de no hacer nada
-  const ctxI = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' });
-  const ip = await ctxI.newPage();
-  ip.on('pageerror', (e) => errores.push('carta iphone: ' + e.message));
-  await ip.goto(`${BASE}/n/${slug}/carta`);
-  await ip.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
-  await ip.waitForSelector('#d-3d .pt-ar', { state: 'attached', timeout: 30000 }); // sin esperar el dibujo del 3D: aligera la prueba
-  await ip.$eval('#d-3d .pt-ar', (b) => b.click());
-  await ip.waitForSelector('.pt-guia h2:has-text("iPhone")');
-  await ctxI.close();
+  // "Verlo en tu mesa" APAGADO por decisión de Jacobo (27/11/2026, "próximamente", RA_ACTIVA en carta.js):
+  // en Android y en iPhone el plato se ve en 3D y NO aparece el botón de realidad aumentada.
+  for (const [nombre, ua] of [
+    ['android', 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36'],
+    ['iphone', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'],
+  ]) {
+    const c = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: ua });
+    const m = await c.newPage();
+    m.on('pageerror', (e) => errores.push('carta ' + nombre + ': ' + e.message));
+    await m.goto(`${BASE}/n/${slug}/carta`);
+    await m.tap(`.pt-prod[data-id="${prods[0].id}"], .pt-pop[data-id="${prods[0].id}"]`);
+    await m.waitForSelector('#d-3d .pt-3d-carga');
+    assert.match(await m.textContent('#d-3d .pt-3d-carga'), /Cargando tu plato/);
+    await m.waitForSelector('#d-3d model-viewer', { state: 'attached', timeout: 30000 }); // sin esperar el dibujo: aligera la prueba
+    await m.waitForTimeout(500);
+    assert.equal(await m.$('#d-3d .pt-ar'), null, nombre + ': la realidad aumentada está apagada por ahora');
+    assert.equal(await m.getAttribute('#d-3d model-viewer', 'ar'), null, nombre + ': el visor no ofrece la realidad aumentada');
+    await c.close();
+  }
   await api(`productos?id=eq.${prods[0].id}`, 'PATCH', { modelo_url: null });
 });
 

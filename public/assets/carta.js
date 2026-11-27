@@ -56,6 +56,9 @@ if (pestanas.length && 'IntersectionObserver' in window) {
 const detalle = hoja($('hoja-detalle'));
 let conHistoria = false;
 // ── Vista 3D y realidad aumentada: si el plato tiene modelo, la hoja abre directo en 3D (la foto se ve mientras carga) ──
+// "Verlo en tu mesa" (realidad aumentada) APAGADO por ahora (Jacobo, 27/11/2026: "próximamente"); el 3D girable sigue.
+// Para volver a prenderlo: true (el código de iPhone y Android sigue aquí abajo).
+const RA_ACTIVA = false;
 let visor = null;
 const cargarVisor = () => (visor ||= import('/assets/vendor/model-viewer/model-viewer.min.js'));
 const VISTA = { inclinacion: 62, min: 35, max: 80 }; // grados desde arriba: nunca se ve el plato por debajo
@@ -86,7 +89,7 @@ async function abrir3d(p) {
   };
   // iPhone: realidad aumentada propia del teléfono (Quick Look), la abre el mismo visor
   // Platos "solo 3D" (carpeta /solo3d/, p. ej. los de alto detalle): se giran, pero sin "Verlo en tu mesa"
-  const soloTresD = (p.modelo_url || '').includes('/solo3d/');
+  const soloTresD = !RA_ACTIVA || (p.modelo_url || '').includes('/solo3d/');
   if (ES_IPHONE && !soloTresD) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
   mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
@@ -132,7 +135,22 @@ const xrListo = ES_ANDROID ? soportaXR() : Promise.resolve(false);
 // La app de Google (Scene Viewer): estable, con su propia guía en la cámara; el plato se arrastra y se gira con los dedos.
 // (La cámara dentro de Chrome con WebXR — mesa-xr.js — se trababa y cerraba Chrome en el celular de prueba: se deja sin usar.)
 // Si el celular no puede, Chrome vuelve aquí con #ra-no-compatible-<id> y sale el aviso.
+// Este celular ya mostró que no puede (Jacobo, 27/11: "comenzó otra vez a intentarlo"): se recuerda y el botón muestra
+// el aviso directo. Si la app de Google devuelve a la carta en menos de 4 s, también es que falló (a veces vuelve sin
+// el #ra-no-compatible). El aviso trae "Intentar de nuevo" por si luego instala lo que faltaba.
+const RA_NO = 'nef_ra_no_compatible';
+const raGuardar = (v) => { try { v ? localStorage.setItem(RA_NO, '1') : localStorage.removeItem(RA_NO); } catch { /* sin almacenamiento */ } };
+const raNoPuede = () => { try { return localStorage.getItem(RA_NO) === '1'; } catch { return false; } };
+let raSalio = 0, raPlato = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !raSalio) return;
+  const rapido = Date.now() - raSalio < 4000;
+  raSalio = 0;
+  if (rapido) { raGuardar(true); avisoNoCompatible(raPlato); }
+});
+
 function abrirGoogle(p) {
+  raSalio = Date.now(); raPlato = p;
   const glb = new URL(p.modelo_url, location.href).href;
   const regreso = `${location.origin}${location.pathname}#ra-no-compatible-${p.id}`;
   location.href = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glb)}&mode=ar_preferred&title=${encodeURIComponent(p.nombre)}`
@@ -144,6 +162,7 @@ async function verEnMesa(p, mv) {
   evento('ver_ar', p.id);
   // iPhone: Quick Look viene con el teléfono (trae su propia guía). Si no puede (iPhone viejo, o navegador de Instagram/Facebook), se dice claro.
   if (ES_IPHONE) { if (QUICK_LOOK) mv.activateAR(); else avisoIphone(); return; }
+  if (raNoPuede()) { avisoNoCompatible(p); return; }
   if (await xrListo) { abrirGoogle(p); return; }
   necesitaApp(() => abrirGoogle(p));
 }
@@ -182,15 +201,18 @@ function avisoIphone() {
   document.body.append(capa);
 }
 
-function avisoNoCompatible() {
+function avisoNoCompatible(p) {
+  if (document.querySelector('.pt-guia')) return; // un aviso a la vez
   const capa = document.createElement('div');
   capa.className = 'pt-guia';
   capa.setAttribute('role', 'alertdialog');
   capa.innerHTML = `<div class="pt-guia-tarjeta"><div class="pt-guia-icono" aria-hidden="true">!</div>
     <h2>No es compatible con tu celular</h2>
     <p class="pt-guia-texto">Tu celular no puede mostrar platos en tu mesa. Puedes seguir viéndolo en 3D: gíralo con el dedo.</p>
-    <button type="button" class="pt-accion">Entendido</button></div>`;
-  capa.querySelector('button').addEventListener('click', () => capa.remove());
+    <button type="button" class="pt-accion" data-ok>Entendido</button>
+    <button type="button" class="pt-link" data-otra>Intentar de nuevo</button></div>`;
+  capa.querySelector('[data-ok]').addEventListener('click', () => capa.remove());
+  capa.querySelector('[data-otra]').addEventListener('click', () => { capa.remove(); raGuardar(false); if (p && p.modelo_url) abrirGoogle(p); });
   document.body.append(capa);
 }
 // Volvió de la app de Google porque el celular no puede → aviso claro, con el plato abierto en 3D
@@ -199,8 +221,9 @@ function revisarCompatible() {
   if (!m) return;
   history.replaceState(history.state, '', location.pathname + location.search);
   const p = porId.get(m[1]);
+  raSalio = 0; raGuardar(true);
   if (p && $('hoja-detalle').hidden) abrirDetalle(p);
-  avisoNoCompatible();
+  avisoNoCompatible(p);
 }
 window.addEventListener('hashchange', revisarCompatible);
 
