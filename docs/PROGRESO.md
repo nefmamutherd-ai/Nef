@@ -216,3 +216,12 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Revisado en el sitio de pruebas con un navegador de celular (capturas en `_local/capturas/noche-*`). Pruebas: sql 94 ✓.
 - Pendiente: Jacobo debe cambiar la contraseña de la base de datos; croissant nuevo sin subir (espera visto bueno);
   torniquete más adelante; plano real por gimnasio.
+
+### Para el 27/11 (pedido de Jacobo al ver la demo de REPS en el celular)
+1. Rediseño del gimnasio: más diseño y color, el morado exacto de REPS y su estilo neón; hoy hay demasiado negro
+   (fondo, botones y apartados). "Se ve muy sencillo".
+2. "Mis entrenamientos" se sale de la baldosa: revisar en el celular (390 y 360 px).
+3. Plano del gimnasio: que parezca el piso real por el que uno camina, con "Estás aquí" y dónde queda cada máquina
+   (no hace falta llenarlo).
+4. Link de Google Maps de demo-reps → el de REPS de verdad.
+5. Cargar el horario real de REPS (Jacobo manda la foto).
