@@ -266,7 +266,10 @@ body.pt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .pt-elige:hover .pt-icono { transform: rotate(180deg); }
 [data-tema="energia"] .pt-elige { color: var(--marca); }
 .pt-fija { padding-top: 8px; }
-.pt-pestanas { justify-content: center; border-bottom-color: var(--linea-fina); }
+/* Centradas si caben; si no caben, arrancan en el borde (con justify-content: center la primera, "Desayunos", quedaba fuera e inalcanzable) */
+.pt-pestanas { border-bottom-color: var(--linea-fina); }
+.pt-pestanas > :first-child { margin-left: auto; }
+.pt-pestanas > :last-child { margin-right: auto; }
 .pt-pestanas button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
 
 .pt-seccion { padding-top: 6px; }
