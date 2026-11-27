@@ -852,7 +852,8 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 [data-tema="energia"] .pt-inicio .pt-logo { background: var(--marca); color: #fff; font-family: var(--serif); }
 [data-tema="energia"] .pt-mancha.dos { background: color-mix(in srgb, var(--marca) 16%, transparent); }
 [data-tema="energia"] .pt-doodle { stroke: color-mix(in srgb, var(--marca) 70%, white) !important; opacity: .35; }
-[data-tema="energia"] .pt-pasos li::marker, [data-tema="energia"] .pt-pasos li::before { color: var(--marca); }
+/* Baldosas chicas: sin mayúsculas ("MIS ENTRENAMIENTOS" no cabía en el celular) */
+[data-tema="energia"] .pt-inicio .pt-boton:not(.principal) > span { text-transform: none; letter-spacing: -.01em; }
 [data-tema="energia"] .pt-entreno { background: linear-gradient(160deg, color-mix(in srgb, var(--marca) 14%, var(--tarjeta)), var(--tarjeta) 60%); border-color: color-mix(in srgb, var(--marca) 35%, var(--linea)); }
 [data-tema="energia"] .pt-entreno-reloj b { color: #fff; text-shadow: 0 0 24px var(--marca); }
 [data-tema="energia"] .pt-entreno-barra i { background: linear-gradient(90deg, #6A1FE8, #B47CFF); }

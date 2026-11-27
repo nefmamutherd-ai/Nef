@@ -165,9 +165,9 @@ insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, s
   resena_url, whatsapp, bienvenida, monedas_por_visita)
 values ('d0000000-0000-4000-8000-0000000000a3', 'd0000000-0000-4000-8000-000000000001', 'demo-reps', 'REPS',
   'Demostración de Nef para REPS', '#8b3dff', 'gimnasio', '{"base":true,"catalogo":true,"club":true,"estudio":true}',
-  'Demostración', 'https://www.google.com/maps', '3224731560', 50, 10)
+  'Bogotá', 'https://www.google.com/maps', '3224731560', 50, 10)
 on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion,
-  color = excluded.color, servicios = excluded.servicios, activo = true;
+  color = excluded.color, servicios = excluded.servicios, ubicacion_etiqueta = excluded.ubicacion_etiqueta, activo = true;
 update public.negocios set rapido_activo = true, rapido_monedas = 10, horas_entre_visitas = 12,
   maquina_monedas = 5, maquina_minutos = 15, maquina_horas = 8, meta_mes_llegadas = 12, meta_mes_bono = 100
 where id = 'd0000000-0000-4000-8000-0000000000a3';

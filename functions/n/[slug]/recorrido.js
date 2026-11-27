@@ -41,7 +41,7 @@ export async function onRequestGet({ params, request, env }) {
   <div class="pt-3d pt-3d-maquina pt-plano" id="m-3d">
     <div class="pt-3d-carga"><i class="pt-3d-giro"></i><span>Cargando el gimnasio…</span></div>
     <model-viewer id="plano" src="/assets/demo/3d/gym/recorrido.glb" alt="Plano del gimnasio en 3D" camera-controls autoplay
-      camera-orbit="-25deg 55deg 10.5m" camera-target="0m 0.6m 0m" min-camera-orbit="auto 20deg 2.5m" max-camera-orbit="auto 80deg 14m"
+      camera-orbit="-25deg 52deg 16m" camera-target="0m 0.4m 0m" min-camera-orbit="auto 20deg 3m" max-camera-orbit="auto 80deg 22m" field-of-view="30deg"
       touch-action="pan-y" interaction-prompt="none" interpolation-decay="160" shadow-intensity="1" environment-image="neutral" exposure="1.1">${puntos}</model-viewer>
     <button type="button" class="pt-plano-todo" id="todo" hidden>Ver todo el gimnasio</button>
   </div>
@@ -71,7 +71,7 @@ export async function onRequestGet({ params, request, env }) {
     $('elegida').hidden = false;
     if (b.dataset.x !== undefined) {
       mv.cameraTarget = b.dataset.x + 'm 0.9m ' + (-Number(b.dataset.y)) + 'm';
-      mv.cameraOrbit = '-20deg 62deg 3.6m';
+      mv.cameraOrbit = '-20deg 58deg 6m';
       $('todo').hidden = false;
       caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
