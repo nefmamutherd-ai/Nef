@@ -5,3 +5,9 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), payment=()
+
+# La página principal siempre se pide nueva (un celular quedó con una versión vieja del botón "Tócalo tú")
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
