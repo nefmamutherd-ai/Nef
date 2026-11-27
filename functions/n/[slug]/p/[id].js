@@ -33,14 +33,15 @@ export async function onRequestGet({ params, request, env }) {
   if (!n) return redirigir(new URL('/inactivo', url).href);
   if (!p) return redirigir(portal);
 
-  // Máquina en 3D (estilo artístico, scripts/maquinas_glb.py): se gira con el dedo. Solo modelos del propio sitio o https.
+  // Cómo se usa: el video del gimnasio (una persona real) si lo subió; si no, la máquina en 3D animada con un muñeco
+  // haciendo el ejercicio (estilo artístico, scripts/maquinas_glb.py), que se gira con el dedo. Solo modelos del propio sitio o https.
   const modelo = /^(https:\/\/[^\s"<>]+|\/assets\/[A-Za-z0-9_/.-]+)\.glb$/.test(p.modelo_url || '') ? p.modelo_url : null;
   const visor = modelo ? `<div class="pt-3d pt-3d-maquina" id="m-3d">
     <div class="pt-3d-carga"><i class="pt-3d-giro"></i><span>Cargando la máquina…</span></div>
-    <model-viewer src="${esc(modelo)}" alt="${esc(p.nombre)} en 3D" camera-controls auto-rotate auto-rotate-delay="1500" rotation-per-second="18deg"
+    <model-viewer src="${esc(modelo)}" alt="Cómo se usa: ${esc(p.nombre)} en 3D" camera-controls autoplay auto-rotate auto-rotate-delay="4000" rotation-per-second="12deg"
       camera-orbit="-35deg 72deg auto" min-camera-orbit="auto 30deg auto" max-camera-orbit="auto 88deg auto" touch-action="pan-y" disable-pan
       interaction-prompt="none" shadow-intensity="1.1" shadow-softness="0.8" environment-image="neutral" exposure="1.1"></model-viewer>
-    <p class="pt-3d-ayuda">Gírala con el dedo</p>
+    <p class="pt-3d-ayuda">Así se usa · gírala con el dedo</p>
   </div>
   <script type="module">
     const caja = document.getElementById('m-3d'), mv = caja.querySelector('model-viewer');
@@ -65,8 +66,7 @@ export async function onRequestGet({ params, request, env }) {
   return html(`${inicioPagina(n, { titulo: `${p.nombre} · ${n.nombre}` })}
 <main class="pt-pagina">
   <header class="pt-cabeza"><h1>${esc(p.nombre)}</h1><p>${esc(n.nombre)}</p></header>
-  ${visor}
-  ${video(p.video_url)}
+  ${video(p.video_url) || visor}
   ${p.descripcion ? `<p class="pt-frase">${esc(p.descripcion)}</p>` : ''}
   ${pasos.length ? `<ol class="pt-pasos">${pasos.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
   ${entreno}

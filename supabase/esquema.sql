@@ -1256,6 +1256,11 @@ $$;
 -- =====================================================================
 --  Catálogo público: ficha de producto (máquina) y clases de hoy
 -- =====================================================================
+-- Modelo 3D del plato (.glb) para girarlo y verlo en la mesa (realidad aumentada); en gimnasios, la máquina
+-- animada. Solo del propio sitio o https.
+alter table public.productos add column if not exists modelo_url text
+  check (modelo_url is null or modelo_url ~ '^(https://[^[:space:]"<>]+|/assets/[A-Za-z0-9_/.-]+)[.]glb$');
+
 create or replace function public.producto_publico(p_slug text, p_id uuid)
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object('id', p.id, 'tipo', p.tipo, 'nombre', p.nombre, 'descripcion', p.descripcion,
@@ -1281,7 +1286,7 @@ $$;
 -- Máquinas activas del negocio (para "Ver otras máquinas")
 create or replace function public.maquinas_publicas(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre) order by p.orden, p.nombre), '[]'::json)
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'modelo_url', p.modelo_url) order by p.orden, p.nombre), '[]'::json)
   from public.productos p join public.negocios n on n.id = p.negocio_id
   where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'maquina'
 $$;
@@ -1739,9 +1744,7 @@ returns json language sql stable security definer set search_path = public as $$
   from public.negocios where slug = lower(trim(p_slug)) and activo;
 $$;
 
--- Modelo 3D del plato (.glb) para girarlo y verlo en la mesa (realidad aumentada). Solo del propio sitio o https.
-alter table public.productos add column if not exists modelo_url text
-  check (modelo_url is null or modelo_url ~ '^(https://[^[:space:]"<>]+|/assets/[A-Za-z0-9_/.-]+)[.]glb$');
+-- (modelo_url se crea antes de producto_publico: ver arriba)
 
 -- La carta en UNA llamada: categorías activas en orden + platos activos (destacados primero, agotados al final)
 create or replace function public.carta_publica(p_slug text)

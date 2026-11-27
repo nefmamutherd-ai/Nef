@@ -85,7 +85,9 @@ async function abrir3d(p) {
     'shadow-intensity': '1', 'shadow-softness': '0.9', 'environment-image': 'neutral', exposure: '1.05', 'interaction-prompt': 'none',
   };
   // iPhone: realidad aumentada propia del teléfono (Quick Look), la abre el mismo visor
-  if (ES_IPHONE) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
+  // Platos "solo 3D" (carpeta /solo3d/, p. ej. los de alto detalle): se giran, pero sin "Verlo en tu mesa"
+  const soloTresD = (p.modelo_url || '').includes('/solo3d/');
+  if (ES_IPHONE && !soloTresD) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
   mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
   mv.addEventListener('error', volverAFoto, { once: true });
@@ -102,7 +104,7 @@ async function abrir3d(p) {
   mv.addEventListener('pointercancel', volver);
   mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
   caja.prepend(mv);
-  if (ES_IPHONE || ES_ANDROID) {
+  if ((ES_IPHONE || ES_ANDROID) && !soloTresD) {
     const ar = document.createElement('button');
     ar.type = 'button'; ar.className = 'pt-ar'; ar.textContent = 'Verlo en tu mesa';
     ar.addEventListener('click', () => verEnMesa(p, mv));

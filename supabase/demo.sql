@@ -138,6 +138,18 @@ where p.id = v.id::uuid and (p.foto_url is null or p.foto_url like '/assets/demo
 update public.productos p set modelo_url = replace(replace(p.foto_url, '/assets/demo/', '/assets/demo/3d/'), '.webp', '.glb')
 where p.negocio_id = 'd0000000-0000-4000-8000-0000000000c1' and p.foto_url like '/assets/demo/%.webp' and p.modelo_url is null;
 
+-- Platos nuevos (26/11/2026, la carta 3D es primero para restaurantes): hamburguesa, desayuno de cafetería y malteada.
+-- Fotos y modelos de scripts/platos_blender.py y platos_glb.py. Van en /3d/solo3d/: se giran en 3D, sin "Verlo en tu mesa".
+insert into public.categorias (id, negocio_id, nombre, orden) values
+  ('d0000000-0000-4000-8000-0000000c0004', 'd0000000-0000-4000-8000-0000000000c1', 'Platos fuertes', 1),
+  ('d0000000-0000-4000-8000-0000000c0005', 'd0000000-0000-4000-8000-0000000000c1', 'Bebidas frías', 2)
+on conflict (id) do nothing;
+insert into public.productos (id, negocio_id, categoria_id, tipo, nombre, descripcion, precio, etiquetas, destacado, agotado, foto_url, modelo_url) values
+  ('d0000000-0000-4000-8000-00000000a013', 'd0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000c0004', 'plato', 'Hamburguesa de la casa', 'Carne a la parrilla, cheddar, lechuga, tomate y papas a la francesa', 26000, '{salado}', true, false, '/assets/demo/hamburguesa.webp', '/assets/demo/3d/solo3d/hamburguesa.glb'),
+  ('d0000000-0000-4000-8000-00000000a014', 'd0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000c0001', 'plato', 'Desayuno cafetero', 'Pericos, arepa con queso, pan y fruta picada', 19500, '{salado}', true, false, '/assets/demo/desayuno.webp', '/assets/demo/3d/solo3d/desayuno.glb'),
+  ('d0000000-0000-4000-8000-00000000a015', 'd0000000-0000-4000-8000-0000000000c1', 'd0000000-0000-4000-8000-0000000c0005', 'plato', 'Malteada de fresa', 'Con crema batida, chispitas y cereza', 14000, '{bebida,dulce}', false, false, '/assets/demo/malteada.webp', '/assets/demo/3d/solo3d/malteada.glb')
+on conflict (id) do nothing;
+
 -- ---------- Gimnasio estilo REPS (26/11/2026) ----------
 -- Forja Gym con tono aspiracional y un rack de mancuernas (5 máquinas con tutorial en 3D)
 update public.negocios set descripcion = 'Entrena fuerte · Suma en cada visita' where id = 'd0000000-0000-4000-8000-0000000000a2';
@@ -183,7 +195,9 @@ select md5('reps-' || p.id::text)::uuid, 'd0000000-0000-4000-8000-0000000000a3',
 from public.premios p where p.negocio_id = 'd0000000-0000-4000-8000-0000000000a2'
 on conflict (id) do nothing;
 insert into public.tags (id, codigo, negocio_id, nombre, destino, producto_id) values
-  ('d0000000-0000-4000-8000-0000000e0301', 'demoreps', 'd0000000-0000-4000-8000-0000000000a3', 'Recepción', 'hub', null)
+  ('d0000000-0000-4000-8000-0000000e0301', 'demoreps', 'd0000000-0000-4000-8000-0000000000a3', 'Recepción', 'hub', null),
+  ('d0000000-0000-4000-8000-0000000e0302', 'demorepsprensa', 'd0000000-0000-4000-8000-0000000000a3', 'Prensa de piernas', 'producto',
+   md5('reps-d0000000-0000-4000-8000-00000000b101')::uuid)
 on conflict (id) do nothing;
 update public.negocios set pin_caja_hash = extensions.crypt('1234', extensions.gen_salt('bf'))
 where id = 'd0000000-0000-4000-8000-0000000000a3' and pin_caja_hash is null;

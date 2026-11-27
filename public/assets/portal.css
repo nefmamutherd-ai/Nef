@@ -861,16 +861,27 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 [data-tema="energia"] .pt-3d.pt-3d-maquina { background: radial-gradient(90% 70% at 50% 35%, color-mix(in srgb, var(--marca) 34%, #1a1726), #0B0A0F 75%); }
 [data-tema="energia"] .pt-3d-maquina .pt-3d-carga { color: var(--tinta-2); }
 .pt-3d-ayuda { position: absolute; left: 0; right: 0; bottom: 10px; margin: 0; text-align: center; font: 600 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: color-mix(in srgb, var(--tinta) 60%, transparent); pointer-events: none; }
-/* Baldosa "Recorrido del gimnasio · Próximamente" y su página de vista previa */
+/* Baldosa "Plano del gimnasio" y su página (buscador + máquinas en el piso en 3D) */
 .pt-baldosa-extra { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; gap: 14px; min-height: 84px; border-radius: var(--r-grande);
   background: var(--papel-hondo); color: var(--tinta); text-decoration: none; font: var(--peso-titulo, 700) 17px/1.15 var(--serif); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--marca) 45%, transparent) inset; }
 .pt-baldosa-extra .pt-dado { animation: none; background: var(--marca); color: #fff; flex: none; }
 .pt-baldosa-extra span { flex: 1; }
 .pt-baldosa-extra em { margin: 0 !important; padding: 5px 10px; border-radius: var(--r-pildora); background: color-mix(in srgb, var(--marca) 22%, transparent); color: var(--tinta); font: 700 11px var(--sans) !important; letter-spacing: .1em; text-transform: uppercase; opacity: 1 !important; }
 [data-tema="energia"] .pt-baldosa-extra span { text-transform: uppercase; }
-.pt-recorrido .pt-3d-maquina { aspect-ratio: 1; }
-.pt-pronto { display: inline-block; margin: 6px 0 0; padding: 6px 12px; border-radius: var(--r-pildora); background: var(--marca); color: var(--sobre-marca); font: 700 12px var(--sans); letter-spacing: .12em; text-transform: uppercase; }
-.pt-recorrido-lista { display: grid; gap: 8px; margin: 14px 0; padding: 0; list-style: none; }
-.pt-recorrido-lista li { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--papel-hondo); font-size: 15px; color: var(--tinta-2); }
-.pt-recorrido-lista b { color: var(--tinta); }
 .pt-3d.pt-3d-maquina { touch-action: pan-y; }
+.pt-plano { aspect-ratio: 1; margin-top: 6px; }
+.pt-punto { display: block; padding: 6px 10px; border: 0; border-radius: var(--r-pildora); background: rgba(11, 10, 15, .82); color: #fff; font: 700 11px var(--sans); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transform: translateY(-50%); transition: transform var(--dur-2) var(--ease), background var(--dur-2); }
+.pt-punto.activo { background: var(--marca); transform: translateY(-50%) scale(1.15); box-shadow: 0 0 0 4px color-mix(in srgb, var(--marca) 35%, transparent); }
+.pt-punto:not([data-visible]) { opacity: .25; }
+.pt-plano-todo { position: absolute; top: 10px; right: 10px; padding: 8px 12px; border: 0; border-radius: var(--r-pildora); background: rgba(11, 10, 15, .8); color: #fff; font: 600 13px var(--sans); cursor: pointer; }
+.pt-elegida { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; padding: 14px; border-radius: var(--r-grande); background: color-mix(in srgb, var(--marca) 16%, var(--tarjeta)); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--marca) 50%, transparent) inset; animation: pt-sube .3s var(--ease) both; }
+.pt-elegida b { display: block; font: var(--peso-titulo, 700) 22px/1.1 var(--serif); text-transform: uppercase; color: var(--tinta); }
+.pt-buscar-maq { margin: 14px 0 10px; }
+.pt-maquinas { display: grid; gap: 8px; }
+.pt-maq { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 14px 16px; border: 0; border-radius: 16px; background: var(--papel-hondo); color: var(--tinta); text-align: left; cursor: pointer; transition: transform var(--dur-1) var(--ease); }
+.pt-maq:active { transform: scale(.98); }
+.pt-maq b { font: 700 16px var(--sans); }
+.pt-maq small { font-size: 13px; color: var(--tinta-2); }
+.pt-maq.activa { background: var(--marca); color: var(--sobre-marca); }
+.pt-maq.activa small { color: inherit; opacity: .85; }
+.pt-nota-plano { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--tinta-2); }

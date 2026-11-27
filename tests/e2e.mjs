@@ -429,6 +429,29 @@ await caso('máquina: creada en el admin; el tag abre la ficha con video y 3 pas
   await p.close();
   await api(`tags?codigo=eq.${codigos[1]}`, 'PATCH', { destino: 'hub', producto_id: null });
 });
+await caso('máquina sin video → 3D animado; plano del gimnasio: buscar una máquina y "Ver cómo se usa"', async () => {
+  const [prod] = await api(`productos?nombre=eq.Prensa de piernas`);
+  await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: null, modelo_url: '/assets/demo/3d/gym/prensa-45.glb' });
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('plano: ' + e.message));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}/p/${prod.id}`, { waitUntil: 'domcontentloaded' });
+  assert.equal(await p.getAttribute('#m-3d model-viewer', 'src'), '/assets/demo/3d/gym/prensa-45.glb');
+  assert.equal(await p.locator('iframe.pt-video').count(), 0, 'sin video no hay reproductor vacío');
+  if (n.sector === 'gimnasio') {
+    await p.goto(`${BASE}/n/${slug}`);
+    assert.equal(await p.getAttribute('.pt-baldosa-extra', 'href'), `/n/${slug}/recorrido`);
+    await p.goto(`${BASE}/n/${slug}/recorrido`, { waitUntil: 'domcontentloaded' });
+    await p.fill('#buscar', 'prensa');
+    await p.waitForSelector('#elegida:not([hidden])');
+    assert.equal(await p.getAttribute('#el-ir', 'href'), `/n/${slug}/p/${prod.id}`);
+    await sinScrollHorizontal(p);
+    await p.screenshot({ path: DIR + 'gym-plano.png' });
+  }
+  await p.close();
+  await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', modelo_url: null });
+});
 await caso('clases de hoy: solo las del día (hora Bogotá)', async () => {
   const dias = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const hoy = dias.indexOf(new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/Bogota' }));

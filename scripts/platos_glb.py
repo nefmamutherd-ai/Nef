@@ -40,6 +40,9 @@ def exportar(nombre):
     MAT.clear()
     materiales()
     PLATOS[nombre]()
+    # El vidrio (vaso de la malteada) no se puede hornear en una imagen: en el 3D se ve la bebida sin el vaso
+    for o in [o for o in bpy.context.scene.objects if o.type == 'MESH' and any(m and m.name.startswith('vidrio') for m in o.data.materials)]:
+        bpy.data.objects.remove(o, do_unlink=True)
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'
     sc.cycles.device = 'CPU'

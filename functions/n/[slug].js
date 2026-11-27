@@ -74,7 +74,7 @@ export async function onRequestGet({ params, request, env }) {
   const carta = `/n/${encodeURIComponent(n.slug)}/carta${q}`;
   // "Elige por mí" en la portada (pedido de Jacobo): abre la tragamonedas de la carta de una
   const elige = conCarta ? `<a class="pt-baldosa pt-baldosa-elige" href="${esc(carta)}#elige"><i class="pt-dado">${icono('dado')}</i><span>Elige por mí</span><em>Que la suerte decida</em></a>` : '';
-  // Baldosa extra del paquete del sector (gimnasio: "Recorrido del gimnasio · Próximamente")
+  // Baldosa extra del paquete del sector (gimnasio: "Plano del gimnasio")
   const bx = pq.baldosa_extra;
   const extra = bx ? `<a class="pt-baldosa pt-baldosa-extra" href="${esc(bx.ruta.replace('{slug}', encodeURIComponent(n.slug)))}"><i class="pt-dado">${icono(bx.icono)}</i><span>${esc(bx.texto)}</span>${bx.detalle ? `<em>${esc(bx.detalle)}</em>` : ''}</a>` : '';
   const fotos = (pop || []).filter((p) => fotoSegura(p.foto_url)).slice(0, 8);

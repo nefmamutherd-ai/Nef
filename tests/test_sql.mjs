@@ -705,7 +705,7 @@ await caso('aviso único: prioridad bienvenida → hora dorada → premio → ra
 });
 
 console.log('Fase 7 · vender y cobrar');
-await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y demo-gym (6 máquinas, 4 clases)', async () => {
+await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 3 premios) y demo-gym (6 máquinas, 4 clases)', async () => {
   await db.exec('reset role;');
   const demo = fs.readFileSync(new URL('../supabase/demo.sql', import.meta.url), 'utf8');
   await db.exec(demo);
@@ -713,7 +713,7 @@ await caso('demo.sql corre dos veces y crea demo-cafe (12 platos, 3 premios) y d
   await db.exec(sql); // el esquema se vuelve a correr con datos ya cargados (como en producción): no debe chocar
   await como('anon');
   const [{ r: c }] = await q(`select carta_publica('demo-cafe') r`);
-  assert.equal(c.categorias.flatMap((x) => x.productos).length, 12);
+  assert.equal(c.categorias.flatMap((x) => x.productos).length, 15);
   assert.equal((await q(`select club_publico('demo-cafe') r`))[0].r.premios.length, 3);
   assert.equal((await q(`select maquinas_publicas('demo-gym') r`))[0].r.length, 7);
   assert.equal((await q(`select maquinas_publicas('demo-reps') r`))[0].r.length, 7, 'la copia para REPS tiene las mismas máquinas');

@@ -409,10 +409,144 @@ def p_natas():
     granitos(0.05, -0.05, 0.35, 0.5, 14, MAT['pasa'], tam=(0.04, 0.055), forma=(1, 0.75, 0.55))
     cilindro(0.5, -0.66, 0.42, 0.03, 0.55, MAT['canela'], seg=16, rot=(math.pi / 2, 0, 0.7))  # astilla de canela en el borde
 
+# ---------- Platos nuevos (26/11/2026): hamburguesa con papas, desayuno de cafetería y malteada. Solo 3D (sin "en tu mesa") ----------
+def lamina(cx, cy, cz, lado, m, rot=0.0, borde=0.3, caida=0.9, grosor=0.014, ondas=0.0, redonda=False):
+    """Lámina que se descuelga por los bordes (queso derretido, lechuga): malla fina, los puntos fuera del borde bajan."""
+    if redonda:
+        bpy.ops.mesh.primitive_circle_add(vertices=48, radius=lado, fill_type='NGON', location=(cx, cy, cz))
+        o = bpy.context.object
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=3, use_grid_fill=True)
+        bm.to_mesh(o.data); bm.free()
+    else:
+        bpy.ops.mesh.primitive_grid_add(x_subdivisions=24, y_subdivisions=24, size=lado * 2, location=(cx, cy, cz))
+        o = bpy.context.object
+    o.rotation_euler[2] = rot
+    for v in o.data.vertices:
+        d = math.hypot(v.co.x, v.co.y)
+        a = math.atan2(v.co.y, v.co.x)
+        if ondas:
+            k = 1 + ondas * math.sin(a * 7 + random.uniform(-0.3, 0.3)) * min(1, d / lado)
+            v.co.x *= k; v.co.y *= k
+            d = math.hypot(v.co.x, v.co.y)
+            v.co.z += ondas * 0.25 * math.sin(a * 11) * (d / lado)
+        if d > borde:
+            v.co.z -= (d - borde) ** 1.4 * caida
+    sol = o.modifiers.new('grosor', 'SOLIDIFY'); sol.thickness = grosor
+    sub = o.modifiers.new('suave', 'SUBSURF'); sub.levels = 1; sub.render_levels = 2
+    return asignar(o, m)
+
+def palito(x, y, z, largo, grueso, m, rx=0.0, ry=0.0, rz=0.0):
+    bpy.ops.mesh.primitive_cube_add(location=(x, y, z)); o = bpy.context.object
+    o.scale = (grueso, grueso, largo / 2); o.rotation_euler = (rx, ry, rz)
+    mod = o.modifiers.new('bisel', 'BEVEL'); mod.width = grueso * 0.35; mod.segments = 2
+    return asignar(o, m)
+
+def p_hamburguesa():
+    MAT['bollo'] = mat('bollo', (0.5, 0.17, 0.025), rough=0.55, coat=0.0, sss=0.1, bump=0.35, color2=(0.32, 0.1, 0.015), escala_ruido=3)
+    MAT['carne'] = mat('carne', (0.07, 0.028, 0.014), rough=0.55, bump=1.6, color2=(0.19, 0.07, 0.025), escala_ruido=14)
+    MAT['cheddar'] = mat('cheddar', (1.0, 0.4, 0.0), rough=0.22, sss=0.5, coat=0.5)
+    MAT['lechuga'] = mat('lechuga', (0.08, 0.38, 0.02), rough=0.35, sss=0.4, coat=0.3, color2=(0.28, 0.62, 0.06), escala_ruido=6)
+    MAT['tomate'] = mat('tomate', (0.75, 0.06, 0.03), rough=0.15, sss=0.6, coat=0.6, color2=(0.9, 0.2, 0.08), escala_ruido=5)
+    MAT['papa'] = mat('papa', (0.88, 0.48, 0.07), rough=0.42, sss=0.25, bump=0.6, coat=0.2, color2=(0.62, 0.26, 0.03), escala_ruido=7)
+    MAT['ajonjoli'] = mat('ajonjoli', (0.95, 0.86, 0.66), rough=0.45, sss=0.3)
+    plato(MAT['ceramica'], 1.2)
+    x, y = -0.28, 0.14
+    cilindro(x, y, 0.1, 0.42, 0.13, MAT['bollo'], bisel=0.05)                       # pan de abajo
+    superficie(cilindro(x, y, 0.22, 0.45, 0.12, MAT['carne'], bisel=0.04), 0.035, 0.15)  # carne
+    lamina(x, y, 0.285, 0.36, MAT['cheddar'], rot=0.7, borde=0.36, caida=1.1)        # queso derretido
+    lamina(x, y, 0.305, 0.5, MAT['lechuga'], borde=0.38, caida=0.8, grosor=0.01, ondas=0.12, redonda=True)
+    for dx, dy in ((-0.11, 0.05), (0.13, -0.04)):
+        cilindro(x + dx, y + dy, 0.34, 0.25, 0.045, MAT['tomate'], bisel=0.012)
+    torno([(0.0, 0.62), (0.18, 0.605), (0.32, 0.55), (0.41, 0.46), (0.445, 0.4), (0.43, 0.37), (0.3, 0.36), (0.0, 0.36)],
+          MAT['bollo'], loc=(x, y, 0))                                                 # pan de arriba
+    esfera(x, y, 0.605, 0.14, 0.14, 0.018, MAT['bollo'])                               # tapa el punto del torno en la cima
+    for _ in range(46):                                                               # ajonjolí sobre la cúpula
+        a = random.uniform(0, 2 * math.pi); d = math.sqrt(random.random()) * 0.34
+        z = 0.36 + 0.26 * math.sqrt(max(0.0, 1 - (d / 0.445) ** 2))
+        esfera(x + math.cos(a) * d, y + math.sin(a) * d, z, 0.026, 0.014, 0.009, MAT['ajonjoli'], seg=8, rot=random.uniform(0, 3.14))
+    for k in range(60):                                                               # papas a la francesa, apiladas
+        a = random.uniform(0, 2 * math.pi); d = math.sqrt(random.random()) * 0.3
+        palito(0.45 + math.cos(a) * d, -0.28 + math.sin(a) * d, 0.06 + random.uniform(0, 0.16), random.uniform(0.34, 0.52), 0.022,
+               MAT['papa'], rx=math.radians(random.uniform(70, 95)), ry=random.uniform(-0.4, 0.4), rz=random.uniform(0, math.pi))
+    tazon(MAT['ceramica'], r=0.2, h=0.16, loc=(0.42, 0.52, 0.03))                     # salsa de tomate
+    MAT['ketchup'] = mat('ketchup', (0.42, 0.015, 0.008), rough=0.08, coat=0.9, sss=0.3)
+    superficie(cilindro(0.42, 0.52, 0.16, 0.18, 0.02, MAT['ketchup'], seg=48), 0.008, 0.4)
+
+def p_desayuno():
+    MAT['pericos'] = mat('pericos', (0.95, 0.45, 0.01), rough=0.5, sss=0.3, bump=1.2, color2=(1.0, 0.65, 0.08), escala_ruido=12)
+    MAT['tomate'] = mat('tomate', (0.75, 0.06, 0.03), rough=0.15, sss=0.6, coat=0.6)
+    MAT['papaya'] = mat('papaya', (0.95, 0.28, 0.02), rough=0.25, sss=0.5, coat=0.4)
+    MAT['pina'] = mat('pina', (0.95, 0.68, 0.04), rough=0.25, sss=0.5, coat=0.4)
+    MAT['fresa'] = mat('fresa', (0.55, 0.0, 0.02), rough=0.2, sss=0.4, coat=0.6)
+    MAT['banano'] = mat('banano', (0.93, 0.8, 0.45), rough=0.35, sss=0.4)
+    MAT['quesito'] = mat('quesito', (0.97, 0.86, 0.56), rough=0.3, sss=0.4, coat=0.35)
+    plato(MAT['ceramica'], 1.25)
+    # Pericos: huevo revuelto con tomate y cebolla larga (un montón irregular, no bolitas)
+    superficie(esfera(-0.33, 0.27, 0.05, 0.37, 0.31, 0.13, MAT['pericos'], seg=48), 0.06, 0.14)
+    superficie(esfera(-0.28, 0.3, 0.1, 0.24, 0.2, 0.08, MAT['pericos'], seg=32), 0.04, 0.2)
+    granitos(-0.33, 0.27, 0.15, 0.26, 34, MAT['tomate'], tam=(0.022, 0.035), alto=0.6, forma=(1, 0.9, 0.6))
+    granitos(-0.33, 0.27, 0.15, 0.26, 24, MAT['cebolla'], tam=(0.015, 0.025), alto=0.6, forma=(1, 0.6, 0.5))
+    # Arepa con queso derretido
+    MAT['arepa_asada'] = mat('arepa_asada', (0.82, 0.42, 0.06), rough=0.6, bump=0.8, color2=(0.55, 0.22, 0.02), escala_ruido=6)
+    cilindro(0.36, 0.3, 0.07, 0.31, 0.1, MAT['arepa_asada'], bisel=0.04)
+    for k in range(3):
+        caja(0.36 + (k - 1) * 0.11, 0.3, 0.118, 0.016, 0.22, 0.005, MAT['quemado'], rot=0.6, bisel=0.004)
+    superficie(esfera(0.36, 0.3, 0.125, 0.25, 0.23, 0.028, MAT['quesito'], seg=48), 0.012, 0.3)   # queso derretido encima
+    # Pan: mogolla dorada
+    MAT['mogolla'] = mat('mogolla', (0.42, 0.16, 0.03), rough=0.6, bump=0.6, color2=(0.62, 0.3, 0.07), escala_ruido=5)
+    p = esfera(0.4, -0.3, 0.13, 0.27, 0.22, 0.15, MAT['mogolla']); ruido_mesh(p, 0.015, 0.5)
+    granitos(0.4, -0.3, 0.255, 0.14, 30, MAT['ajonjoli'] if 'ajonjoli' in MAT else MAT['queso'], tam=(0.012, 0.018), alto=0.1, forma=(1, 0.55, 0.4))
+    # Fruta picada en un platico
+    tazon(MAT['ceramica_azul'], r=0.3, h=0.18, loc=(-0.34, -0.36, 0.01))
+    frutas = [MAT['papaya']] * 6 + [MAT['pina']] * 6 + [MAT['fresa']] * 4
+    for m in frutas:
+        a = random.uniform(0, 2 * math.pi); d = math.sqrt(random.random()) * 0.17
+        c = caja(-0.34 + math.cos(a) * d, -0.36 + math.sin(a) * d, 0.17 + random.uniform(0, 0.05), 0.05, 0.05, 0.045, m,
+                 rot=random.uniform(0, 3), bisel=0.012)
+        c.rotation_euler[0] = random.uniform(-0.4, 0.4)
+    for k in range(3):
+        cilindro(-0.3 + k * 0.06, -0.3 - k * 0.05, 0.23, 0.055, 0.025, MAT['banano'], seg=24, rot=(0.3, 0.2, 0))
+    hierbas(-0.33, 0.27, 0.15, 0.2, 6)
+
+def p_malteada():
+    # Vidrio sutil (casi transparente): con transmisión real el vaso salía como metal cromado y tapaba el color
+    MAT['vidrio'] = mat('vidrio', (0.95, 0.97, 1.0), rough=0.06, coat=1.0)
+    MAT['vidrio'].node_tree.nodes['Principled BSDF'].inputs['Alpha'].default_value = 0.16
+    MAT['malteada'] = mat('malteada', (0.88, 0.3, 0.42), rough=0.4, sss=0.4, coat=0.25, color2=(0.95, 0.5, 0.6), escala_ruido=3)
+    MAT['batida'] = mat('batida', (0.99, 0.97, 0.93), rough=0.45, sss=0.6)
+    MAT['cereza'] = mat('cereza', (0.55, 0.01, 0.04), rough=0.08, coat=1.0, sss=0.3)
+    MAT['pitillo'] = mat('pitillo', (0.5, 0.22, 0.95), rough=0.3, coat=0.4)
+    MAT['chispa1'] = mat('chispa1', (0.55, 0.24, 1.0), rough=0.3)
+    MAT['chispa2'] = mat('chispa2', (1.0, 0.75, 0.1), rough=0.3)
+    MAT['chispa3'] = mat('chispa3', (0.2, 0.75, 0.9), rough=0.3)
+    plato(MAT['ceramica'], 0.62)
+    torno([(0.0, 0.05), (0.26, 0.05), (0.28, 0.09), (0.31, 1.15), (0.345, 1.3), (0.33, 1.3), (0.295, 1.15), (0.265, 0.12), (0.0, 0.12)],
+          MAT['vidrio'], loc=(0, 0, 0.02))
+    torno([(0.0, 0.12), (0.26, 0.12), (0.29, 1.15), (0.315, 1.24), (0.0, 1.24)], MAT['malteada'], loc=(0, 0, 0.02))
+    for k in range(120):                                                              # crema batida en espiral
+        t = k / 120
+        a = k * 0.42
+        r = 0.27 * (1 - t) ** 0.9
+        esfera(math.cos(a) * r, math.sin(a) * r, 1.3 + t * 0.32, 0.085 * (1 - t * 0.6), 0.085 * (1 - t * 0.6), 0.07 * (1 - t * 0.5),
+               MAT['batida'], seg=16)
+    for k in range(26):                                                               # chispitas de colores
+        a = random.uniform(0, 2 * math.pi); d = math.sqrt(random.random()) * 0.24
+        z = 1.42 + 0.26 * (1 - d / 0.27) + 0.02
+        esfera(math.cos(a) * d, math.sin(a) * d, z, 0.022, 0.007, 0.007, MAT['chispa' + str(1 + k % 3)], seg=6, rot=random.uniform(0, 3.14))
+    esfera(0.02, 0.0, 1.71, 0.085, 0.085, 0.08, MAT['cereza'])
+    cilindro(0.04, 0.0, 1.82, 0.008, 0.2, MAT['hierba'], seg=8, rot=(0, 0.4, 0))
+    cilindro(0.12, 0.08, 1.3, 0.034, 1.3, MAT['pitillo'], seg=20, rot=(0.12, 0.22, 0))
+
+PLATOS_NUEVOS = {'hamburguesa': p_hamburguesa, 'desayuno': p_desayuno, 'malteada': p_malteada}
+# Cámara propia: la malteada es alta (se ve completa, un poco más de lejos)
+CAMARA = {'malteada': ((0, -3.4, 2.35), (0, 0, 0.95))}
+
 PLATOS = {
     'calentado': p_calentado, 'capuchino': p_capuchino, 'tinto': p_tinto, 'cafe-filtrado': p_cafe_filtrado,
     'chocolate': p_chocolate, 'torta-chocolate': p_torta, 'croissant': p_croissant, 'galleta-avena': p_galletas,
     'huevos-rancheros': p_huevos_rancheros, 'changua': p_changua, 'tostada-aguacate': p_tostada, 'natas': p_natas,
+    **PLATOS_NUEVOS,
 }
 
 def render(nombre):
@@ -421,6 +555,10 @@ def render(nombre):
     escena()
     materiales()
     PLATOS[nombre]()
+    if nombre in CAMARA:
+        cam = bpy.context.scene.camera; cam.location = CAMARA[nombre][0]
+        direc = Vector(CAMARA[nombre][1]) - cam.location; cam.rotation_euler = direc.to_track_quat('-Z', 'Y').to_euler()
+        cam.data.dof.focus_distance = direc.length
     bpy.context.scene.render.filepath = f'{SALIDA}/{nombre}.png'
     bpy.ops.render.render(write_still=True)
     print('RENDER', nombre)
