@@ -13,9 +13,16 @@ const $ = (id) => document.getElementById(id);
 const quieto = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const monedas = (n) => `${numero(n)} ${Number(n) === 1 ? singular : plural}`;
 
-const leer = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
-const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* modo privado: la tarjeta dura la sesión */ } };
-const borrar = (k) => { try { localStorage.removeItem(k); } catch { /* nada */ } };
+// La tarjeta del cliente (su token) se guarda en el almacenamiento del navegador Y en una cookie de respaldo (1 año):
+// en iPhone, si una de las dos se pierde (navegador de WhatsApp o Instagram, limpieza de Safari), se recupera de la otra.
+const galleta = {
+  leer: (k) => { try { const m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch { return null; } },
+  poner: (k, v) => { try { document.cookie = k + '=' + encodeURIComponent(v) + '; Max-Age=31536000; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch { /* nada */ } },
+  quitar: (k) => { try { document.cookie = k + '=; Max-Age=0; Path=/'; } catch { /* nada */ } },
+};
+const leer = (k) => { let v = null; try { v = localStorage.getItem(k); } catch { /* sin almacenamiento */ } return v || (k === CLAVE ? galleta.leer(k) : null); };
+const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* modo privado */ } if (k === CLAVE) galleta.poner(k, v); };
+const borrar = (k) => { try { localStorage.removeItem(k); } catch { /* nada */ } if (k === CLAVE) galleta.quitar(k); };
 
 // "17:00" → "5 p. m."; "12:30" → "12:30 m."
 const hora12 = (hhmm) => {
@@ -405,6 +412,7 @@ form.addEventListener('submit', async (e) => {
   $('r-unirme').disabled = true;
   try {
     const r = await rpc('club_registrar', { p_slug: slug, p_nombre: nombre, p_telefono: celular, p_acepta: true });
+    if (r && r.token && r.nuevo === false) { guardar(CLAVE, r.token); await cargarTarjeta(r.token, 'regreso'); toast('¡Hola de nuevo! Aquí está tu tarjeta con tus ' + plural); setTimeout(() => reclamarCompra(), 2500); return; }
     if (r && r.token) { guardar(CLAVE, r.token); borrar(CLAVE + '_visto'); await cargarTarjeta(r.token, 'registro'); setTimeout(() => reclamarCompra(), 2500); return; }
     const err = r && r.error;
     if (err === 'telefono') errorCampo('campo-celular', true);
@@ -463,6 +471,7 @@ async function reclamarCompra() {
 }
 
 const token = leer(CLAVE);
+if (token) guardar(CLAVE, token); // si venía solo de la cookie, vuelve a quedar en las dos
 if (token) {
   cargarTarjeta(token).then(() => reclamarCompra()).catch(() => {
     mostrar('registro');

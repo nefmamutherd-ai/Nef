@@ -1098,3 +1098,4 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
   76% { transform: rotate(-7deg) scale(1.05); } 81% { transform: rotate(4deg) scale(1.02); } 86% { transform: rotate(0) scale(1); } }
 @keyframes pt-punto-late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 @keyframes pt-destello { 0%, 60%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 72% { opacity: .9; transform: scale(1) rotate(45deg); } 86% { opacity: 0; transform: scale(.5) rotate(90deg); } }
+.pt-ya-socio { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--papel-hondo); font-size: 14px; line-height: 1.45; color: var(--tinta-2); text-align: center; }

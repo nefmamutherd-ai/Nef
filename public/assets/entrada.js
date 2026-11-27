@@ -6,6 +6,8 @@ const slug = raiz.dataset.slug;
 const $ = (id) => document.getElementById(id);
 let token = null;
 try { token = localStorage.getItem('nef_club_' + slug); } catch { /* sin almacenamiento */ }
+// Respaldo: la cookie que deja el club (en iPhone a veces se pierde el almacenamiento)
+if (!token) { try { const m = document.cookie.match(new RegExp('(?:^|; )nef_club_' + slug + '=([^;]*)')); token = m ? decodeURIComponent(m[1]) : null; } catch { /* nada */ } }
 
 function listo(r) {
   $('cargando').hidden = true;

@@ -50,6 +50,7 @@ ${fondoVivo(n.sector)}
       <label class="pt-casilla"><input type="checkbox" id="r-acepto"><span>Autorizo a ${esc(n.nombre)} a usar mi nombre y mi celular para el club y a escribirme por WhatsApp sobre él, según su <a href="${datos}">política de datos</a>.</span></label>
       <div class="pt-aviso alerta" id="r-error" hidden></div>
       <button type="submit" class="pt-accion marca" id="r-unirme" disabled>Unirme</button>
+      <p class="pt-ya-socio">¿Ya eres del club? Escribe el mismo nombre y celular con los que te inscribiste y <b>recuperas tu tarjeta con tus ${plural}</b>.</p>
     </form>
   </section>
 

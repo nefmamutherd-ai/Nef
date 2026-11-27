@@ -10,7 +10,9 @@ const $ = (id) => document.getElementById(id);
 const leer = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
 const borrar = (k) => { try { localStorage.removeItem(k); } catch { /* nada */ } };
-const token = leer('nef_club_' + slug);
+// La tarjeta: del almacenamiento o, si se perdió, de la cookie de respaldo que deja el club (iPhone)
+const galleta = (k) => { try { const m = document.cookie.match(new RegExp('(?:^|; )' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch { return null; } };
+const token = leer('nef_club_' + slug) || galleta('nef_club_' + slug);
 const CLAVE = 'nef_entreno_' + slug;
 const hora = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
 let reloj = null;
