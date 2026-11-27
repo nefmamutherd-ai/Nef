@@ -1083,3 +1083,18 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 :is([data-tema="neon"], [data-tema="industrial"]) :is(.pt-club2 h1, .pt-pase-saldo b, .pt-boleto b, .pt-meta-cuesta, .pt-pr-cuesta) { font-family: var(--serif); letter-spacing: 0; }
 :is([data-tema="neon"], [data-tema="industrial"]) .pt-club2 h1 { text-transform: uppercase; }
 [data-tema="industrial"] .pt-pase-saldo b { font-style: italic; }
+
+/* "Abre tu regalo" (27/11/2026, Jacobo: que den ganas de tocarlo): el regalo se sacude cada tanto, un puntito rojo late
+   como una notificación y dos destellos brillan alrededor. Solo transform/opacity. */
+.pt-boton[data-icono="regalo"] { position: relative; overflow: visible; }
+.pt-boton[data-icono="regalo"] > .pt-ico { position: relative; animation: pt-regalo 3.2s ease-in-out infinite; transform-origin: 50% 80%; }
+.pt-boton[data-icono="regalo"] > .pt-ico::after { content: ""; position: absolute; top: -4px; right: -4px; width: 13px; height: 13px; border-radius: 50%;
+  background: #FF2D55; box-shadow: 0 0 0 2.5px var(--tarjeta); animation: pt-punto-late 1.6s ease-in-out infinite; }
+.pt-boton[data-icono="regalo"]::before, .pt-boton[data-icono="regalo"]::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  background: currentColor; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: pt-destello 3.2s ease-in-out infinite; }
+.pt-boton[data-icono="regalo"]::before { top: 12px; right: 18px; }
+.pt-boton[data-icono="regalo"]::after { top: 38px; right: 40px; width: 9px; height: 9px; animation-delay: .35s; }
+@keyframes pt-regalo { 0%, 62%, 100% { transform: rotate(0) scale(1); } 66% { transform: rotate(-12deg) scale(1.08); } 71% { transform: rotate(10deg) scale(1.08); }
+  76% { transform: rotate(-7deg) scale(1.05); } 81% { transform: rotate(4deg) scale(1.02); } 86% { transform: rotate(0) scale(1); } }
+@keyframes pt-punto-late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+@keyframes pt-destello { 0%, 60%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 72% { opacity: .9; transform: scale(1) rotate(45deg); } 86% { opacity: 0; transform: scale(.5) rotate(90deg); } }

@@ -40,7 +40,7 @@ export async function onRequestGet({ params, request, env }) {
 
   // Botones grandes (máximo 3, el primero principal)
   const botones = botonesPortal(n).map((b, i) =>
-    `<a class="pt-boton${i === 0 ? ' principal' : ''}" href="${esc(conTag(b.ruta))}" data-boton="${esc(b.id)}">` +
+    `<a class="pt-boton${i === 0 ? ' principal' : ''}" href="${esc(conTag(b.ruta))}" data-boton="${esc(b.id)}" data-icono="${esc(b.icono)}">` +
     `<i class="pt-ico">${icono(b.icono)}</i><span>${esc(b.texto)}</span>${b.detalle ? `<em>${esc(b.detalle)}</em>` : ''}${icono('flecha', ' pt-flecha')}</a>`
   );
 
