@@ -202,3 +202,17 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Diseño C (elegido por Jacobo) en el tema cálido (restaurantes y cafés): blanco/lila/azul noche/amarillo, títulos Bricolage; club con racha 🔥 y baldosas (Ver la carta / Elige por mí); carta con buscador, rejilla 2 columnas y sello 3D; "Elige por mí" gira de una sobre toda la carta, con sonido (se puede apagar). Demo café en coral #ff5a36 (aplicado en Supabase).
 - QR de compra probado en la base real (caja con PIN 1234 → QR con el valor de la carta). Guía: `docs/kit/PRUEBA-QR.md`.
 - Pendiente: información/receta del plato bajo el 3D; renders de platos de restaurante; croissant nuevo sin subir (espera visto bueno).
+
+### 2026-11-26 (noche) · Gimnasio estilo REPS, máquinas animadas, plano del gimnasio, 3 platos nuevos
+- **Tema de gimnasios** negro + morado eléctrico, títulos en mayúsculas gruesas (estilo REPS). **Demo para REPS**:
+  https://nef-73r.pages.dev/n/demo-reps (noindex, "Demostración de Nef para REPS", sin su logo). NFC de máquina de la demo:
+  `/t/demorepsprensa`. Recepción: `/t/demoreps`. PIN de caja 1234.
+- **5 máquinas en 3D** estilo artístico, **animadas** como si alguien las usara (sin muñeco, a pedido de Jacobo). En la página de
+  la máquina: video del gimnasio si existe; si no, el 3D animado + pasos + "Entrena con el tutorial".
+- **Plano del gimnasio** (`/n/<slug>/recorrido`): piso 3D con las máquinas moviéndose, buscador, la cámara vuela a la máquina y
+  "Ver cómo se usa". El piso es el de la demo; el real de cada gimnasio se arma con ellos.
+- **Platos nuevos** en la carta demo: Hamburguesa de la casa (nueva categoría "Platos fuertes"), Desayuno cafetero, Malteada de
+  fresa ("Bebidas frías"); foto + 3D, sin "Verlo en tu mesa".
+- Revisado en el sitio de pruebas con un navegador de celular (capturas en `_local/capturas/noche-*`). Pruebas: sql 94 ✓.
+- Pendiente: Jacobo debe cambiar la contraseña de la base de datos; croissant nuevo sin subir (espera visto bueno);
+  torniquete más adelante; plano real por gimnasio.

@@ -829,6 +829,7 @@ const ESTADO_PAGO = {
   gracia: (d) => ['aviso', `Vencido · se apaga en ${d} ${d === 1 ? 'día' : 'días'}`],
   vencido: (d) => ['alerta', 'Vencido · portal apagado'],
 };
+let edicionesCobros = 0;
 async function cargarCobros() {
   const tb = $('#lista-cobros');
   const { data, error: err } = await sb.rpc('mensualidades_admin');
@@ -841,9 +842,13 @@ async function cargarCobros() {
     tr.dataset.empresa = e.id;
     const vence = el('input'); vence.type = 'date'; vence.value = e.vence || ''; vence.setAttribute('aria-label', 'Pagado hasta');
     const gracia = el('input'); gracia.type = 'number'; gracia.min = 0; gracia.max = 60; gracia.value = e.dias_gracia; gracia.style.width = '70px'; gracia.setAttribute('aria-label', 'Días de gracia');
+    // Si mientras se guardaba alguien siguió editando (otra fecha o gracia), no se redibuja la tabla:
+    // eso borraba lo recién escrito. Solo el último guardado recarga.
     const guardar = async () => {
+      const yo = ++edicionesCobros;
       const { error: er } = await sb.from('empresas').update({ vence: vence.value || null, dias_gracia: Math.max(0, Math.min(60, +gracia.value || 0)) }).eq('id', e.id);
-      toast(er ? 'No se guardó: ' + er.message : 'Guardado'); cargarCobros();
+      toast(er ? 'No se guardó: ' + er.message : 'Guardado');
+      if (yo === edicionesCobros) cargarCobros();
     };
     vence.addEventListener('change', guardar); gracia.addEventListener('change', guardar);
     const [clase, texto] = ESTADO_PAGO[e.estado.estado](e.estado.dias);
