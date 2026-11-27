@@ -92,20 +92,27 @@ async function abrir3d(p) {
   const soloTresD = !RA_ACTIVA || (p.modelo_url || '').includes('/solo3d/');
   if (ES_IPHONE && !soloTresD) Object.assign(attrs, { ar: '', 'ar-modes': 'quick-look', 'ar-scale': 'fixed', 'ar-placement': 'floor' });
   for (const [k, v] of Object.entries(attrs)) mv.setAttribute(k, v);
-  mv.addEventListener('load', () => caja.classList.add('listo'), { once: true });
+  mv.addEventListener('load', () => { caja.classList.add('listo'); mostrarDedo(caja, mv); }, { once: true });
   mv.addEventListener('error', volverAFoto, { once: true });
   // Al soltarlo, vuelve solo a la inclinación de siempre (conserva hacia dónde lo giraron de lado)
-  let vuelta = null;
+  // Al soltarlo (o después de hacer zoom), a los 2 s vuelve solo a la vista de siempre: misma inclinación, sin zoom
+  // (conserva hacia dónde lo giraron de lado). Jacobo, 27/11: "que se devuelva a su posición original".
+  let vuelta = null, tocando = false;
   const volver = () => {
     clearTimeout(vuelta);
     vuelta = setTimeout(() => {
+      if (tocando) return;
       const o = mv.getCameraOrbit && mv.getCameraOrbit();
       if (o) mv.cameraOrbit = `${o.theta}rad ${VISTA.inclinacion}deg auto`;
-    }, 1400);
+      mv.fieldOfView = 'auto';
+    }, 2000);
   };
-  mv.addEventListener('pointerup', volver);
-  mv.addEventListener('pointercancel', volver);
-  mv.addEventListener('pointerdown', () => clearTimeout(vuelta));
+  mv.addEventListener('pointerdown', () => { tocando = true; clearTimeout(vuelta); });
+  const suelta = () => { tocando = false; volver(); };
+  mv.addEventListener('pointerup', suelta);
+  mv.addEventListener('pointercancel', suelta);
+  // Zoom con dos dedos o con la rueda del mouse también vuelve
+  mv.addEventListener('camera-change', (e) => { if (e.detail && e.detail.source === 'user-interaction' && !tocando) volver(); });
   caja.prepend(mv);
   if ((ES_IPHONE || ES_ANDROID) && !soloTresD) {
     const ar = document.createElement('button');
@@ -114,6 +121,16 @@ async function abrir3d(p) {
     caja.append(ar);
   }
   evento('ver_3d', p.id);
+}
+// Dedito que muestra que el plato se puede girar: va y viene; se va con el primer toque o a los 6 s
+function mostrarDedo(caja, mv) {
+  const d = document.createElement('div');
+  d.className = 'pt-dedo'; d.setAttribute('aria-hidden', 'true');
+  d.innerHTML = '<svg viewBox="0 0 64 64" width="52" height="52"><path d="M26 30V12a4 4 0 0 1 8 0v14l10 2.4a5 5 0 0 1 3.8 5.7L46 46c-.6 4-4 7-8 7H32a8 8 0 0 1-6.4-3.2L17 38.6a3.6 3.6 0 0 1 5.4-4.8z" fill="#fff" stroke="#1D1B18" stroke-width="2.6" stroke-linejoin="round"/></svg>';
+  caja.append(d);
+  const quitar = () => { d.classList.add('fuera'); setTimeout(() => d.remove(), 400); };
+  mv.addEventListener('pointerdown', quitar, { once: true });
+  setTimeout(quitar, 6000);
 }
 let abierto = null;
 

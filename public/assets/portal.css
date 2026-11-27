@@ -1099,3 +1099,15 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 @keyframes pt-punto-late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 @keyframes pt-destello { 0%, 60%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 72% { opacity: .9; transform: scale(1) rotate(45deg); } 86% { opacity: 0; transform: scale(.5) rotate(90deg); } }
 .pt-ya-socio { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--papel-hondo); font-size: 14px; line-height: 1.45; color: var(--tinta-2); text-align: center; }
+
+/* Hoja del plato: X para cerrar arriba, siempre a la vista (en iPhone la barra de Safari tapaba el "Cerrar" de abajo) */
+.pt-hoja-x { position: sticky; top: 0; z-index: 4; float: right; display: grid; place-items: center; width: 44px; height: 44px; margin: -6px -10px -38px 0;
+  border: 0; border-radius: 50%; background: color-mix(in srgb, var(--tarjeta) 92%, transparent); color: var(--tinta); box-shadow: 0 2px 10px rgba(0, 0, 0, .14); cursor: pointer; }
+.pt-hoja-x:active { transform: scale(.94); }
+#hoja-detalle { padding-bottom: calc(var(--e-32) + env(safe-area-inset-bottom) + 24px); }
+#hoja-detalle > .pt-link[data-cerrar] { min-height: 52px; }
+/* Dedito sobre el 3D del plato: muestra que se puede girar */
+.pt-dedo { position: absolute; left: 50%; top: 58%; z-index: 3; margin-left: -26px; pointer-events: none; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25));
+  animation: pt-dedo-gira 2.2s ease-in-out infinite; transition: opacity .4s; }
+.pt-dedo.fuera { opacity: 0; }
+@keyframes pt-dedo-gira { 0%, 100% { transform: translateX(-44px) rotate(-8deg); } 50% { transform: translateX(44px) rotate(8deg); } }

@@ -82,6 +82,7 @@ ${fondoVivo(n.sector)}
 
   <div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-detalle" role="dialog" aria-label="Detalle" hidden>
+    <button type="button" class="pt-hoja-x" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
     <div class="pt-vista" id="d-vista">
       <img class="pt-foto-grande" id="d-foto" alt="" hidden>
       <div class="pt-3d" id="d-3d" hidden></div>
