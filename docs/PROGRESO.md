@@ -225,3 +225,5 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
    (no hace falta llenarlo).
 4. Link de Google Maps de demo-reps → el de REPS de verdad.
 5. Cargar el horario real de REPS (Jacobo manda la foto).
+6. Forja Gym también, con sus propios colores y su propia estética (distinta de REPS) y los mismos arreglos.
+   Usar las skills de diseño para que no se vea genérico.
