@@ -365,6 +365,16 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 .paso:hover { transform: translateY(-4px); }
 .paso .cap img { transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
 .paso:hover .cap img { transform: translateY(-6px) rotate(-1deg); }
+/* Los pasos alternan café y gimnasio (Nef no es solo para cafés), los tres a la vez y con su etiqueta */
+.paso .cap { position: relative; padding-top: 52px; }
+.paso .cap img.g { position: absolute; top: 52px; left: 50%; margin-left: calc(min(62%, 220px) / -2); }
+.paso .cap img.g, .paso .cap .cap-rubro .g { opacity: 0; animation: cap-g 10s 3s infinite; }
+.paso .cap .cap-rubro b:not(.g) { animation: cap-c 10s 3s infinite; }
+.paso .cap .cap-rubro { position: absolute; top: 16px; left: 0; right: 0; display: grid; justify-items: center; }
+.paso .cap .cap-rubro b { grid-area: 1 / 1; padding: 3px 12px; border-radius: 999px; background: var(--blanco); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--tinta); }
+@keyframes cap-g { 0%, 44% { opacity: 0; } 50%, 94% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cap-c { 0%, 44% { opacity: 1; } 50%, 94% { opacity: 0; } 100% { opacity: 1; } }
+@media (max-width: 760px) { .paso .cap img.g { margin-left: calc(min(70%, 230px) / -2); } }
 .kpi .num { font-variant-numeric: tabular-nums; }
 </style>
 </head>
@@ -443,11 +453,11 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
     <h2 class="t1">Tres pasos. Ninguno es descargar una app.</h2>
     <div class="pasos">
       <div class="paso"><div class="n">1</div><h3>Acerca el celular</h3><p>Al punto de la mesa, la recepción o la máquina. Si no tiene NFC, escanea el QR que está al lado.</p>
-        <div class="cap"><img src="/assets/img/portal-cafe.webp" alt="Portal de un café: tres botones grandes" width="416" height="870" loading="lazy"></div></div>
+        <div class="cap"><span class="cap-rubro" aria-hidden="true"><b>En un café</b><b class="g">En un gimnasio</b></span><img src="/assets/img/portal-cafe.webp" alt="Portal de un café: tres botones grandes" width="416" height="870" loading="lazy"><img class="g" src="/assets/img/portal-gym.webp" alt="Portal de un gimnasio: clases, entrenamientos y reseña" width="416" height="870" loading="lazy"></div></div>
       <div class="paso"><div class="n">2</div><h3>Ve tu portal</h3><p>Tu carta, tus clases, sus monedas. Tres botones grandes y nada que buscar.</p>
-        <div class="cap"><img src="/assets/img/carta.webp" alt="Carta de un café con precios y fotos" width="416" height="870" loading="lazy"></div></div>
+        <div class="cap"><span class="cap-rubro" aria-hidden="true"><b>En un café</b><b class="g">En un gimnasio</b></span><img src="/assets/img/carta.webp" alt="Carta de un café con precios y fotos" width="416" height="870" loading="lazy"><img class="g" src="/assets/img/clases-gym.webp" alt="Clases de la semana de un gimnasio" width="416" height="870" loading="lazy"></div></div>
       <div class="paso"><div class="n">3</div><h3>Vuelve</h3><p>Cada visita suma monedas. Y si deja de venir, te avisamos para que le escribas.</p>
-        <div class="cap"><img src="/assets/img/monedas.webp" alt="Tarjeta de monedas del cliente" width="416" height="870" loading="lazy"></div></div>
+        <div class="cap"><span class="cap-rubro" aria-hidden="true"><b>En un café</b><b class="g">En un gimnasio</b></span><img src="/assets/img/monedas.webp" alt="Tarjeta de monedas del cliente" width="416" height="870" loading="lazy"><img class="g" src="/assets/img/monedas-gym.webp" alt="Tarjeta de monedas de un socio del gimnasio" width="416" height="870" loading="lazy"></div></div>
     </div>
   </section>
 

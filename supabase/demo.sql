@@ -255,3 +255,9 @@ insert into public.tags (id, codigo, negocio_id, nombre, destino, producto_id) v
 on conflict (id) do nothing;
 update public.negocios set pin_caja_hash = extensions.crypt('1234', extensions.gen_salt('bf'))
 where id = 'd0000000-0000-4000-8000-0000000000a3' and pin_caja_hash is null;
+
+-- Socia de ejemplo en Forja Gym (para las capturas de la landing: su tarjeta se abre con este token)
+insert into public.membresias (id, cliente_id, negocio_id, token, saldo, total_ganado, visitas, acepto_datos_at, ultima_visita, vence)
+values ('d0000000-0000-4000-8000-0000000f0102', 'd0000000-0000-4000-8000-0000000f0001', 'd0000000-0000-4000-8000-0000000000a2',
+  'de00f0e9a000000000000000000a0002', 18, 26, 26, now(), now() - interval '1 day', now() + interval '12 months')
+on conflict (id) do nothing;
