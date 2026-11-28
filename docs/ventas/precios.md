@@ -14,6 +14,11 @@ Hasta 10 puntos NFC + QR (mesas, consultorios, máquinas…), placa de caja y tu
 
 ## Extras
 - Punto adicional: **$15.000**
+- **Platos en 3D** (27/11/2026): la instalación (restaurantes y cafés) **incluye 3 platos en 3D**, los estrella. Cada plato
+  adicional **$40.000** (pago único) o **paquete de 5 por $150.000** ($30.000 c/u). Incluye las fotos del plato en el
+  restaurante, limpiar el modelo, la foto para la carta y subirlo. Si el plato cambia y hay que volver a hacerlo, mismo precio.
+  Salen mejor los platos mate (pizza, pasta, hamburguesa, postres); bebidas en vaso, sopas y salsas muy brillantes se hacen
+  en render artístico. **Por qué hay límite:** una carta puede tener 100+ productos y cada 3D toma tiempo de escaneo y limpieza.
 - Estudio estadístico trimestral: **$150.000**. El primero es gratis con el plan Club.
 
 ## Fundadores — solo 3 cupos
@@ -35,7 +40,7 @@ Instalación a **$120.000** y mensualidad congelada por 12 meses.
 - Precios en pesos colombianos.
 
 ## Lo que NO va en los planes (todavía)
-- **Platos en 3D**: nuevo; los primeros clientes lo prueban sin costo. **"Verlo en tu mesa"** (realidad aumentada): **próximamente**, apagado por ahora (27/11/2026). No se promete en los planes.
+- **"Verlo en tu mesa"** (realidad aumentada): **próximamente**, apagado por ahora (27/11/2026). No se promete en los planes.
 - Nef **no toma pedidos** desde la mesa.
 
 ---

@@ -457,6 +457,13 @@ await caso('"En mantenimiento": el interruptor del catálogo muestra y quita el 
   const [n] = await api(`negocios?slug=eq.${slug}`);
   await panel.click('.tab[data-tab=catalogo]');
   await panel.selectOption('#k-negocio', { label: 'Café Prueba' });
+  // Buscador del catálogo (27/11/2026): sin tildes, filtra las filas y dice cuántas quedan
+  await panel.fill('#k-buscar', 'PRENSA');
+  assert.equal(await panel.locator('#lista-productos tr[data-id]:visible').count(), 1, 'el buscador deja solo la prensa');
+  assert.match(await panel.textContent('#k-buscar-cuenta'), /^1 de \d+$/);
+  await panel.fill('#k-buscar', 'zzz');
+  assert.equal(await panel.textContent('#k-buscar-cuenta'), 'No hay nada con esa palabra.');
+  await panel.fill('#k-buscar', '');
   const chk = panel.locator(`#lista-productos tr[data-id="${prod.id}"] .k-mantenimiento`);
   await chk.check();
   await panel.waitForTimeout(400);

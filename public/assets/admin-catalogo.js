@@ -74,6 +74,7 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
         : p.tipo === 'maquina' ? `<label class="k-mant"><input type="checkbox" class="k-mantenimiento" aria-label="En mantenimiento" ${p.mantenimiento ? 'checked' : ''}> En mantenimiento</label>` : ''}</td>
       <td><span class="n-estado ${p.activo ? 'ok' : 'alerta'}">${p.activo ? 'Activo' : 'Apagado'}</span></td>
       <td><button class="n-btn secundario chico" data-editar-producto="${esc(p.id)}">Editar</button></td></tr>`).join('');
+    filtrar();
     tb.querySelectorAll('[data-editar-producto]').forEach((b) => b.addEventListener('click', () => abrir(lista.find((p) => p.id === b.dataset.editarProducto))));
     // "Agotado hoy" de un toque: es lo que más se usa en el día a día
     tb.querySelectorAll('.k-agotado').forEach((chk) => chk.addEventListener('change', async () => {
@@ -244,6 +245,20 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
     await cargar();
     if (alCambiar) alCambiar();
   });
+
+  const sinTilde = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function filtrar() {
+    const q = sinTilde($('#k-buscar').value.trim());
+    const filas = [...document.querySelectorAll('#lista-productos tr[data-id]')];
+    let n = 0;
+    for (const tr of filas) {
+      const p = lista.find((x) => x.id === tr.dataset.id);
+      const si = !q || (p && sinTilde([p.nombre, p.descripcion, TIPOS[p.tipo], detalle(p)].join(' ')).includes(q));
+      tr.hidden = !si; if (si) n++;
+    }
+    $('#k-buscar-cuenta').textContent = q ? (n ? `${n} de ${filas.length}` : 'No hay nada con esa palabra.') : '';
+  }
+  $('#k-buscar').addEventListener('input', filtrar);
 
   return { cargar };
 }

@@ -2,6 +2,7 @@
 
 Formato: fecha · decisión · por qué. Las más recientes arriba.
 
+- 2026-11-27 · **Precio del 3D** (Jacobo: "hay menús extensos, el 3D debe tener límite y el extra se cobra aparte"): la instalación incluye **3 platos en 3D**; cada adicional **$40.000** (pago único) o **5 por $150.000**. En `docs/ventas/precios.md` y en la landing (extras y sección Carta 3D). Antes decía "los primeros lo prueban sin costo".
 - 2026-11-27 · **Demo de Los Fuertes** (prospecto, reunión 30/11): negocio de demostración `/n/demo-los-fuertes` en la empresa "Demostración", con datos en su propio archivo `supabase/demo-los-fuertes.sql` (generado por `scripts/demo_los_fuertes.mjs`; solo toca ese negocio). Rama `demo/los-fuertes`. Slug con "demo-" (noindex) para no ocupar `los-fuertes` antes de que sea cliente. Se llama **Los Fuertes** (no "Fuentes": así dice su logo). Sin su logo como imagen (mismo criterio que REPS): su nombre en manuscrita dorada.
 - 2026-11-27 · **Tema "trattoria"** (restaurantes clásicos): verde salvia, dorado y papel crema con veta de mármol (texturas SVG, sin degradados de color), marco dorado fino, títulos en manuscrita (Great Vibes, en lugar de la Aniyah de su carta, que no es libre), platos en Josefin Sans espaciada y texto en Cormorant Garamond (las de su carta; OFL, en `public/assets/fuentes`). Los platos sin foto no muestran el círculo vacío.
 - 2026-11-27 · **Precio 0 = sin precio aparte** (sabores de pizza, salsas de pasta): la carta no muestra "$0" y "Elige por mí" no los sugiere (no se piden solos).

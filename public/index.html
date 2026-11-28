@@ -160,7 +160,6 @@ nav .entrar:hover { text-decoration: underline; text-underline-offset: 4px; }
 .qr-tarjeta .btn { width: 100%; }
 @keyframes qr-entra { from { opacity: 0; } }
 .demo-card img.demo-gym-img { background: #23252A; object-fit: contain; padding: 6px; }
-.demo-card img.demo-reps-img { background: #111215; object-fit: contain; padding: 6px; box-shadow: 0 0 0 2px #FF3EC8 inset; }
 .lead-sec { max-width: 640px; margin-top: 14px; font-size: 18px; line-height: 1.5; color: var(--texto-2); }
 .vitrina { display: grid; gap: 16px; margin-top: 32px; }
 .vt-lado { display: grid; gap: 16px; align-content: start; }
@@ -427,14 +426,6 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
         </a>
         <button type="button" class="demo-qr" data-url="/n/demo-gym" data-nombre="Forja Gym" aria-label="Mostrar el QR de Forja Gym"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg><span>QR</span></button>
       </div>
-      <!-- TEMPORAL (27/11/2026, pedido de Jacobo para tener acceso fácil en la reunión con REPS): quitar después. -->
-      <div class="demo-item">
-        <a class="demo-card" href="/n/demo-reps" data-demo>
-          <img class="demo-reps-img" src="/assets/demo/gym/neon/prensa-45.webp" alt="" width="240" height="240" loading="lazy">
-          <div><small>Gimnasio · demostración</small><b>Demo para REPS</b><span>Con su estilo: neón, sus 3 sedes y "Encuentra tu máquina".</span></div>
-        </a>
-        <button type="button" class="demo-qr" data-url="/n/demo-reps" data-nombre="Demo para REPS" aria-label="Mostrar el QR de Demo para REPS"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2"/></svg><span>QR</span></button>
-      </div>
     </div>
     <div class="qr-capa" id="qr-capa" role="dialog" aria-modal="true" aria-labelledby="qr-nombre" hidden>
       <div class="qr-tarjeta">
@@ -465,7 +456,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
   <section class="sec" id="carta-3d">
     <div class="et">Tu carta, como nunca la han visto <span class="etiqueta-nuevo">Nuevo</span></div>
     <h2 class="t1">Tu carta en 3D.</h2>
-    <p class="lead-sec">Tus clientes giran el plato con el dedo antes de pedirlo. Hacemos tus platos estrella en 3D a partir de fotos. Los primeros clientes lo prueban sin costo.</p>
+    <p class="lead-sec">Tus clientes giran el plato con el dedo antes de pedirlo. Hacemos tus platos estrella en 3D a partir de fotos: la instalación incluye 3 y cada plato adicional cuesta $40.000 (5 por $150.000).</p>
     <div class="vitrina">
       <article class="vt grande">
         <div class="visor3d" id="visor3d" style="--poster:url('/assets/demo/malteada.webp')">
@@ -603,6 +594,7 @@ footer { border-top: 1px solid var(--arena); padding: 24px 0 40px; display: flex
 
     <div class="pr-extras">
       <div><b>Punto adicional</b><span>$15.000</span></div>
+      <div><b>Plato en 3D adicional</b><span>$40.000 · 5 por $150.000 · la instalación incluye 3</span></div>
       <div><b>Estudio estadístico trimestral</b><span>$150.000 · el primero gratis con el Plan Club</span></div>
     </div>
     <div class="fundadores"><b>Fundadores: solo 3 cupos.</b> Instalación a $120.000 (en gimnasios, la primera sede) y mensualidad congelada por 12 meses.</div>

@@ -238,3 +238,37 @@ values ('d0000000-0000-4000-8000-00000f500009', 'd0000000-0000-4000-8000-00000f4
 insert into public.movimientos (membresia_id, negocio_id, tipo, monedas, op_id, creado)
 select 'd0000000-0000-4000-8000-00000f500009', 'd0000000-0000-4000-8000-0000000000f1', 'visita', 10, md5('fuertes-9-' || k)::uuid, now() - make_interval(days => 9 + k * 10, hours => 19 - k % 6)
 from generate_series(0, 2) k on conflict (op_id) do nothing;
+
+-- Mesas de ejemplo (8) y 45 días de toques y clics inventados para el Resumen del panel
+insert into public.tags (id, codigo, negocio_id, nombre) values
+  ('d0000000-0000-4000-8000-00000f600003', 'demofuertesm1', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 1'),
+  ('d0000000-0000-4000-8000-00000f600004', 'demofuertesm2', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 2'),
+  ('d0000000-0000-4000-8000-00000f600005', 'demofuertesm3', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 3'),
+  ('d0000000-0000-4000-8000-00000f600006', 'demofuertesm4', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 4'),
+  ('d0000000-0000-4000-8000-00000f600007', 'demofuertesm5', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 5'),
+  ('d0000000-0000-4000-8000-00000f600008', 'demofuertesm6', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 6'),
+  ('d0000000-0000-4000-8000-00000f600009', 'demofuertesm7', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 7'),
+  ('d0000000-0000-4000-8000-00000f600010', 'demofuertesm8', 'd0000000-0000-4000-8000-0000000000f1', 'Mesa 8')
+on conflict (id) do nothing;
+with t as (select array['d0000000-0000-4000-8000-00000f600003'::uuid, 'd0000000-0000-4000-8000-00000f600004'::uuid, 'd0000000-0000-4000-8000-00000f600005'::uuid, 'd0000000-0000-4000-8000-00000f600006'::uuid, 'd0000000-0000-4000-8000-00000f600007'::uuid, 'd0000000-0000-4000-8000-00000f600008'::uuid, 'd0000000-0000-4000-8000-00000f600009'::uuid, 'd0000000-0000-4000-8000-00000f600010'::uuid] as m),
+dia as (select d, 6 + abs(hashtext('c' || d)) % 10 as n from generate_series(1, 45) d),
+x as (
+  select d, k, (select m from t)[1 + abs(hashtext('t' || d || '-' || k)) % 8] as tag,
+    ((now() at time zone 'America/Bogota')::date - d)::timestamp
+      + make_interval(hours => (array[12, 12, 13, 13, 13, 14, 18, 19, 19, 20, 20, 21])[1 + abs(hashtext('h' || d || '-' || k)) % 12],
+                      mins => abs(hashtext('n' || d || '-' || k)) % 60) as local
+  from dia cross join lateral generate_series(1, dia.n) k
+  where not exists (select 1 from public.toques where tag_id = 'd0000000-0000-4000-8000-00000f600003')
+),
+toq as (
+  insert into public.toques (tag_id, negocio_id, medio, dispositivo, creado)
+  select tag, 'd0000000-0000-4000-8000-0000000000f1', case when abs(hashtext('m' || d || '-' || k)) % 10 < 7 then 'nfc' else 'qr' end,
+    case when abs(hashtext('d' || d || '-' || k)) % 5 < 2 then 'ios' else 'android' end, local at time zone 'America/Bogota'
+  from x returning 1
+)
+insert into public.clicks (negocio_id, tag_id, boton, creado)
+select 'd0000000-0000-4000-8000-0000000000f1', tag, b, (local at time zone 'America/Bogota') + interval '40 seconds'
+from x cross join lateral (select case abs(hashtext('b' || d || '-' || k)) % 20
+    when 0 then 'resena' when 1 then 'resena' when 2 then 'whatsapp' when 3 then 'link0'
+    when 4 then 'club' when 5 then 'club' when 6 then 'club' when 7 then 'club' else 'menu' end as b) bb
+where abs(hashtext('s' || d || '-' || k)) % 10 < 8;

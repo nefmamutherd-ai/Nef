@@ -745,6 +745,12 @@ await caso('demo-los-fuertes.sql corre dos veces: 118 platos, 2 agotados, sin "$
   const riesgo = (await q(`select metrica_en_riesgo('d0000000-0000-4000-8000-0000000000f1', current_date) r`))[0].r;
   assert.deepEqual(riesgo.map((x) => x.nombre).sort(), ['Andrea M.', 'Carlos R.', 'Diana L.', 'Julián T.', 'Paola G.'], '"quién dejó de venir" con datos de ejemplo');
   assert.ok(riesgo.every((x) => /^573000002\d{3}$/.test(x.telefono)), 'teléfonos de ejemplo, no reales');
+  // Toques y clics de ejemplo para el Resumen: se cargan una sola vez aunque el archivo corra de nuevo
+  const cuenta = async () => (await q("select (select count(*) from toques where negocio_id = 'd0000000-0000-4000-8000-0000000000f1')::int t, (select count(*) from clicks where negocio_id = 'd0000000-0000-4000-8000-0000000000f1')::int c"))[0];
+  const antes = await cuenta();
+  assert.ok(antes.t > 250 && antes.c > 150, 'hay toques y clics de ejemplo');
+  await db.exec(demo);
+  assert.deepEqual(await cuenta(), antes, 'correr la demo otra vez no duplica los toques');
 });
 
 console.log('Diseño · pieles y "Lo más pedido"');

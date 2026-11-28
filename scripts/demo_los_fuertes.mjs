@@ -227,5 +227,35 @@ select ${q(mem)}, ${q(N)}, 'visita', 10, md5('fuertes-${i + 1}-' || k)::uuid, no
 from generate_series(0, ${visitas - 1}) k on conflict (op_id) do nothing;
 `;
 });
+
+// Mesas de ejemplo y 45 días de toques y clics inventados: así el "Resumen" del panel (horas pico, NFC/QR, qué tocan,
+// conversión a reseña) se ve como el de un restaurante de verdad. Se cargan una sola vez (si la Mesa 1 ya tiene toques, no).
+const MESAS = Array.from({ length: 8 }, (_, i) => [id('f6', i + 3), `Mesa ${i + 1}`, `demofuertesm${i + 1}`]);
+sql += `\n-- Mesas de ejemplo (8) y 45 días de toques y clics inventados para el Resumen del panel\n` +
+  'insert into public.tags (id, codigo, negocio_id, nombre) values\n' +
+  MESAS.map(([t, nom, cod]) => `  (${q(t)}, '${cod}', ${q(N)}, '${nom}')`).join(',\n') + '\non conflict (id) do nothing;\n';
+sql += `with t as (select array[${MESAS.map(([t]) => q(t) + '::uuid').join(', ')}] as m),
+dia as (select d, 6 + abs(hashtext('c' || d)) % 10 as n from generate_series(1, 45) d),
+x as (
+  select d, k, (select m from t)[1 + abs(hashtext('t' || d || '-' || k)) % 8] as tag,
+    ((now() at time zone 'America/Bogota')::date - d)::timestamp
+      + make_interval(hours => (array[12, 12, 13, 13, 13, 14, 18, 19, 19, 20, 20, 21])[1 + abs(hashtext('h' || d || '-' || k)) % 12],
+                      mins => abs(hashtext('n' || d || '-' || k)) % 60) as local
+  from dia cross join lateral generate_series(1, dia.n) k
+  where not exists (select 1 from public.toques where tag_id = ${q(MESAS[0][0])})
+),
+toq as (
+  insert into public.toques (tag_id, negocio_id, medio, dispositivo, creado)
+  select tag, ${q(N)}, case when abs(hashtext('m' || d || '-' || k)) % 10 < 7 then 'nfc' else 'qr' end,
+    case when abs(hashtext('d' || d || '-' || k)) % 5 < 2 then 'ios' else 'android' end, local at time zone 'America/Bogota'
+  from x returning 1
+)
+insert into public.clicks (negocio_id, tag_id, boton, creado)
+select ${q(N)}, tag, b, (local at time zone 'America/Bogota') + interval '40 seconds'
+from x cross join lateral (select case abs(hashtext('b' || d || '-' || k)) % 20
+    when 0 then 'resena' when 1 then 'resena' when 2 then 'whatsapp' when 3 then 'link0'
+    when 4 then 'club' when 5 then 'club' when 6 then 'club' when 7 then 'club' else 'menu' end as b) bb
+where abs(hashtext('s' || d || '-' || k)) % 10 < 8;
+`;
 fs.writeFileSync('supabase/demo-los-fuertes.sql', sql);
 console.log('ok', p, 'platos en', c, 'categorías');
