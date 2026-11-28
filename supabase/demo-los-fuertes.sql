@@ -3,16 +3,18 @@
 --  Generado por scripts/demo_los_fuertes.mjs (no editar a mano). Idempotente: ids fijos, solo toca este negocio.
 --  Se corre después de esquema.sql y demo.sql. /n/demo-los-fuertes · caja /caja/demo-los-fuertes (PIN 1234).
 -- =====================================================================
+insert into public.empresas (id, nombre, plan) values ('d0000000-0000-4000-8000-0000000000e2', 'Los Fuertes (demo)', 'demo') on conflict (id) do nothing;
+
 insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, sector, servicios, ubicacion_etiqueta,
   resena_url, whatsapp, instagram, moneda_plural, moneda_singular, bienvenida, monedas_por_visita, tema, links)
-values ('d0000000-0000-4000-8000-0000000000f1', 'd0000000-0000-4000-8000-000000000001', 'demo-los-fuertes', 'Los Fuertes',
+values ('d0000000-0000-4000-8000-0000000000f1', 'd0000000-0000-4000-8000-0000000000e2', 'demo-los-fuertes', 'Los Fuertes',
   'Demo preparado para Los Fuertes', '#758074', 'cafe', '{"base":true,"catalogo":true,"club":true,"estudio":false}',
   'Pizzas y pastas',
   -- VARIABLE: link real de reseñas de Google de Los Fuertes (pendiente; este es de ejemplo)
   'https://www.google.com/maps/search/?api=1&query=Los+Fuertes+Pizzas+y+Pastas+Bogot%C3%A1',
   '3108728707', null, 'monedas', 'moneda', 50, 10, 'trattoria',
   '[{"titulo":"Cómo llegar · Cra 92 #157-65","url":"https://www.google.com/maps/search/?api=1&query=Cra+92+%23157-65+Bogot%C3%A1"}]'::jsonb)
-on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion, color = excluded.color,
+on conflict (id) do update set empresa_id = excluded.empresa_id, slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion, color = excluded.color,
   servicios = excluded.servicios, ubicacion_etiqueta = excluded.ubicacion_etiqueta, resena_url = excluded.resena_url,
   whatsapp = excluded.whatsapp, tema = excluded.tema, links = excluded.links, activo = true;
 

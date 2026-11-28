@@ -4,7 +4,8 @@
 import fs from 'node:fs';
 
 const N = 'd0000000-0000-4000-8000-0000000000f1';        // negocio
-const E = 'd0000000-0000-4000-8000-000000000001';        // empresa "Demostración" (la misma de las otras demos)
+// Empresa propia de la demo: así una cuenta de dueño de prueba ve en /panel SOLO a Los Fuertes (no las otras demos)
+const E = 'd0000000-0000-4000-8000-0000000000e2';
 const id = (tipo, n) => `d0000000-0000-4000-8000-00000${tipo}${String(n).padStart(5, '0')}`;
 const q = (s) => (s == null ? 'null' : `'${String(s).replace(/'/g, "''")}'`);
 
@@ -169,6 +170,8 @@ let sql = `-- ==================================================================
 --  Generado por scripts/demo_los_fuertes.mjs (no editar a mano). Idempotente: ids fijos, solo toca este negocio.
 --  Se corre después de esquema.sql y demo.sql. /n/demo-los-fuertes · caja /caja/demo-los-fuertes (PIN 1234).
 -- =====================================================================
+insert into public.empresas (id, nombre, plan) values (${q(E)}, 'Los Fuertes (demo)', 'demo') on conflict (id) do nothing;
+
 insert into public.negocios (id, empresa_id, slug, nombre, descripcion, color, sector, servicios, ubicacion_etiqueta,
   resena_url, whatsapp, instagram, moneda_plural, moneda_singular, bienvenida, monedas_por_visita, tema, links)
 values (${q(N)}, ${q(E)}, 'demo-los-fuertes', 'Los Fuertes',
@@ -178,7 +181,7 @@ values (${q(N)}, ${q(E)}, 'demo-los-fuertes', 'Los Fuertes',
   'https://www.google.com/maps/search/?api=1&query=Los+Fuertes+Pizzas+y+Pastas+Bogot%C3%A1',
   '3108728707', null, 'monedas', 'moneda', 50, 10, 'trattoria',
   '[{"titulo":"Cómo llegar · Cra 92 #157-65","url":"https://www.google.com/maps/search/?api=1&query=Cra+92+%23157-65+Bogot%C3%A1"}]'::jsonb)
-on conflict (id) do update set slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion, color = excluded.color,
+on conflict (id) do update set empresa_id = excluded.empresa_id, slug = excluded.slug, nombre = excluded.nombre, descripcion = excluded.descripcion, color = excluded.color,
   servicios = excluded.servicios, ubicacion_etiqueta = excluded.ubicacion_etiqueta, resena_url = excluded.resena_url,
   whatsapp = excluded.whatsapp, tema = excluded.tema, links = excluded.links, activo = true;
 
