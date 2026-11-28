@@ -45,7 +45,10 @@ export async function onRequestGet({ params, request, env }) {
   if (!secciones.length) return redirigir(new URL(`/n/${encodeURIComponent(n.slug)}`, url).href);
 
   const titulo = mayuscula(paquete(n.sector).palabras.catalogo);
-  const todos = secciones.flatMap((s) => s.productos);
+  const todos = secciones.flatMap((s) => s.productos.map((p) => ({ ...p, seccion: s.id })));
+  // "Elige por mí" pregunta primero qué se le antoja (Jacobo, 27/11/2026: a quien va a desayunar no se le sugiere un plato
+  // fuerte). Las opciones son las secciones de la carta que tienen algo disponible con precio, más "Sorpréndeme".
+  const antojos = secciones.filter((s) => s.productos.some((p) => !p.agotado && p.precio > 0));
   // Datos para la hoja y "Elige por mí" (JSON seguro dentro de <script>)
   const datos = JSON.stringify(todos.map((p) => ({ ...p, foto_url: fotoSegura(p.foto_url), modelo_url: modeloSeguro(p.modelo_url) }))).replace(/</g, '\\u003c');
   // En cada categoría, el primer plato destacado (y disponible) va con foto grande
@@ -96,8 +99,9 @@ ${fondoVivo(n.sector)}
 
   <div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-elige" role="dialog" aria-label="Elige por mí" hidden>
-    <div class="pt-elige-cabeza"><h2 id="e-titulo">Girando…</h2>
+    <div class="pt-elige-cabeza"><h2 id="e-titulo">¿Qué se te antoja?</h2>
       <button type="button" class="pt-sonido" id="e-sonido" aria-pressed="true">${icono('sonido')}<span>Con sonido</span></button></div>
+    <div class="pt-antojos" id="e-pregunta">${antojos.map((s) => `<button type="button" class="pt-antojo" data-seccion="${esc(s.id)}">${esc(s.nombre)}</button>`).join('')}<button type="button" class="pt-antojo sorpresa" data-seccion="sorpresa">Sorpréndeme</button></div>
     <div id="giro" hidden>
       <div class="pt-maquina" id="maquina">
         <div class="pt-marquesina" aria-hidden="true">La suerte de la casa</div>
@@ -121,6 +125,7 @@ ${fondoVivo(n.sector)}
         <button type="button" class="pt-accion marca" id="lo-pido">Lo pido</button>
         <button type="button" class="pt-accion" id="otra-vez">Otra vez</button>
       </div>
+      <button type="button" class="pt-link" id="g-cambiar" hidden>Se me antoja otra cosa</button>
     </div>
     <div class="pt-vacio" id="g-vacio" hidden><b>Hoy no hay platos disponibles</b>Vuelve a intentarlo más tarde.</div>
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>

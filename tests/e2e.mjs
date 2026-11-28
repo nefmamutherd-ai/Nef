@@ -700,7 +700,7 @@ await caso('carta en el celular: 30 productos, agotado en gris, hoja que cierra 
   const ev = await api(`eventos_carta?negocio_id=eq.${negocioId}`);
   assert.ok(ev.some((e) => e.tipo === 'ver_carta') && ev.some((e) => e.tipo === 'ver_producto'));
 });
-await caso('"Elige por mí": gira de una con sonido, sugiere un plato disponible, "Lo pido" se registra y no da monedas', async () => {
+await caso('"Elige por mí": pregunta qué se le antoja (secciones), sugiere de esa sección, "Lo pido" se registra y no da monedas', async () => {
   const movAntes = (await api('movimientos')).length;
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errores.push('elige: ' + e.message));
@@ -708,11 +708,19 @@ await caso('"Elige por mí": gira de una con sonido, sugiere un plato disponible
   await p.goto(`${BASE}/n/${slug}/carta`);
   await p.click('#elige');
   await p.waitForSelector('#hoja-elige.abierta');
-  // Gira de una sobre toda la carta (sin elegir antojo), con botón de sonido
+  // Primero pregunta: las secciones de la carta + "Sorpréndeme" (27/11/2026); con botón de sonido
+  assert.equal(await p.textContent('#e-titulo'), '¿Qué se te antoja?');
+  assert.ok((await p.locator('#e-pregunta .pt-antojo').allTextContents()).includes('Sorpréndeme'));
   assert.equal(await p.getAttribute('#e-sonido', 'aria-pressed'), 'true');
+  await p.click('#e-pregunta .pt-antojo:text-is("Cafés")');
   await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 8000 });
   const elegido = await p.$eval('#rollo [data-elegido]', (d) => d.textContent);
-  assert.ok(elegido.length > 0); assert.notEqual(elegido, 'Postre 2', 'sugirió un agotado');
+  assert.match(elegido, /^Café /, 'eligió "Cafés" y sugirió un café');
+  await p.click('#g-cambiar');
+  assert.equal(await p.isVisible('#e-pregunta'), true, '"Se me antoja otra cosa" vuelve a la pregunta');
+  await p.click('#e-pregunta .pt-antojo.sorpresa');
+  await p.waitForSelector('#g-acciones:not([hidden])', { timeout: 8000 });
+  assert.notEqual(await p.$eval('#rollo [data-elegido]', (d) => d.textContent), 'Postre 2', 'sugirió un agotado');
   await p.click('#e-sonido');
   assert.equal(await p.getAttribute('#e-sonido', 'aria-pressed'), 'false', 'se puede apagar el sonido');
   await p.screenshot({ path: DIR + 'elige-por-mi.png' });

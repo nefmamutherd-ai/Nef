@@ -273,7 +273,13 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('hoja
 
 // ── Elige por mí ─────────────────────────────────────────────────────────────────
 const elige = hoja($('hoja-elige'));
-const antojo = 'sorpresa'; // gira sobre toda la carta disponible: el negocio no tiene que etiquetar nada
+const antojo = 'sorpresa'; // dentro de la sección elegida, cualquier plato disponible: el negocio no tiene que etiquetar nada
+let seccion = 'sorpresa'; // la sección que eligió el cliente en "¿Qué se te antoja?" ('sorpresa' = toda la carta)
+const deSeccion = () => (seccion === 'sorpresa' ? productos : productos.filter((p) => p.seccion === seccion));
+function preguntar() {
+  $('e-titulo').textContent = '¿Qué se te antoja?';
+  $('e-pregunta').hidden = false; $('giro').hidden = true; $('g-vacio').hidden = true;
+}
 let elegido = null;
 
 // Sonido de tragamonedas (WebAudio, sin archivos): palanca, clics que se frenan y melodía de premio.
@@ -325,7 +331,7 @@ $('e-sonido').addEventListener('click', () => {
   pintarSonido();
 });
 pintarSonido();
-$('elige').addEventListener('click', () => { if (conSonido && !audioPremio) { audioPremio = new Audio('/assets/sonidos/premio.mp3'); audioPremio.preload = 'auto'; } elige.abrir(); girar(); });
+$('elige').addEventListener('click', () => { if (conSonido && !audioPremio) { audioPremio = new Audio('/assets/sonidos/premio.mp3'); audioPremio.preload = 'auto'; } elige.abrir(); preguntar(); });
 
 function fila(p) {
   const d = document.createElement('div');
@@ -356,7 +362,9 @@ function confeti() {
 }
 
 function girar() {
-  elegido = elegir(productos, antojo); // ← decidido aquí, antes de animar
+  elegido = elegir(deSeccion(), antojo); // ← decidido aquí, antes de animar
+  $('e-pregunta').hidden = true;
+  $('g-cambiar').hidden = true;
   $('g-acciones').hidden = true;
   $('g-resultado').hidden = true;
   $('g-frase').hidden = true;
@@ -368,7 +376,7 @@ function girar() {
 
   // Rollo: muchos platos al azar del antojo y, al final, el elegido (queda en la ventana del centro)
   // Nunca el mismo plato en filas vecinas: si el antojo tiene pocas opciones, el rollo se rellena con el resto de la carta.
-  const c = candidatos(productos, antojo);
+  const c = candidatos(deSeccion(), antojo);
   const pool = c.length >= 4 ? c : [...new Map([...c, ...candidatos(productos, 'sorpresa')].map((p) => [p.id, p])).values()];
   const sacar = (evitar) => {
     const ops = pool.filter((p) => !evitar.includes(p.id));
@@ -416,9 +424,17 @@ function girar() {
     $('g-precio').textContent = pesos(elegido.precio);
     $('g-resultado').hidden = false;
     $('g-acciones').hidden = false;
+    $('g-cambiar').hidden = false;
   }, { once: true });
 }
 $('otra-vez').addEventListener('click', girar);
+$('g-cambiar').addEventListener('click', preguntar);
+$('e-pregunta').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-seccion]');
+  if (!b) return;
+  seccion = b.dataset.seccion;
+  girar();
+});
 // Curiosidad (Jacobo, 27/11): al salir el plato, tocarlo (en la ventana de la máquina o en "Ver el plato") lo abre con su foto y su 3D
 function verElegido() {
   if (!elegido || !$('maquina').classList.contains('gano')) return;

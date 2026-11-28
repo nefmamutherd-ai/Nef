@@ -14,7 +14,8 @@ Hasta 10 puntos NFC + QR (mesas, consultorios, máquinas…), placa de caja y tu
 
 ## Extras
 - Punto adicional: **$15.000**
-- **Platos en 3D** (27/11/2026): la instalación (restaurantes y cafés) **incluye 3 platos en 3D**, los estrella. Cada plato
+- **Fotos de los platos de la carta: incluidas, sin costo adicional.** Lo que se cobra aparte es solo el 3D extra.
+- **Platos en 3D** (27/11/2026): la instalación (restaurantes y cafés) **incluye 5 platos en 3D**, los estrella. Cada plato
   adicional **$40.000** (pago único) o **paquete de 5 por $150.000** ($30.000 c/u). Incluye las fotos del plato en el
   restaurante, limpiar el modelo, la foto para la carta y subirlo. Si el plato cambia y hay que volver a hacerlo, mismo precio.
   Salen mejor los platos mate (pizza, pasta, hamburguesa, postres); bebidas en vaso, sopas y salsas muy brillantes se hacen

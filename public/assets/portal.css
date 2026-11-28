@@ -1292,3 +1292,12 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
   [data-tema="trattoria"] .pt-inicio .pt-boton > span, [data-tema="trattoria"] .pt-baldosa > span { font-size: 14px; letter-spacing: .1em; }
   [data-tema="trattoria"] .pt-inicio .pt-boton.principal > span { font-size: 16px; }
 }
+
+/* "¿Qué se te antoja?" antes de girar (27/11/2026): una ficha por sección de la carta + "Sorpréndeme" */
+.pt-antojos .pt-antojo { min-height: 52px; padding: 10px 14px; border-radius: var(--r-medio, 14px); border: 1.5px solid var(--linea); background: var(--tarjeta); color: var(--tinta); font: 600 16px/1.2 var(--sans); text-align: center; cursor: pointer; transition: transform .15s ease, border-color .15s ease; }
+.pt-antojos .pt-antojo:active { transform: scale(.97); }
+.pt-antojos .pt-antojo.sorpresa { grid-column: 1 / -1; background: var(--marca); color: var(--sobre-marca); border-color: transparent; }
+.pt-antojos[hidden] { display: none; }
+[data-tema="trattoria"] .pt-antojos .pt-antojo { font: 600 13px/1.25 var(--sans); letter-spacing: .12em; text-transform: uppercase; border: 0; box-shadow: inset 0 0 0 1px var(--dorado); color: var(--salvia-honda); border-radius: var(--r-grande); }
+[data-tema="trattoria"] .pt-antojos .pt-antojo.sorpresa { background: var(--salvia); color: var(--dorado-claro); }
+[data-tema="trattoria"] .pt-elige-cabeza h2 { font: 400 40px/1.1 var(--manuscrita); color: var(--dorado); }

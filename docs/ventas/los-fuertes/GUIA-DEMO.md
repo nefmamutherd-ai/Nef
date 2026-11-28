@@ -37,7 +37,7 @@ Para mostrar el "toque" de verdad, lleva un sticker NFC grabado con `https://nef
 - **Toca un plato:** se abre su hoja con la descripción completa y el precio.
 - **3D:** los platos con sello "3D" (pizza familiar, albóndigas a la parmesana, hamburguesa clásica) se giran con el dedo y vuelven solos a su posición.
 - **Agotado hoy:** Ossobuco y Spaghetti marinero salen tachados con "Agotado hoy". (En 2.3 ves cómo se marca.)
-- **Elige por mí:** la máquina de la suerte sugiere un plato (nunca uno agotado ni una salsa suelta). Toca "Ver el plato" para abrirlo. **Solo sugiere: no da premios.**
+- **Elige por mí:** primero pregunta **"¿Qué se te antoja?"** (las secciones de su carta: Entradas, Pizzas, Pastas… o "Sorpréndeme") y luego la máquina de la suerte sugiere un plato de esa sección (nunca uno agotado ni una salsa suelta). Toca "Ver el plato" para abrirlo. **Solo sugiere: no da premios.**
 
 ### 1.4 El club ("Abre tu regalo")
 - **Inscribirse:** nombre + celular + la casilla de autorización de datos → "Unirme". Recibe **50 monedas de bienvenida**,
@@ -133,10 +133,10 @@ Abre `nef-73r.pages.dev/caja/demo-los-fuertes` → PIN **1234**.
 - **¿Pueden hacer trampa con las monedas?** Las monedas solo se dan desde la caja (con PIN) y una vez por visita.
 - **¿Nef cobra o maneja la plata del restaurante?** No. Nef no toca la plata: los premios los entrega el restaurante.
 - **¿Cuánto cuesta?** Instalación **$250.000** (fundadores: **$120.000** y mensualidad congelada 12 meses).
-  Plan **Portal** $55.000/mes · Plan **Club** (recomendado) **$95.000/mes**. Punto adicional $15.000. Plato en 3D adicional $40.000. Detalle: `docs/ventas/precios.md`.
+  Plan **Portal** $55.000/mes · Plan **Club** (recomendado) **$95.000/mes**. Punto adicional $15.000. Fotos de la carta incluidas; plato en 3D adicional $40.000 (5 incluidos en la instalación). Detalle: `docs/ventas/precios.md`.
 - **¿Cuántos puntos trae?** Los de la instalación (una por mesa); los adicionales a $15.000.
 - **¿Y si un cliente pierde o cambia el celular?** Escribe el mismo nombre y celular y recupera sus monedas.
-- **¿Se puede ver toda la carta en 3D?** El 3D es para los platos estrella: la instalación **incluye 3**; cada plato adicional
+- **¿Se puede ver toda la carta en 3D?** El 3D es para los platos estrella: la instalación **incluye 5**; cada plato adicional
   cuesta **$40.000** (o 5 por $150.000), pago único. Se hacen con fotos del plato en el restaurante. Por qué hay límite: una
   carta como la suya tiene más de 100 productos y cada 3D toma su trabajo; además, no todos lucen en 3D (bebidas, sopas).
 
