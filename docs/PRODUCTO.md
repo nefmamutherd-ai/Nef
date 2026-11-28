@@ -32,12 +32,17 @@ y lo recupera cuando deja de venir.
 | Servicio | Qué incluye |
 |---|---|
 | **Base** | Tags NFC+QR con links dinámicos, portal, botón de reseñas, enlaces (WiFi, WhatsApp, Instagram), estadísticas nivel 1 |
-| **Catálogo** | Carta del café; clases y máquinas (con video) del gimnasio; "Elige por mí" |
+| **Catálogo** | Carta del café ("Agotado hoy"); clases y máquinas (con video y "En mantenimiento") del gimnasio; "Elige por mí" |
 | **Club** | Inscripción por celular, monedas, premios, caja, niveles, racha, hora dorada, socios en riesgo |
 | **Estudio** | Informe estadístico trimestral (descriptivo + inferencial) hecho por Jacobo |
 | **Red** (después) | Grupos de sedes y redes de negocios aliados |
 
 El portal muestra **solo** lo contratado.
+
+**"En mantenimiento" (máquinas):** el dueño, el gerente o Jacobo (desde /admin) lo prenden de un toque en el catálogo, con
+una fecha opcional "Vuelve el…". El socio que acerca el celular a esa máquina ve arriba "Esta máquina está en mantenimiento"
+(y cuándo vuelve, si se puso); el video y los pasos siguen visibles, pero no se puede entrenar con el tutorial ni ganar
+monedas en ella. En "Encuentra tu máquina" sale en gris. No se quita solo: queda hasta que el dueño lo apague.
 
 ## 5. Cómo se adapta a cada nicho
 | | ☕ Café / restaurante | 🏋️ Gimnasio |

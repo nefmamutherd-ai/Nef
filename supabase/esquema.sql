@@ -1261,11 +1261,20 @@ $$;
 alter table public.productos add column if not exists modelo_url text
   check (modelo_url is null or modelo_url ~ '^(https://[^[:space:]"<>]+|/assets/[A-Za-z0-9_/.-]+)[.]glb$');
 
+-- "En mantenimiento" (27/11/2026): como "Agotado hoy" pero para máquinas de gimnasio. Lo marcan el dueño, el gerente o el
+-- admin (políticas dueno_todo / admin_todo de productos) y queda hasta que lo apaguen. "vuelve" es la fecha opcional que se
+-- muestra en el aviso ("Vuelve el…"). Solo máquinas; sin mantenimiento no hay fecha.
+alter table public.productos add column if not exists mantenimiento boolean not null default false;
+alter table public.productos add column if not exists vuelve date;
+alter table public.productos drop constraint if exists productos_mantenimiento_check;
+alter table public.productos add constraint productos_mantenimiento_check
+  check ((not mantenimiento and vuelve is null) or (mantenimiento and tipo = 'maquina'));
+
 create or replace function public.producto_publico(p_slug text, p_id uuid)
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object('id', p.id, 'tipo', p.tipo, 'nombre', p.nombre, 'descripcion', p.descripcion,
     'precio', p.precio, 'foto_url', p.foto_url, 'video_url', p.video_url, 'pasos', p.pasos, 'horario', p.horario,
-    'agotado', p.agotado, 'modelo_url', p.modelo_url)
+    'agotado', p.agotado, 'modelo_url', p.modelo_url, 'mantenimiento', p.mantenimiento, 'vuelve', p.vuelve)
   from public.productos p join public.negocios n on n.id = p.negocio_id
   where n.slug = lower(trim(p_slug)) and n.activo and p.id = p_id and p.activo
 $$;
@@ -1300,7 +1309,7 @@ grant execute on function public.clases_semana(text) to anon, authenticated;
 -- Máquinas activas del negocio (para "Ver otras máquinas")
 create or replace function public.maquinas_publicas(p_slug text)
 returns json language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'modelo_url', p.modelo_url, 'foto_url', p.foto_url) order by p.orden, p.nombre), '[]'::json)
+  select coalesce(json_agg(json_build_object('id', p.id, 'nombre', p.nombre, 'descripcion', p.descripcion, 'modelo_url', p.modelo_url, 'foto_url', p.foto_url, 'mantenimiento', p.mantenimiento, 'vuelve', p.vuelve) order by p.orden, p.nombre), '[]'::json)
   from public.productos p join public.negocios n on n.id = p.negocio_id
   where n.slug = lower(trim(p_slug)) and n.activo and p.activo and p.tipo = 'maquina'
 $$;
@@ -2495,7 +2504,7 @@ begin
   if not found then return json_build_object('error', 'negocio'); end if;
   select * into m from public.membresias where token = p_token and negocio_id = n.id;
   if not found then return json_build_object('error', 'token'); end if;
-  if not exists (select 1 from public.productos where id = p_producto and negocio_id = n.id and tipo = 'maquina' and activo) then
+  if not exists (select 1 from public.productos where id = p_producto and negocio_id = n.id and tipo = 'maquina' and activo and not mantenimiento) then  -- en mantenimiento no da monedas
     return json_build_object('error', 'maquina');
   end if;
   if not public._llego_hoy(m) then return json_build_object('error', 'sin_llegada'); end if;

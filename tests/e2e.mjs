@@ -452,6 +452,46 @@ await caso('máquina sin video → 3D animado; plano del gimnasio: buscar una m�
   await p.close();
   await api(`productos?id=eq.${prod.id}`, 'PATCH', { video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', modelo_url: null });
 });
+await caso('"En mantenimiento": el interruptor del catálogo muestra y quita el aviso en la ficha de la máquina', async () => {
+  const [prod] = await api(`productos?nombre=eq.Prensa de piernas`);
+  const [n] = await api(`negocios?slug=eq.${slug}`);
+  await panel.click('.tab[data-tab=catalogo]');
+  await panel.selectOption('#k-negocio', { label: 'Café Prueba' });
+  const chk = panel.locator(`#lista-productos tr[data-id="${prod.id}"] .k-mantenimiento`);
+  await chk.check();
+  await panel.waitForTimeout(400);
+  assert.equal((await api(`productos?id=eq.${prod.id}`))[0].mantenimiento, true, 'el interruptor guarda');
+  const p = await ctx.newPage();
+  p.on('pageerror', (e) => errores.push('mantenimiento: ' + e.message));
+  await p.route(/youtube-nocookie\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<body style="margin:0;background:#000"></body>' }));
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.goto(`${BASE}/n/${slug}/p/${prod.id}`, { waitUntil: 'domcontentloaded' });
+  assert.match(await p.textContent('#aviso-mantenimiento'), /Esta máquina está en mantenimiento/);
+  assert.equal(await p.locator('iframe.pt-video').count(), 1, 'el video sigue debajo del aviso');
+  assert.equal(await p.locator('.pt-pasos li').count(), 3, 'los pasos siguen');
+  assert.equal(await p.locator('#entreno').count(), 0, 'en mantenimiento no se entrena ni se ganan monedas en ella');
+  // Con fecha de regreso, el aviso dice cuándo vuelve
+  await api(`productos?id=eq.${prod.id}`, 'PATCH', { vuelve: '2026-12-05' });
+  await p.reload({ waitUntil: 'domcontentloaded' });
+  assert.match(await p.textContent('#aviso-mantenimiento'), /Vuelve el sábado 5 de diciembre/);
+  await sinScrollHorizontal(p);
+  await p.screenshot({ path: DIR + 'maquina-mantenimiento.png', fullPage: true });
+  if (n.sector === 'gimnasio') {
+    await p.goto(`${BASE}/n/${slug}/recorrido`, { waitUntil: 'domcontentloaded' });
+    assert.equal(await p.locator(`.pt-maq.agotado[data-id="${prod.id}"] .pt-agotado`).textContent(), 'En mantenimiento');
+  }
+  // Se apaga desde el panel: el aviso desaparece y la fecha se borra
+  await panel.reload();
+  await panel.click('.tab[data-tab=catalogo]');
+  await panel.selectOption('#k-negocio', { label: 'Café Prueba' });
+  await panel.locator(`#lista-productos tr[data-id="${prod.id}"] .k-mantenimiento`).uncheck();
+  await panel.waitForTimeout(400);
+  const [despues] = await api(`productos?id=eq.${prod.id}`);
+  assert.equal(despues.mantenimiento, false); assert.equal(despues.vuelve, null, 'al apagarlo se borra la fecha');
+  await p.goto(`${BASE}/n/${slug}/p/${prod.id}`, { waitUntil: 'domcontentloaded' });
+  assert.equal(await p.locator('#aviso-mantenimiento').count(), 0, 'sin mantenimiento no hay aviso');
+  await p.close();
+});
 await caso('clases de la semana: abre en hoy (hora Bogotá) y cada día en su pestaña', async () => {
   const dias = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const hoy = dias.indexOf(new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/Bogota' }));

@@ -47,7 +47,7 @@ function plano(lista) {
   const maquinas = lista.filter((m) => m.puesto).map((m) => {
     const p = m.puesto, cx = (p.x + p.w / 2) * E, cy = (p.y + p.h / 2) * E;
     const piezas = [[p.x, p.y], ...(p.extra || [])].map(([x, y]) => r({ x, y, w: p.w, h: p.h }, 'pl-maq-forma')).join('');
-    return `<g class="pl-maq" data-id="${esc(m.id)}" tabindex="0" role="button" aria-label="${esc(m.nombre)}">${piezas}` +
+    return `<g class="pl-maq${m.mantenimiento ? ' mant' : ''}" data-id="${esc(m.id)}" tabindex="0" role="button" aria-label="${esc(m.nombre)}${m.mantenimiento ? ' (en mantenimiento)' : ''}">${piezas}` +
       `<circle class="pl-num-fondo" cx="${cx}" cy="${cy}" r="6.2"/><text class="pl-num" x="${cx}" y="${cy + 2.4}">${m.num}</text></g>`;
   }).join('');
   const [ex, ey] = PISO.entrada;
@@ -88,8 +88,8 @@ export async function onRequestGet({ params, request, env }) {
   lista.forEach((m) => { if (m.puesto) m.num = ++numero; });
   const datos = Object.fromEntries(lista.map((m) => [m.id, m.guia]));
   const filas = lista.map((m) =>
-    `<button type="button" class="pt-maq" data-id="${esc(m.id)}" data-nombre="${esc(m.nombre.toLowerCase())}">` +
-    `${m.num ? `<i class="pl-n">${m.num}</i>` : ''}<span><b>${esc(m.nombre)}</b><small>${esc(m.puesto ? m.puesto.zona : 'Pregunta en recepción')}</small></span></button>`).join('');
+    `<button type="button" class="pt-maq${m.mantenimiento ? ' agotado' : ''}" data-id="${esc(m.id)}" data-nombre="${esc(m.nombre.toLowerCase())}"${m.mantenimiento ? ' data-mant="1"' : ''}>` +
+    `${m.num ? `<i class="pl-n">${m.num}</i>` : ''}<span><b>${esc(m.nombre)}</b><small>${esc(m.puesto ? m.puesto.zona : 'Pregunta en recepción')}</small>${m.mantenimiento ? '<span class="pt-agotado">En mantenimiento</span>' : ''}</span></button>`).join('');
 
   return html(`${inicioPagina(n, { titulo: `Encuentra tu máquina · ${n.nombre}` })}
 <main class="pt-pagina pt-recorrido">
@@ -119,7 +119,8 @@ export async function onRequestGet({ params, request, env }) {
     const g = GUIA[id];
     $('el-nombre').textContent = fila ? fila.querySelector('b').textContent : '';
     const enMapa = g && g.ruta;
-    $('el-zona').textContent = enMapa ? 'Está aquí' : 'No está en el plano';
+    const mant = !!(fila && fila.dataset.mant);
+    $('el-zona').textContent = mant ? 'En mantenimiento' : enMapa ? 'Está aquí' : 'No está en el plano';
     $('el-guia').textContent = enMapa ? g.texto + ' · unos ' + g.pasos + ' pasos desde la entrada.' : 'Pregunta en recepción dónde está.';
     const foto = $('el-foto');
     if (g && g.foto) { foto.src = g.foto; foto.hidden = false; foto.classList.remove('entra'); void foto.offsetWidth; foto.classList.add('entra'); } else foto.hidden = true;

@@ -227,3 +227,15 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 5. Cargar el horario real de REPS (Jacobo manda la foto).
 6. Forja Gym también, con sus propios colores y su propia estética (distinta de REPS) y los mismos arreglos.
    Usar las skills de diseño para que no se vea genérico.
+
+## 2026-11-27 (tarde) · "En mantenimiento" para máquinas + landing
+- **En mantenimiento** (pedido de Jacobo, con su "dale"): interruptor de un toque en el catálogo (panel y /admin) y fecha
+  opcional "Vuelve el…" en la ficha. Aviso arriba en `/n/<slug>/p/<id>` (video y pasos debajo; sin "Entrena con el
+  tutorial" ni monedas), gris en "Encuentra tu máquina" y apagada en el plano. Demo: el remo sentado de Forja.
+  Pruebas: SQL (dueño, gerente y admin sí; otra empresa, usuario sin acceso y visitante no; solo máquinas; el público ve
+  solo los dos campos) y e2e (el interruptor muestra y quita el aviso). `npm run verificar -- --e2e`: ✓.
+- Arreglo de paso: guardar una máquina desde el formulario ya no le borra el modelo 3D.
+- Hallazgo: "Agotado hoy" no se quita solo al día siguiente (nunca tuvo reinicio). Se le contó a Jacobo.
+- Landing: el teléfono de la portada, las burbujas y los tres pasos alternan café y gimnasio; la cinta de rubros no se
+  puede seleccionar. Carta: la franja de categorías ya no esconde la primera en el celular.
+- Pendiente (pedido de Jacobo): **rediseño de Forja Gym** ("se ve genérico"), con las skills de diseño y referentes.

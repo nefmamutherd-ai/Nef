@@ -1,5 +1,5 @@
 // /n/<slug>/p/<id> → ficha de un producto. Para máquinas: video 16:9 (sin reproducirse solo) + 3 pasos.
-import { rpc, esc, html, redirigir, paginaError, urlSegura } from '../../../../lib/util.js';
+import { rpc, esc, html, redirigir, paginaError, urlSegura, fechaVuelve } from '../../../../lib/util.js';
 import { inicioPagina, firma, icono } from '../../../../lib/portal.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,7 +52,8 @@ export async function onRequestGet({ params, request, env }) {
   const pasos = (Array.isArray(p.pasos) ? p.pasos : []).filter((x) => typeof x === 'string' && x.trim());
   const demas = (otras || []).filter((m) => m.id !== p.id);
   // Gimnasio con club: "Entrena con el tutorial" (cronómetro + Terminé → monedas). Lo arma public/assets/entreno.js
-  const entreno = p.tipo === 'maquina' && n.servicios && n.servicios.club ? `<section class="pt-entreno" id="entreno" data-slug="${esc(n.slug)}" data-producto="${esc(p.id)}" hidden>
+  // En mantenimiento no se entrena en ella: sin cronómetro ni monedas hasta que el dueño la apague
+  const entreno = p.tipo === 'maquina' && !p.mantenimiento && n.servicios && n.servicios.club ? `<section class="pt-entreno" id="entreno" data-slug="${esc(n.slug)}" data-producto="${esc(p.id)}" hidden>
     <h2 class="pt-versalitas">Entrena con el tutorial</h2>
     <div class="pt-entreno-reloj"><b id="e-reloj">15:00</b></div>
     <div class="pt-entreno-barra" aria-hidden="true"><i id="e-barra"></i></div>
@@ -70,6 +71,7 @@ export async function onRequestGet({ params, request, env }) {
     // Si llegó desde el plano ("Encuentra tu máquina"), volver lo lleva de nuevo al plano; si no, al inicio del gimnasio
     (function () { try { var r = new URL(document.referrer); if (r.origin === location.origin && r.pathname.endsWith('/recorrido')) document.getElementById('volver').href = r.pathname; } catch (e) {} })();
   </script>
+  ${p.mantenimiento ? `<div class="pt-mantenimiento" id="aviso-mantenimiento" role="status">${icono('herramienta')}<div><b>Esta máquina está en mantenimiento</b>${p.vuelve && fechaVuelve(p.vuelve) ? `<span>Vuelve el ${esc(fechaVuelve(p.vuelve))}</span>` : '<span>Mientras tanto, puedes ver cómo se usa.</span>'}</div></div>` : ''}
   <header class="pt-cabeza"><h1>${esc(p.nombre)}</h1><p>${esc(n.nombre)}</p></header>
   ${video(p.video_url) || visor}
   ${p.descripcion ? `<p class="pt-frase">${esc(p.descripcion)}</p>` : ''}
@@ -80,7 +82,7 @@ export async function onRequestGet({ params, request, env }) {
   ${demas.length ? `<div class="pt-fondo" hidden></div>
   <div class="pt-hoja" id="hoja-otras" role="dialog" aria-label="Otras máquinas" hidden>
     <h2>Otras máquinas</h2>
-    ${demas.map((m) => `<a class="pt-prod" href="/n/${encodeURIComponent(n.slug)}/p/${esc(m.id)}"><div class="pt-tx"><b>${esc(m.nombre)}</b></div>${icono('flecha')}</a>`).join('')}
+    ${demas.map((m) => `<a class="pt-prod${m.mantenimiento ? ' agotado' : ''}" href="/n/${encodeURIComponent(n.slug)}/p/${esc(m.id)}"><div class="pt-tx"><b>${esc(m.nombre)}</b>${m.mantenimiento ? '<span class="pt-agotado">En mantenimiento</span>' : ''}</div>${icono('flecha')}</a>`).join('')}
     <button type="button" class="pt-link" data-cerrar>Cerrar</button>
   </div>
   <script type="module">

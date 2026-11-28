@@ -261,3 +261,7 @@ insert into public.membresias (id, cliente_id, negocio_id, token, saldo, total_g
 values ('d0000000-0000-4000-8000-0000000f0102', 'd0000000-0000-4000-8000-0000000f0001', 'd0000000-0000-4000-8000-0000000000a2',
   'de00f0e9a000000000000000000a0002', 18, 26, 26, now(), now() - interval '1 day', now() + interval '12 months')
 on conflict (id) do nothing;
+
+-- "En mantenimiento" de ejemplo en Forja: el remo sentado, con fecha de regreso (el dueño lo apaga desde el panel)
+update public.productos set mantenimiento = true, vuelve = (public._ahora() at time zone 'America/Bogota')::date + 5
+where id = 'd0000000-0000-4000-8000-00000000b104' and not mantenimiento;

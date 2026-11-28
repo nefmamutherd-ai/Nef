@@ -237,3 +237,4 @@ p.n-ayuda { font-size: 13px; color: var(--n-gris); margin: 12px 4px 0; }
 a.n-btn:not(.principal):not(.secundario):not(.fantasma) { color: var(--n-papel); }
 /* Panel visto por el admin */
 .n-aviso-admin { max-width: 1100px; margin: 12px auto 0; background: var(--n-mandarina-suave, #FFE3D6); font-weight: 600; }
+.k-mant { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }

@@ -70,7 +70,8 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       <td><b>${esc(p.nombre)}</b>${p.descripcion ? `<br>${esc(p.descripcion)}` : ''}</td>
       <td>${esc(TIPOS[p.tipo] || p.tipo)}</td>
       <td>${esc(detalle(p))}</td>
-      <td>${['plato', 'servicio'].includes(p.tipo) ? `<input type="checkbox" class="k-agotado" aria-label="Agotado hoy" ${p.agotado ? 'checked' : ''}>` : ''}</td>
+      <td>${['plato', 'servicio'].includes(p.tipo) ? `<input type="checkbox" class="k-agotado" aria-label="Agotado hoy" ${p.agotado ? 'checked' : ''}>`
+        : p.tipo === 'maquina' ? `<label class="k-mant"><input type="checkbox" class="k-mantenimiento" aria-label="En mantenimiento" ${p.mantenimiento ? 'checked' : ''}> En mantenimiento</label>` : ''}</td>
       <td><span class="n-estado ${p.activo ? 'ok' : 'alerta'}">${p.activo ? 'Activo' : 'Apagado'}</span></td>
       <td><button class="n-btn secundario chico" data-editar-producto="${esc(p.id)}">Editar</button></td></tr>`).join('');
     tb.querySelectorAll('[data-editar-producto]').forEach((b) => b.addEventListener('click', () => abrir(lista.find((p) => p.id === b.dataset.editarProducto))));
@@ -81,6 +82,15 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       if (err) { chk.checked = !chk.checked; toast('No se guardó: ' + err.message); return; }
       lista.find((p) => p.id === id).agotado = chk.checked;
       toast(chk.checked ? 'Marcado como agotado hoy' : 'Disponible otra vez');
+    }));
+    // "En mantenimiento" (máquinas) de un toque, igual que "Agotado hoy"; al apagarlo se borra la fecha de regreso
+    tb.querySelectorAll('.k-mantenimiento').forEach((chk) => chk.addEventListener('change', async () => {
+      const id = chk.closest('tr').dataset.id;
+      const cambio = chk.checked ? { mantenimiento: true } : { mantenimiento: false, vuelve: null };
+      const { error: err } = await sb.from('productos').update(cambio).eq('id', id);
+      if (err) { chk.checked = !chk.checked; toast('No se guardó: ' + err.message); return; }
+      Object.assign(lista.find((p) => p.id === id), cambio);
+      toast(chk.checked ? 'Máquina en mantenimiento' : 'Máquina disponible otra vez');
     }));
   }
 
@@ -128,6 +138,7 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       (p.horario || []).forEach(filaHorario);
       f.querySelectorAll('#k-etiquetas input').forEach((c) => (c.checked = (p.etiquetas || []).includes(c.value)));
       f.destacado.checked = p.destacado; f.agotado.checked = p.agotado; f.activo.checked = p.activo;
+      f.mantenimiento.checked = !!p.mantenimiento; f.vuelve.value = p.vuelve || '';
     } else {
       // Por defecto, según el sector del negocio activo en el selector: lo más común primero
       const tipo = categorias.length ? 'plato' : 'maquina';
@@ -195,8 +206,10 @@ export function montarCatalogo({ sb, toast, esc, negocioActual, alCambiar }) {
       etiquetas: esCarta ? [...f.querySelectorAll('#k-etiquetas input:checked')].map((c) => c.value) : [],
       destacado: esCarta && f.destacado.checked,
       agotado: esCarta && f.agotado.checked,
+      mantenimiento: tipo === 'maquina' && f.mantenimiento.checked,
+      vuelve: tipo === 'maquina' && f.mantenimiento.checked ? f.vuelve.value || null : null,
       video_url: tipo === 'maquina' ? video || null : null,
-      modelo_url: esCarta ? modelo || null : null,
+      modelo_url: esCarta ? modelo || null : (editando && editando.modelo_url) || null,
       pasos: tipo === 'maquina' ? ['paso1', 'paso2', 'paso3'].map((k) => f[k].value.trim()).filter(Boolean) : [],
       horario: tipo === 'clase' ? horario : [],
       activo: f.activo.checked,

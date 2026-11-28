@@ -106,7 +106,7 @@
         <ul class="n-lista" id="k-cat-lista"></ul>
       </div>
       <div class="n-tabla-caja"><table class="n-tabla">
-        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Agotado hoy</th><th>Activo</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Detalle</th><th>Agotado / mantenimiento</th><th>Activo</th><th></th></tr></thead>
         <tbody id="lista-productos"></tbody>
       </table></div>
     </section>
@@ -190,6 +190,8 @@
       <div class="n-campo"><label for="k-paso1">Paso 1</label><input id="k-paso1" name="paso1" maxlength="90"></div>
       <div class="n-campo"><label for="k-paso2">Paso 2</label><input id="k-paso2" name="paso2" maxlength="90"></div>
       <div class="n-campo"><label for="k-paso3">Paso 3</label><input id="k-paso3" name="paso3" maxlength="90"></div>
+      <label class="n-interruptor"><div><b>En mantenimiento</b><span>El socio ve el aviso al acercar el celular. Queda hasta que lo apagues.</span></div><input type="checkbox" name="mantenimiento"></label>
+      <div class="n-campo" id="k-vuelve-campo"><label for="k-vuelve">Vuelve el… (opcional)</label><input id="k-vuelve" name="vuelve" type="date"><div class="n-ayuda">Si la llenas, el aviso dice cuándo vuelve.</div></div>
     </div>
     <div data-para="clase">
       <div class="n-campo"><label>Horario</label></div>

@@ -1176,3 +1176,14 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 .pt-art-btn:disabled { opacity: .7; cursor: default; }
 .pt-qr-premio { margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--oro-suave); color: var(--oro-tinta); font-weight: 700; text-align: center; }
 [data-tema="industrial"] .pt-art, [data-tema="industrial"] .pt-art-ico, [data-tema="industrial"] .pt-art-btn { border-radius: 8px; }
+
+/* "En mantenimiento" (máquinas de gimnasio, 27/11/2026): aviso arriba en la ficha de la máquina; en el plano, la máquina apagada */
+.pt-mantenimiento { display: flex; gap: var(--e-12); align-items: flex-start; margin: 0 0 var(--e-16); padding: var(--e-16); border-radius: var(--r-tarjeta, 18px);
+  background: var(--alerta-suave); border: 2px solid var(--alerta); color: var(--tinta); }
+.pt-mantenimiento svg { flex: none; width: 26px; height: 26px; color: var(--alerta); }
+.pt-mantenimiento b { display: block; font-size: 17px; line-height: 1.25; }
+.pt-mantenimiento span { display: block; margin-top: 2px; font-size: 14px; color: var(--tinta-2); }
+.pl-maq.mant .pl-maq-forma { opacity: .35; }
+.pl-maq.mant .pl-num-fondo { fill: var(--alerta); }
+.pt-maq.agotado b { color: var(--tinta-3); }
+.pt-maq .pt-agotado { display: block; margin-top: 2px; }

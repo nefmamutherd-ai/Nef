@@ -1049,6 +1049,35 @@ await caso('productos: A edita su carta; no lee, no crea ni mueve nada a la de B
   await q(`insert into categorias (negocio_id, nombre) values ($1, 'Panadería')`, [na.id]);
   await assert.rejects(q(`insert into categorias (negocio_id, nombre) values ($1, 'x')`, [nb.id]), /row-level security/);
 });
+await caso('"En mantenimiento": solo dueño, gerente o admin lo cambian; nadie más; solo máquinas; el público ve solo el aviso', async () => {
+  await db.exec('reset role;');
+  const [ma] = await q(`insert into productos (negocio_id, tipo, nombre) values ($1, 'maquina', 'Prensa A') returning id`, [na.id]);
+  const [mb] = await q(`insert into productos (negocio_id, tipo, nombre) values ($1, 'maquina', 'Remo B') returning id`, [nb.id]);
+  const marca = (id, si = true) => q(`update productos set mantenimiento = $2, vuelve = case when $2 then date '2026-12-05' end where id = $1 returning id`, [id, si]);
+  await como('authenticated', DUENO_A);                       // dueño de A
+  assert.equal((await marca(ma.id)).length, 1, 'el dueño marca su máquina');
+  assert.equal((await marca(mb.id)).length, 0, 'el dueño de otra empresa no toca la de B');
+  await como('authenticated', DUENO_B);                       // gerente de B
+  assert.equal((await marca(mb.id)).length, 1, 'el gerente marca la máquina de su empresa');
+  assert.equal((await marca(ma.id, false)).length, 0, 'el gerente de B no toca la de A');
+  await como('authenticated', 'cccccccc-0000-4000-8000-00000000000c'); // usuario con cuenta pero sin acceso a ninguna empresa
+  assert.equal((await marca(ma.id, false)).length, 0, 'un usuario sin acceso no lo cambia');
+  await como('anon');
+  assert.equal((await marca(ma.id, false)).length, 0, 'un visitante no lo cambia');
+  await como('authenticated', ADMIN);
+  assert.equal((await marca(mb.id, false)).length, 1, 'el admin lo apaga');
+  await db.exec('reset role;');
+  await assert.rejects(q(`update productos set mantenimiento = true where negocio_id = $1 and tipo = 'plato'`, [na.id]), /productos_mantenimiento_check/, 'solo máquinas');
+  await assert.rejects(q(`update productos set vuelve = date '2026-12-05' where id = $1`, [mb.id]), /productos_mantenimiento_check/, 'sin mantenimiento no hay fecha');
+  await como('anon');
+  const pub = (await q(`select producto_publico('cafe-a', $1) r`, [ma.id]))[0].r;
+  assert.equal(pub.mantenimiento, true); assert.equal(pub.vuelve, '2026-12-05');
+  const lista = (await q(`select maquinas_publicas('gym-b') r`))[0].r;
+  assert.deepEqual(lista.map((m) => [m.nombre, m.mantenimiento, m.vuelve]), [['Remo B', false, null]]);
+  assert.deepEqual(Object.keys(lista[0]).sort(), ['descripcion', 'foto_url', 'id', 'modelo_url', 'mantenimiento', 'nombre', 'vuelve'].sort());
+  await db.exec('reset role;');
+  await q(`delete from productos where id in ($1, $2)`, [ma.id, mb.id]);
+});
 await caso('premios: A crea y cambia los suyos; los de B ni los ve', async () => {
   await como('authenticated', DUENO_A);
   assert.equal(await cuenta('premios', nb.id), 0);
