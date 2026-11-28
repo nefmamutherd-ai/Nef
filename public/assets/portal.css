@@ -1285,3 +1285,10 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
   :is(.pt-pestanas, .pt-carrusel, .pt-dias).arrastrando { cursor: grabbing; scroll-snap-type: none; user-select: none; }
   :is(.pt-pestanas, .pt-carrusel, .pt-dias).arrastrando * { pointer-events: none; }
 }
+/* Trattoria: el título del botón no se monta sobre el borde si ocupa dos líneas (celulares angostos, 27/11/2026) */
+[data-tema="trattoria"] .pt-inicio .pt-boton { grid-template-rows: auto auto; align-content: center; padding-block: 14px; }
+[data-tema="trattoria"] .pt-inicio .pt-boton > span { align-self: end; }
+@media (max-width: 400px) {
+  [data-tema="trattoria"] .pt-inicio .pt-boton > span, [data-tema="trattoria"] .pt-baldosa > span { font-size: 14px; letter-spacing: .1em; }
+  [data-tema="trattoria"] .pt-inicio .pt-boton.principal > span { font-size: 16px; }
+}
