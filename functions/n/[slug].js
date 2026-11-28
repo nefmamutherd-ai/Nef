@@ -5,6 +5,34 @@ import { paquete, botonesPortal } from '../../lib/sectores.js';
 import { inicioPagina, firma, icono, fondoVivo, TEMAS } from '../../lib/portal.js';
 
 const mayuscula = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+// "Instalar" (27/11/2026, Jacobo: para gimnasios, por los horarios): botoncito en la esquina de arriba. En Android/Chrome
+// abre el instalador del sistema; en iPhone (Safari no tiene ese instalador) muestra los 2 pasos de "Agregar a inicio".
+// Ya instalada (se abre como app) o en un navegador que no puede, no aparece.
+const instalar = (n) => `<button type="button" class="pt-instalar" id="instalar" hidden aria-label="Instalar ${esc(n.nombre)} en tu celular">${icono('descargar')}<span>Instalar</span></button>
+<div class="pt-fondo" id="fondo-instalar" hidden></div>
+<div class="pt-hoja" id="hoja-instalar" role="dialog" aria-labelledby="t-instalar" hidden>
+  <h2 id="t-instalar">Tenlo como app</h2>
+  <p class="pt-frase">Así abres ${esc(n.nombre)} de un toque, con tus clases y tu racha.</p>
+  <ol class="pt-pasos"><li><span>Toca <b>Compartir</b> ${icono('compartir')} abajo en Safari.</span></li><li><span>Elige <b>Agregar a inicio</b> y luego <b>Agregar</b>.</span></li></ol>
+  <button type="button" class="pt-link" data-cerrar>Listo</button>
+</div>
+<script type="module">
+  import { hoja } from '/assets/nef-rpc.js';
+  const b = document.getElementById('instalar');
+  const app = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  let aviso = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); aviso = e; if (!app) b.hidden = false; });
+  window.addEventListener('appinstalled', () => { b.hidden = true; });
+  if (!app && iphone) b.hidden = false;
+  const h = hoja(document.getElementById('hoja-instalar'));
+  b.addEventListener('click', async () => {
+    if (aviso) { aviso.prompt(); const r = await aviso.userChoice; if (r && r.outcome === 'accepted') b.hidden = true; aviso = null; return; }
+    h.abrir();
+  });
+</script>`;
+
 const iniciales = (nombre) =>
   String(nombre || '?').trim().split(/\s+/).slice(0, 2).map((p) => p.charAt(0)).join('').toUpperCase() || '?';
 
@@ -91,6 +119,7 @@ ${deco}
   ${enlaces.length ? `<nav class="pt-enlaces pt-puntos">${enlaces.join('')}</nav>` : ''}
   ${firma()}
 </main>
+${pq.instalable ? instalar(n) : ''}
 <script>
   (function () {
     var w = document.getElementById('wifi');

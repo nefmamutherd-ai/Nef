@@ -1301,3 +1301,12 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 [data-tema="trattoria"] .pt-antojos .pt-antojo { font: 600 13px/1.25 var(--sans); letter-spacing: .12em; text-transform: uppercase; border: 0; box-shadow: inset 0 0 0 1px var(--dorado); color: var(--salvia-honda); border-radius: var(--r-grande); }
 [data-tema="trattoria"] .pt-antojos .pt-antojo.sorpresa { background: var(--salvia); color: var(--dorado-claro); }
 [data-tema="trattoria"] .pt-elige-cabeza h2 { font: 400 40px/1.1 var(--manuscrita); color: var(--dorado); }
+
+/* "Instalar" (gimnasios, 27/11/2026): botoncito fijo en la esquina de arriba a la derecha */
+.pt-instalar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; z-index: 20; display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px 8px 11px; border: 0; border-radius: 999px; background: var(--marca); color: var(--sobre-marca); font: 700 14px var(--sans);
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, .55); cursor: pointer; animation: pt-sube .5s .6s cubic-bezier(.2, .8, .2, 1) both; }
+.pt-instalar[hidden] { display: none; }
+.pt-instalar svg { width: 18px; height: 18px; }
+.pt-instalar:active { transform: scale(.96); }
+#hoja-instalar .pt-pasos svg { width: 18px; height: 18px; vertical-align: -3px; }

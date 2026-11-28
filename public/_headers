@@ -11,3 +11,6 @@
   Cache-Control: no-cache
 /index.html
   Cache-Control: no-cache
+# El service worker (botón "Instalar" de los gimnasios) siempre se revisa: así un cambio llega de una
+/sw.js
+  Cache-Control: no-cache

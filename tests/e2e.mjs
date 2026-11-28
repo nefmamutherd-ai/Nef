@@ -442,6 +442,11 @@ await caso('máquina sin video → 3D animado; plano del gimnasio: buscar una m�
   if (n.sector === 'gimnasio') {
     await p.goto(`${BASE}/n/${slug}`);
     assert.equal(await p.getAttribute('.pt-baldosa-extra', 'href'), `/n/${slug}/recorrido`);
+    // "Instalar" (solo gimnasios, 27/11/2026): el portal enlaza su ficha de app, con nombre e inicio propios
+    assert.equal(await p.getAttribute('link[rel=manifest]', 'href'), `/n/${slug}/app.webmanifest`);
+    const ficha = await (await fetch(`${BASE}/n/${slug}/app.webmanifest`)).json();
+    assert.equal(ficha.start_url, `/n/${slug}?app=1`); assert.equal(ficha.display, 'standalone');
+    assert.equal((await fetch(`${BASE}/n/demo-cafe/app.webmanifest`)).status, 404, 'un café no se instala (no es de su paquete)');
     await p.goto(`${BASE}/n/${slug}/recorrido`, { waitUntil: 'domcontentloaded' });
     await p.fill('#buscar', 'prensa');
     await p.waitForSelector('#elegida:not([hidden])');
