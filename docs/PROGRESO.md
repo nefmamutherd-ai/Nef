@@ -239,3 +239,11 @@ Plan: Fase 1 → 2 → 3 → 4… según `docs/PLAN.md`. Todo en local: `git ini
 - Landing: el teléfono de la portada, las burbujas y los tres pasos alternan café y gimnasio; la cinta de rubros no se
   puede seleccionar. Carta: la franja de categorías ya no esconde la primera en el celular.
 - Pendiente (pedido de Jacobo): **rediseño de Forja Gym** ("se ve genérico"), con las skills de diseño y referentes.
+
+## 2026-11-27 (noche) · Demo para Los Fuertes Pizzas y Pastas (rama demo/los-fuertes)
+- Carta completa transcrita de su PDF: 118 productos en 11 secciones; lo dudoso en `docs/ventas/los-fuertes/REVISAR-los-fuertes.md`.
+- Tema nuevo "trattoria" con su identidad (colores, letras y marco de su carta). Inicio con "Demo preparado para Los Fuertes",
+  WhatsApp 310 872 8707 y "Cómo llegar · Cra 92 #157-65". Link de reseñas: falta el real (va uno de ejemplo).
+- Club con 7 premios de su carta; 2 agotados de ejemplo (Ossobuco, Spaghetti marinero); 9 clientes inventados, 5 en riesgo.
+- Renders 3D nuevos: pizza y pasta (scripts/platos_blender.py) + la hamburguesa que ya existía.
+- Pendiente: link real de reseñas; confirmar los puntos de REVISAR con el restaurante.

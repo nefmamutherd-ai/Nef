@@ -11,7 +11,7 @@ export const ANTOJOS = [
 
 // Candidatos: nunca agotados; si el antojo no es "sorpresa", solo los que tienen esa etiqueta
 export function candidatos(productos, antojo) {
-  const disponibles = (productos || []).filter((p) => p && !p.agotado);
+  const disponibles = (productos || []).filter((p) => p && !p.agotado && !(p.precio === 0));
   if (!antojo || antojo === 'sorpresa') return disponibles;
   return disponibles.filter((p) => (p.etiquetas || []).includes(antojo));
 }

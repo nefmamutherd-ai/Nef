@@ -538,7 +538,69 @@ def p_malteada():
     cilindro(0.04, 0.0, 1.82, 0.008, 0.2, MAT['hierba'], seg=8, rot=(0, 0.4, 0))
     cilindro(0.12, 0.08, 1.3, 0.034, 1.3, MAT['pitillo'], seg=20, rot=(0.12, 0.22, 0))
 
-PLATOS_NUEVOS = {'hamburguesa': p_hamburguesa, 'desayuno': p_desayuno, 'malteada': p_malteada}
+
+# ---------- Los Fuertes (27/11/2026): pizza y pasta para su demo ----------
+def p_pizza():
+    MAT['masa'] = mat('masa', (0.6, 0.27, 0.05), rough=0.6, bump=1.0, color2=(0.32, 0.11, 0.015), escala_ruido=6)
+    MAT['mozzarella'] = mat('mozzarella', (0.93, 0.58, 0.12), rough=0.3, sss=0.4, coat=0.4, bump=0.6, color2=(0.5, 0.19, 0.02), escala_ruido=9)
+    MAT['peperoni'] = mat('peperoni', (0.17, 0.01, 0.005), rough=0.45, coat=0.25, sss=0.1, bump=1.2, color2=(0.34, 0.025, 0.012), escala_ruido=11)
+    MAT['albahaca'] = mat('albahaca', (0.02, 0.16, 0.015), rough=0.3, sss=0.3, coat=0.5, color2=(0.05, 0.3, 0.03), escala_ruido=4)
+    MAT['tabla'] = mat('tabla', (0.55, 0.33, 0.15), rough=0.55, bump=0.4, color2=(0.42, 0.24, 0.1), escala_ruido=2)
+    cilindro(0, 0, 0.03, 1.12, 0.06, MAT['tabla'], bisel=0.02)                          # tabla de madera
+    perfil = [(0.0, 0.09), (0.8, 0.09), (0.88, 0.1), (0.94, 0.135), (0.955, 0.165), (0.93, 0.19), (0.88, 0.195), (0.84, 0.17), (0.8, 0.13), (0.0, 0.12)]
+    ruido_mesh(torno(perfil, MAT['masa']), 0.012, 3.0)                                  # base con borde inflado
+    cilindro(0, 0, 0.125, 0.83, 0.014, MAT['salsa'], seg=96)                            # salsa de tomate (se ve en el borde)
+    ruido_mesh(esfera(0, 0, 0.128, 0.76, 0.76, 0.03, MAT['mozzarella'], seg=64), 0.014, 3.0)  # queso derretido, borde irregular
+    for k in range(13):                                                                 # peperoni
+        a = k * 2.4; d = 0.2 + 0.52 * ((k * 0.618) % 1)
+        ruido_mesh(esfera(math.cos(a) * d, math.sin(a) * d, 0.15, 0.1, 0.1, 0.022, MAT['peperoni'], seg=24), 0.006, 4.0)
+    for k in range(6):                                                                  # hojas de albahaca
+        a = k * 1.05 + 0.4; d = 0.28 + 0.3 * (k % 2)
+        esfera(math.cos(a) * d, math.sin(a) * d, 0.175, 0.075, 0.036, 0.008, MAT['albahaca'], seg=16, rot=a)
+    granitos(0, 0, 0.17, 0.7, 40, MAT['queso'], tam=(0.008, 0.013), alto=0.02)          # parmesano
+
+
+def fideo(puntos, m, grosor=0.011):
+    cu = bpy.data.curves.new('fideo', 'CURVE'); cu.dimensions = '3D'
+    cu.bevel_depth = grosor; cu.bevel_resolution = 1; cu.resolution_u = 3
+    sp = cu.splines.new('NURBS'); sp.points.add(len(puntos) - 1)
+    for p, (x, y, z) in zip(sp.points, puntos):
+        p.co = (x, y, z, 1.0)
+    sp.use_endpoint_u = True; sp.order_u = 4
+    ob = bpy.data.objects.new('fideo', cu); bpy.context.collection.objects.link(ob)
+    cu.materials.append(m)
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.convert(target='MESH')
+    for pol in ob.data.polygons:
+        pol.use_smooth = True
+    return ob
+
+
+def p_pasta():
+    # Spaghetti a la parmesana con albóndigas (un nido de hebras de verdad, salsa napolitana, parmesano y albahaca)
+    MAT['espagueti'] = mat('espagueti', (0.9, 0.52, 0.09), rough=0.28, sss=0.4, coat=0.4, color2=(0.76, 0.36, 0.03), escala_ruido=6)
+    MAT['albondiga'] = mat('albondiga', (0.14, 0.045, 0.02), rough=0.45, bump=1.8, coat=0.3, color2=(0.3, 0.09, 0.03), escala_ruido=16)
+    MAT['napolitana'] = mat('napolitana', (0.4, 0.025, 0.008), rough=0.38, coat=0.25, sss=0.3, bump=1.4, color2=(0.62, 0.08, 0.02), escala_ruido=12)
+    MAT['albahaca'] = mat('albahaca', (0.02, 0.16, 0.015), rough=0.3, sss=0.3, coat=0.5, color2=(0.05, 0.3, 0.03), escala_ruido=4)
+    plato(MAT['ceramica'], 1.15)
+    ruido_mesh(esfera(0, 0, 0.06, 0.62, 0.62, 0.2, MAT['espagueti']), 0.02, 2.0)        # relleno bajo el nido
+    for k in range(80):                                                                 # hebras en espiral, formando el nido
+        a = random.uniform(0, 2 * math.pi); r0 = random.uniform(0.08, 0.62); pts = []
+        for i in range(22):
+            ang = a + i * 0.32 * (1 if k % 2 else -1)
+            r = min(0.66, max(0.04, r0 + 0.07 * math.sin(i * 0.7 + k)))
+            z = 0.07 + 0.3 * max(0.0, 1 - (r / 0.68) ** 2) + random.uniform(-0.012, 0.012)
+            pts.append((math.cos(ang) * r, math.sin(ang) * r, z))
+        fideo(pts, MAT['espagueti'])
+    superficie(esfera(0.02, -0.02, 0.33, 0.34, 0.3, 0.06, MAT['napolitana']), 0.06, 2.4)   # salsa encima
+    superficie(esfera(0.0, -0.05, 0.27, 0.44, 0.4, 0.05, MAT['napolitana']), 0.07, 3.0)   # salsa que baja por el nido
+    for x, y, z in ((0.0, 0.08, 0.42), (-0.15, -0.1, 0.4), (0.17, -0.1, 0.39)):          # albóndigas
+        superficie(esfera(x, y, z, 0.135, 0.135, 0.12, MAT['albondiga']), 0.05, 5.0)
+    granitos(0, 0, 0.4, 0.38, 30, MAT['queso'], tam=(0.008, 0.014), alto=0.12)         # parmesano rallado
+    for x, y, a in ((0.08, 0.2, 0.5), (-0.05, 0.24, 2.1), (0.22, 0.05, 1.2)):           # albahaca
+        esfera(x, y, 0.52, 0.07, 0.034, 0.008, MAT['albahaca'], seg=16, rot=a)
+
+PLATOS_NUEVOS = {'hamburguesa': p_hamburguesa, 'desayuno': p_desayuno, 'malteada': p_malteada, 'pizza': p_pizza, 'pasta': p_pasta}
 # Cámara propia: la malteada es alta (se ve completa, un poco más de lejos)
 CAMARA = {'malteada': ((0, -3.4, 2.35), (0, 0, 0.95))}
 

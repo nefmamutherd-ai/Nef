@@ -253,7 +253,7 @@ function abrirDetalle(p) {
   $('d-3d').textContent = '';
   if (p.modelo_url) abrir3d(p);
   $('d-nombre').textContent = p.nombre;
-  $('d-precio').textContent = pesos(p.precio);
+  $('d-precio').textContent = p.precio > 0 ? pesos(p.precio) : '';
   $('d-agotado').hidden = !p.agotado;
   $('d-desc').textContent = p.descripcion || '';
   detalle.abrir();
@@ -334,7 +334,7 @@ function fila(p) {
   const t = document.createElement('span');
   t.textContent = p.nombre;
   d.append(t);
-  d.dataset.precio = pesos(p.precio); // se pinta con CSS (::after): el texto de la fila sigue siendo solo el nombre
+  d.dataset.precio = p.precio > 0 ? pesos(p.precio) : ''; // se pinta con CSS (::after): el texto de la fila sigue siendo solo el nombre
   return d;
 }
 

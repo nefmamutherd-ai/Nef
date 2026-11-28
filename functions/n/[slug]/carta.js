@@ -16,14 +16,14 @@ function estrella(p) {
     ${foto ? `<img src="${esc(foto)}" alt="${esc(p.nombre)}" width="600" height="375" loading="lazy" decoding="async">` : '<span class="pt-sin-foto"></span>'}
     <div class="pt-tx"><span class="pt-sello">La de la casa</span><b>${esc(p.nombre)}</b>
     ${p.agotado ? '<span class="pt-agotado">Agotado hoy</span>' : p.descripcion ? `<small>${esc(p.descripcion)}</small>` : ''}
-    <span class="pt-precio">${pesos(p.precio)}</span></div></button>`;
+    <span class="pt-precio">${p.precio > 0 ? pesos(p.precio) : ''}</span></div></button>`;
 }
 
 function plato(p) {
   const foto = fotoSegura(p.foto_url);
   return `<button type="button" class="pt-prod pt-revela${p.agotado ? ' agotado' : ''}" data-id="${esc(p.id)}">${sello3d(p)}
     ${foto ? `<img class="pt-foto" src="${esc(foto)}" alt="" width="84" height="84" loading="lazy" decoding="async">` : '<span class="pt-foto"></span>'}
-    <div class="pt-tx"><div class="pt-linea"><b>${esc(p.nombre)}</b><i></i><span class="pt-precio">${pesos(p.precio)}</span></div>
+    <div class="pt-tx"><div class="pt-linea"><b>${esc(p.nombre)}</b><i></i><span class="pt-precio">${p.precio > 0 ? pesos(p.precio) : ''}</span></div>
     ${p.agotado ? '<span class="pt-agotado">Agotado hoy</span>' : p.descripcion ? `<small>${esc(p.descripcion)}</small>` : ''}</div></button>`;
 }
 
@@ -59,7 +59,7 @@ export async function onRequestGet({ params, request, env }) {
   const carrusel = populares.length >= 2 ? `<section class="pt-populares pt-entra" aria-label="Los favoritos">
     <h2 class="pt-versalitas">Los favoritos</h2>
     <div class="pt-carrusel">${populares.map((p) => `<button type="button" class="pt-pop" data-id="${esc(p.id)}">
-      <img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b><span class="pt-precio">${pesos(p.precio)}</span></button>`).join('')}</div>
+      <img src="${esc(fotoSegura(p.foto_url))}" alt="" width="300" height="300" loading="lazy" decoding="async"><b>${esc(p.nombre)}</b><span class="pt-precio">${p.precio > 0 ? pesos(p.precio) : ''}</span></button>`).join('')}</div>
   </section>` : '';
 
   return html(`${inicioPagina(n, { titulo: `${titulo} · ${n.nombre}`, extraHead: '<script src="/api/config"></script>' })}

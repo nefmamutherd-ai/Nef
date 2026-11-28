@@ -109,6 +109,22 @@
   --r-medio: 10px; --r-grande: 14px; --r-chico: 6px;
 }
 
+/* Trattoria (27/11/2026, restaurantes clásicos; la identidad de Los Fuertes): papel crema con veta de mármol, verde salvia,
+   dorado y café. Títulos en manuscrita dorada (Great Vibes), platos en Josefin Sans espaciada y texto en Cormorant Garamond. */
+[data-tema="trattoria"] {
+  --papel: #F4EFE4; --papel-hondo: #E9E1D1; --tarjeta: #FBF8F1; --linea: #DCCFB6;
+  --tinta: #2E2A20; --tinta-2: #5C5644; --tinta-3: #8A8270;
+  --marca: #6E7B6D; --sobre-marca: #FBF8F1;
+  --salvia: #758074; --salvia-honda: #5D6A5C; --dorado: #C4A265; --dorado-claro: #E2CB98; --cafe: #805220;
+  --oro: #C4A265; --oro-suave: #F3E8CF; --oro-tinta: #6B4A12;
+  --ok: #4F7A4A; --ok-suave: #E1EEDB; --alerta: #A2402B; --alerta-suave: #F6E2DA;
+  --serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --sans: "Josefin Sans", system-ui, sans-serif;
+  --manuscrita: "Great Vibes", "Snell Roundhand", cursive;
+  --peso-titulo: 600;
+  --r-medio: 4px; --r-grande: 6px; --r-chico: 3px;
+}
+
 [data-tema="noche"] {     /* bares, cafés de noche, coctelería: oscuro y cálido, serif elegante */
   --papel: #16120E; --papel-hondo: #221C16; --tarjeta: #1E1913; --linea: #3A2F24;
   --tinta: #F4EBDD; --tinta-2: #C2B29C; --tinta-3: #8E7F6C;
@@ -141,6 +157,13 @@
 @font-face { font-family: "Barlow Condensed"; src: url("/assets/fuentes/barlow-condensed-latin-800-italic.woff2") format("woff2"); font-weight: 800; font-style: italic; font-display: swap; }
 @font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Bricolage"; src: url("/assets/fuentes/bricolage-grotesque-latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("/assets/fuentes/cormorant-garamond-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("/assets/fuentes/cormorant-garamond-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("/assets/fuentes/cormorant-garamond-latin-500-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Josefin Sans"; src: url("/assets/fuentes/josefin-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Josefin Sans"; src: url("/assets/fuentes/josefin-sans-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Josefin Sans"; src: url("/assets/fuentes/josefin-sans-latin-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Great Vibes"; src: url("/assets/fuentes/great-vibes-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 .nef {
   --nef-mandarina: #FF6B35; --nef-mandarina-suave: #FFE3D6;
   --nef-tinta: #1D1B18; --nef-papel: #F5F1EA; --nef-arena: #E8E1D4; --nef-cielo: #CFE3F0; --nef-gris: #6E675E;

@@ -1264,6 +1264,10 @@ alter table public.productos add column if not exists modelo_url text
 -- "En mantenimiento" (27/11/2026): como "Agotado hoy" pero para máquinas de gimnasio. Lo marcan el dueño, el gerente o el
 -- admin (políticas dueno_todo / admin_todo de productos) y queda hasta que lo apaguen. "vuelve" es la fecha opcional que se
 -- muestra en el aviso ("Vuelve el…"). Solo máquinas; sin mantenimiento no hay fecha.
+-- Descripción: hasta 400 caracteres (27/11/2026). Las cartas reales traen un párrafo por plato; la lista lo corta en 3 líneas y la
+-- hoja del plato lo muestra completo.
+alter table public.productos drop constraint if exists productos_descripcion_check;
+alter table public.productos add constraint productos_descripcion_check check (descripcion is null or char_length(descripcion) <= 400);
 alter table public.productos add column if not exists mantenimiento boolean not null default false;
 alter table public.productos add column if not exists vuelve date;
 alter table public.productos drop constraint if exists productos_mantenimiento_check;
@@ -1941,7 +1945,8 @@ alter table public.negocios add column if not exists tema text check (tema in ('
 -- Pieles para gimnasios (27/11/2026): neon (rosa claro + magenta con brillo de aviso de neón) e industrial (concreto,
 -- grafito y naranja fundido). Cualquier negocio puede elegirlas; el color de la marca lo sigue poniendo cada uno.
 alter table public.negocios drop constraint if exists negocios_tema_check;
-alter table public.negocios add constraint negocios_tema_check check (tema in ('calido', 'limpio', 'noche', 'energia', 'neon', 'industrial'));
+alter table public.negocios add constraint negocios_tema_check check (tema in ('calido', 'limpio', 'noche', 'energia', 'neon', 'industrial', 'trattoria'));
+-- trattoria (27/11/2026): restaurante clásico italiano (verde salvia, dorado y papel crema; serif + manuscrita). Primero: demo de Los Fuertes.
 
 -- negocio_publico + tema (sigue sin nada privado)
 create or replace function public.negocio_publico(p_slug text)

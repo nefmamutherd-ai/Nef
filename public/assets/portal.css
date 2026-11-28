@@ -1187,3 +1187,92 @@ body:has(#club) .pt-deco, body:has(#carta) .pt-deco { opacity: .38; }
 .pl-maq.mant .pl-num-fondo { fill: var(--alerta); }
 .pt-maq.agotado b { color: var(--tinta-3); }
 .pt-maq .pt-agotado { display: block; margin-top: 2px; }
+
+/* ═══════════════ Trattoria (27/11/2026): la carta de un restaurante clásico, hecha pantalla ═══════════════
+   Primero para la demo de Los Fuertes: portada verde salvia con textura y marco dorado fino, nombre en manuscrita dorada,
+   papel crema con veta de mármol, platos en Josefin espaciada y descripciones en Cormorant (como su carta impresa). */
+[data-tema="trattoria"] body.pt {
+  background-color: var(--papel);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.003 .018' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .42 0 0 0 0 .36 0 0 0 -2.2 1.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)' opacity='.16'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .27 0 0 0 0 .2 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  font-family: var(--serif); font-size: 17px;
+}
+/* Marco dorado fino de la carta, siempre a la vista */
+[data-tema="trattoria"] body.pt::before { content: ""; position: fixed; inset: 7px; border: 1px solid var(--dorado); border-radius: 2px; pointer-events: none; z-index: 30; opacity: .75; }
+[data-tema="trattoria"] :is(.pt-mancha, .pt-doodle, .pt-deco) { display: none !important; }
+[data-tema="trattoria"] .pt-versalitas { font: 400 12px var(--sans); letter-spacing: .24em; text-transform: uppercase; color: var(--tinta-2); }
+
+/* Portada: el verde de su carta, con su textura y el nombre como su logo */
+[data-tema="trattoria"] .pt-inicio .pt-portada { position: relative; margin: calc(var(--e-24) * -1) calc(var(--e-24) * -1) 26px; padding: 54px 28px 36px; text-align: center;
+  background-color: var(--salvia);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .15 0 0 0 0 .18 0 0 0 0 .14 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .24 0 0 0 0 .19 0 0 0 .5 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  color: var(--dorado-claro); box-shadow: inset 0 -1px 0 var(--dorado); }
+[data-tema="trattoria"] .pt-inicio .pt-portada::after { content: ""; position: absolute; inset: 14px; border: 1px solid var(--dorado); opacity: .8; pointer-events: none; }
+[data-tema="trattoria"] .pt-inicio .pt-logo { display: none; }
+[data-tema="trattoria"] .pt-inicio .pt-cabeza h1 { font: 400 66px/1.05 var(--manuscrita); letter-spacing: 0; color: var(--dorado-claro); margin: 0; text-shadow: 0 2px 0 rgba(40, 46, 38, .35); }
+[data-tema="trattoria"] .pt-inicio .pt-lugar { display: block; margin: -4px 0 0 34%; font: 400 30px/1 var(--manuscrita); letter-spacing: 0; text-transform: none; color: var(--dorado-claro); }
+[data-tema="trattoria"] .pt-inicio .pt-lugar::before, [data-tema="trattoria"] .pt-inicio .pt-lugar::after { content: none; }
+[data-tema="trattoria"] .pt-inicio .pt-filete { color: var(--dorado); margin: 22px auto 14px; max-width: 170px; }
+[data-tema="trattoria"] .pt-inicio .pt-filete i { width: 7px; height: 7px; transform: rotate(45deg); border-radius: 0; box-shadow: none; }
+[data-tema="trattoria"] .pt-inicio .pt-portada .pt-versalitas:not(.pt-lugar) { color: #F4EFE4; font-size: 11px; letter-spacing: .3em; opacity: .92; }
+
+/* Botones: tarjetas de papel con doble filete dorado, títulos como los platos de su carta */
+[data-tema="trattoria"] .pt-inicio .pt-botones { gap: 12px; }
+[data-tema="trattoria"] .pt-inicio .pt-boton, [data-tema="trattoria"] .pt-baldosa { border-radius: var(--r-grande); background: var(--tarjeta); color: var(--tinta);
+  box-shadow: inset 0 0 0 1px var(--dorado), inset 0 0 0 4px var(--tarjeta), inset 0 0 0 5px rgba(196, 162, 101, .4), 0 10px 22px -18px rgba(46, 42, 32, .5); border: 0; }
+[data-tema="trattoria"] .pt-inicio .pt-boton::after { content: none !important; }
+[data-tema="trattoria"] .pt-inicio .pt-boton > span, [data-tema="trattoria"] .pt-baldosa > span { font: 600 15px/1.2 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--salvia-honda); }
+[data-tema="trattoria"] .pt-inicio .pt-boton > em, [data-tema="trattoria"] .pt-baldosa > em { font: italic 500 17px/1.25 var(--serif); color: var(--tinta-2); }
+[data-tema="trattoria"] .pt-inicio .pt-boton > .pt-ico, [data-tema="trattoria"] .pt-baldosa .pt-dado { background: transparent; color: var(--cafe); border-radius: 50%; box-shadow: inset 0 0 0 1px var(--dorado); }
+[data-tema="trattoria"] .pt-inicio .pt-boton .pt-flecha { color: var(--dorado); }
+[data-tema="trattoria"] .pt-inicio .pt-boton.principal { background-color: var(--salvia); color: #F4EFE4;
+  box-shadow: inset 0 0 0 1px var(--dorado), inset 0 0 0 4px var(--salvia), inset 0 0 0 5px rgba(226, 203, 152, .55), 0 14px 26px -18px rgba(46, 54, 44, .7); }
+[data-tema="trattoria"] .pt-inicio .pt-boton.principal > span { color: var(--dorado-claro); font-size: 17px; }
+[data-tema="trattoria"] .pt-inicio .pt-boton.principal > em { color: #EDE6D6; }
+[data-tema="trattoria"] .pt-inicio .pt-boton.principal > .pt-ico { color: var(--dorado-claro); box-shadow: inset 0 0 0 1px var(--dorado-claro); }
+[data-tema="trattoria"] .pt-inicio .pt-boton.principal .pt-flecha { color: var(--dorado-claro); }
+[data-tema="trattoria"] .pt-inicio .pt-enlaces a { font: 400 13px var(--sans); letter-spacing: .08em; color: var(--salvia-honda); }
+[data-tema="trattoria"] .pt-firma { font-family: var(--sans); }
+
+/* Carta: encabezado y secciones con la manuscrita dorada; platos sin foto como en la carta impresa */
+[data-tema="trattoria"] .pt-carta-cabeza h1 { font: 400 64px/1 var(--manuscrita); letter-spacing: 0; color: var(--dorado); }
+[data-tema="trattoria"] .pt-carta-cabeza .pt-filete { color: var(--dorado); }
+[data-tema="trattoria"] .pt-carta-cabeza .pt-filete i { border-radius: 0; transform: rotate(45deg); width: 7px; height: 7px; box-shadow: none; }
+[data-tema="trattoria"] .pt-elige { font: 600 13px var(--sans); letter-spacing: .14em; text-transform: uppercase; border-color: var(--dorado); color: var(--salvia-honda); background: var(--tarjeta); }
+[data-tema="trattoria"] .pt-buscar { background: var(--tarjeta); box-shadow: inset 0 0 0 1px var(--linea); }
+[data-tema="trattoria"] .pt-buscar input { font: 500 18px var(--serif); }
+[data-tema="trattoria"] .pt-fija { background: color-mix(in srgb, var(--papel) 94%, transparent); }
+[data-tema="trattoria"] .pt-pestanas button { font: 600 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-2); border-radius: 2px; }
+[data-tema="trattoria"] .pt-pestanas button[aria-selected="true"] { background: var(--salvia); color: #F8F3E8; }
+[data-tema="trattoria"] .pt-seccion > .pt-categoria { display: block; text-align: center; font: 400 50px/1.1 var(--manuscrita); color: var(--dorado); margin: 34px 0 18px; }
+[data-tema="trattoria"] .pt-seccion > .pt-categoria small { display: none; }
+[data-tema="trattoria"] .pt-seccion > .pt-categoria::after { content: ""; display: block; width: 64px; height: 1px; margin: 6px auto 0; background: var(--dorado); }
+[data-tema="trattoria"] .pt-seccion .pt-prod:not(.pt-estrella) { grid-template-columns: 1fr; padding: 16px 2px; border-bottom: 1px solid var(--linea); }
+[data-tema="trattoria"] .pt-seccion .pt-prod:not(.pt-estrella) span.pt-foto { display: none; }
+[data-tema="trattoria"] .pt-linea b { font: 600 14px/1.35 var(--sans) !important; letter-spacing: .14em; text-transform: uppercase; color: var(--salvia-honda); }
+[data-tema="trattoria"] .pt-linea i { border-bottom: 1px dotted var(--dorado); transform: translateY(-3px); }
+[data-tema="trattoria"] .pt-precio { font: 600 15px var(--sans); letter-spacing: .04em; color: var(--tinta); }
+[data-tema="trattoria"] .pt-seccion .pt-prod small { font: 500 17px/1.38 var(--serif); color: var(--tinta-2); margin-top: 6px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+[data-tema="trattoria"] .pt-seccion .pt-prod.agotado .pt-linea b { text-decoration: line-through; text-decoration-color: var(--dorado); color: var(--tinta-3); }
+[data-tema="trattoria"] .pt-agotado { font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--alerta); }
+[data-tema="trattoria"] .pt-estrella { background: var(--tarjeta); box-shadow: inset 0 0 0 1px var(--dorado), 0 16px 30px -22px rgba(46, 42, 32, .6); border-radius: var(--r-grande); }
+[data-tema="trattoria"] .pt-estrella .pt-tx b { font: 600 16px/1.3 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--salvia-honda); }
+[data-tema="trattoria"] .pt-estrella small { font: 500 17px/1.38 var(--serif); }
+[data-tema="trattoria"] .pt-sello { background: var(--salvia); color: var(--dorado-claro); font: 600 10px var(--sans); letter-spacing: .2em; text-transform: uppercase; border-radius: 2px; }
+[data-tema="trattoria"] .pt-accion { font: 600 14px var(--sans); letter-spacing: .14em; text-transform: uppercase; border-radius: var(--r-grande); }
+[data-tema="trattoria"] .pt-inicio .pt-boton .pt-flecha { display: none; }
+[data-tema="trattoria"] .pt-boton[data-icono="regalo"] > .pt-ico::after { background: var(--alerta); }
+
+/* Trattoria · club: la tarjeta del club como una tarjeta de la casa (verde, filete dorado, cifras en Cormorant) */
+[data-tema="trattoria"] :is(.pt-club h1, .pt-club2 h1) { font: 600 30px/1.15 var(--serif); letter-spacing: 0; }
+[data-tema="trattoria"] .pt-pase { border-radius: var(--r-grande); background-color: var(--salvia); color: #F4EFE4;
+  box-shadow: inset 0 0 0 1px var(--dorado), inset 0 0 0 5px var(--salvia), inset 0 0 0 6px rgba(226, 203, 152, .5), 0 18px 34px -24px rgba(46, 54, 44, .8); }
+[data-tema="trattoria"] .pt-pase-hola { font: 400 30px/1 var(--manuscrita); color: var(--dorado-claro); opacity: 1; }
+[data-tema="trattoria"] :is(.pt-pase-saldo b, .pt-boleto b, .pt-meta-cuesta, .pt-pr-cuesta) { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em; }
+[data-tema="trattoria"] .pt-pase-unidad { font: 400 13px var(--sans); letter-spacing: .18em; text-transform: uppercase; }
+[data-tema="trattoria"] .pt-pase-fondo { opacity: .35; }
+[data-tema="trattoria"] .pt-campo label, [data-tema="trattoria"] .pt-campo > span { font: 400 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+[data-tema="trattoria"] .pt-campo input { font: 500 19px var(--serif); border-radius: var(--r-medio); }

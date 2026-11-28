@@ -729,6 +729,24 @@ await caso('demo.sql corre dos veces y crea demo-cafe (15 platos, 7 premios) y d
   assert.equal((await q(`select count(*)::int n from productos where negocio_id = 'd0000000-0000-4000-8000-0000000000a2' and tipo = 'clase'`))[0].n, 12, 'la semana del gimnasio demo tiene 12 clases');
 });
 
+await caso('demo-los-fuertes.sql corre dos veces: 118 platos, 2 agotados, sin "$0" en la ruleta y 5 clientes en riesgo', async () => {
+  await db.exec('reset role;');
+  const demo = fs.readFileSync(new URL('../supabase/demo-los-fuertes.sql', import.meta.url), 'utf8');
+  await db.exec(demo);
+  await db.exec(demo);
+  await como('anon');
+  const [{ r: c }] = await q(`select carta_publica('demo-los-fuertes') r`);
+  const platos = c.categorias.flatMap((x) => x.productos);
+  assert.equal(c.categorias.length, 11); assert.equal(platos.length, 118);
+  assert.deepEqual(platos.filter((p) => p.agotado).map((p) => p.nombre).sort(), ['Ossobuco', 'Spaghetti marinero']);
+  assert.equal((await q(`select club_publico('demo-los-fuertes') r`))[0].r.premios.length, 7);
+  assert.ok((await q(`select caja_entrar('demo-los-fuertes','1234') r`))[0].r.sesion, 'la caja demo abre con 1234');
+  await db.exec('reset role;');
+  const riesgo = (await q(`select metrica_en_riesgo('d0000000-0000-4000-8000-0000000000f1', current_date) r`))[0].r;
+  assert.deepEqual(riesgo.map((x) => x.nombre).sort(), ['Andrea M.', 'Carlos R.', 'Diana L.', 'Julián T.', 'Paola G.'], '"quién dejó de venir" con datos de ejemplo');
+  assert.ok(riesgo.every((x) => /^573000002\d{3}$/.test(x.telefono)), 'teléfonos de ejemplo, no reales');
+});
+
 console.log('Diseño · pieles y "Lo más pedido"');
 await caso('"Lo más pedido": destacados si no hay datos; luego lo más visto; nunca agotados', async () => {
   await como('anon');
